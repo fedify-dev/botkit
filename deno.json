@@ -9,6 +9,8 @@
   "exports": {
     ".": "./src/mod.ts",
     "./bot": "./src/bot.ts",
+    "./message": "./src/message.ts",
+    "./session": "./src/session.ts",
     "./text": "./src/text.ts"
   },
   "imports": {
@@ -22,10 +24,14 @@
     "xss": "npm:xss@^1.0.15"
   },
   "exclude": [
-    "*.md",
     ".github",
     ".vscode"
   ],
+  "fmt": {
+    "exclude": [
+      "*.md"
+    ]
+  },
   "tasks": {
     "check": "deno check src/ && deno lint && deno fmt --check",
     "test": "deno test --allow-net=hollo.social",
