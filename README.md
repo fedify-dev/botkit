@@ -3,6 +3,8 @@
 BotKit by Fedify
 ================
 
+[![GitHub Actions][GitHub Actions badge]][GitHub Actions]
+
 > [!NOTE]
 > BotKit is still in early development.  The API may change in the future.
 > Although it currently supports only Deno, it will support Node.js and Bun
@@ -53,6 +55,8 @@ setInterval(async () => {
 export default bot;
 ~~~~
 
+[GitHub Actions]: https://github.com/dahlia/botkit/actions/workflows/main.yaml
+[GitHub Actions badge]: https://github.com/dahlia/botkit/actions/workflows/main.yaml/badge.svg
 [ActivityPub]: https://activitypub.rocks/
 [Fedify]: https://fedify.dev/
 
