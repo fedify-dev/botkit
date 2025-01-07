@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
+  type Context,
   createFederation,
   getDocumentLoader,
   importJwk,
@@ -27,7 +28,7 @@ import {
   assertFalse,
   assertInstanceOf,
 } from "@std/assert";
-import type { Bot } from "./bot.ts";
+import type { BotWithVoidContextData } from "./mod.ts";
 import type { Session } from "./session.ts";
 import { em, isText, mention, text } from "./text.ts";
 
@@ -94,11 +95,13 @@ federation.setActorDispatcher("/ap/actor/{identifier}", (_ctx, identifier) => {
   return [keyPair];
 });
 
-const bot: Bot<void> = {
+const bot: BotWithVoidContextData = {
   federation,
   identifier: "bot",
-  getSession(origin: string | URL, _contextData: void) {
-    const ctx = federation.createContext(new URL(origin));
+  getSession(origin: string | URL | Context<void>, _contextData?: void) {
+    const ctx = typeof origin === "string" || origin instanceof URL
+      ? federation.createContext(new URL(origin))
+      : origin;
     return {
       bot,
       context: ctx,

@@ -28,6 +28,7 @@
   ],
   "tasks": {
     "check": "deno check src/ && deno lint && deno fmt --check",
-    "test": "deno test --allow-net=hollo.social"
+    "test": "deno test --allow-net=hollo.social",
+    "test-all": "deno task check && deno task test"
   }
 }
