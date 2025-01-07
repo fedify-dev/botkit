@@ -23,6 +23,7 @@
     "@std/uuid": "jsr:@std/uuid@^1.0.4",
     "xss": "npm:xss@^1.0.15"
   },
+  "lock": false,
   "exclude": [
     ".github",
     ".vscode"
