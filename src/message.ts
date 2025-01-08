@@ -119,6 +119,15 @@ export interface Message<T extends MessageClass, TContextData> {
   readonly attachments: readonly Document[];
 
   /**
+   * Deletes the message, if possible.
+   *
+   * If the message is not published by the bot, it will silently fail.
+   *
+   * If the message is already deleted, it will be a no-op.
+   */
+  delete(): Promise<void>;
+
+  /**
    * Publishes a reply to the message.
    * @param text The content of the message.
    * @param options The options for publishing the message.

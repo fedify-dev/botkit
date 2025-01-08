@@ -32,9 +32,16 @@ const bot = createBot<void>({
   behindProxy: true,
 });
 
-const session = bot.getSession(new URL("https://yourdomain"));
+const session = bot.getSession(
+  new URL(Deno.env.get("ORIGIN") ?? "http://localhost"),
+);
 setInterval(async () => {
-  await session.publish(text`Hi, forks! It's a minutely greeting.`);
+  const message = await session.publish(
+    text`Hi, forks! It's a minutely greeting. It will be deleted in 30 seconds.`,
+  );
+  setTimeout(async () => {
+    await message.delete();
+  }, 1000 * 30);
 }, 1000 * 60);
 
 export default bot;

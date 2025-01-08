@@ -15,13 +15,21 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   type Actor,
+  Article,
+  ChatMessage,
+  Create,
+  Delete,
   Document,
   Hashtag,
   isActor,
+  type KvKey,
   LanguageString,
   Mention,
-  type Note,
+  Note,
+  type Object,
   PUBLIC_COLLECTION,
+  Question,
+  Tombstone,
 } from "@fedify/fedify";
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
@@ -33,6 +41,8 @@ import type {
   SessionPublishOptionsWithClass,
 } from "./session.ts";
 import type { Text } from "./text.ts";
+
+const messageClasses = [Article, ChatMessage, Note, Question];
 
 export class MessageImpl<T extends MessageClass, TContextData>
   implements Message<T, TContextData> {
@@ -50,7 +60,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
 
   constructor(
     session: SessionImpl<TContextData>,
-    message: Omit<Message<T, TContextData>, "reply">,
+    message: Omit<Message<T, TContextData>, "delete" | "reply">,
   ) {
     this.session = session;
     this.raw = message.raw;
@@ -63,6 +73,74 @@ export class MessageImpl<T extends MessageClass, TContextData>
     this.mentions = message.mentions;
     this.hashtags = message.hashtags;
     this.attachments = message.attachments;
+  }
+
+  async delete(): Promise<void> {
+    const parsed = this.session.context.parseUri(this.id);
+    if (
+      parsed?.type !== "object" ||
+      !messageClasses.some((cls) => parsed.class === cls)
+    ) {
+      return;
+    }
+    const { id } = parsed.values;
+    const kv = this.session.bot.kv;
+    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
+    const lockKey: KvKey = [...listKey, "lock"];
+    const lockId = `${id}:delete`;
+    do {
+      await kv.set(lockKey, lockId);
+      const set = new Set(await kv.get<string[]>(listKey) ?? []);
+      set.delete(id);
+      const list = [...set];
+      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      await kv.set(listKey, list);
+    } while (await kv.get(lockKey) !== lockId);
+    const messageKey: KvKey = [...listKey, id];
+    const createJson = await kv.get(messageKey);
+    if (createJson == null) return;
+    await kv.delete(messageKey);
+    const create = await Create.fromJsonLd(createJson, this.session.context);
+    const message = await create.getObject(this.session.context);
+    if (message == null) return;
+    const mentionedActorIds: Set<string> = new Set();
+    for await (const tag of message.getTags(this.session.context)) {
+      if (tag instanceof Mention && tag.href != null) {
+        mentionedActorIds.add(tag.href.href);
+      }
+    }
+    const promises: Promise<Object | null>[] = [];
+    const documentLoader = await this.session.context.getDocumentLoader(
+      this.session.bot,
+    );
+    for (const uri of mentionedActorIds) {
+      promises.push(this.session.context.lookupObject(uri, { documentLoader }));
+    }
+    const mentionedActors = (await Promise.all(promises)).filter(isActor);
+    const activity = new Delete({
+      id: new URL("#delete", this.id),
+      actor: this.session.context.getActorUri(this.session.bot.identifier),
+      tos: create.toIds,
+      ccs: create.ccIds,
+      object: new Tombstone({
+        id: this.id,
+      }),
+    });
+    const excludeBaseUris = [new URL(this.session.context.origin)];
+    await this.session.context.sendActivity(
+      this.session.bot,
+      "followers",
+      activity,
+      { preferSharedInbox: true, excludeBaseUris },
+    );
+    for (const actor of mentionedActors) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        actor,
+        activity,
+        { preferSharedInbox: true, excludeBaseUris },
+      );
+    }
   }
 
   reply(
