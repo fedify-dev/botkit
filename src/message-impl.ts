@@ -166,7 +166,11 @@ export class MessageImpl<T extends MessageClass, TContextData>
       | SessionPublishOptions
       | SessionPublishOptionsWithClass<MessageClass>,
   ): Promise<Message<MessageClass, TContextData>> {
-    return this.session.publish(text, { ...options, replyTo: this.id });
+    return this.session.publish(text, {
+      visibility: this.visibility === "unknown" ? "direct" : this.visibility,
+      ...options,
+      replyTo: this.id,
+    });
   }
 
   async share(
