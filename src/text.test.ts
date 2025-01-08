@@ -30,7 +30,7 @@ import {
 } from "@std/assert";
 import type { BotWithVoidContextData } from "./mod.ts";
 import type { Session } from "./session.ts";
-import { em, isText, mention, text } from "./text.ts";
+import { em, isText, link, mention, strong, text } from "./text.ts";
 
 const defaultDocumentLoader = getDocumentLoader();
 
@@ -153,7 +153,8 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(t3.getHtml(session))).join(""),
       '<p>Hello, <a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention">@<span>john@example.com</span></a></p>',
+        'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
+        "</span></a></p>",
     );
     const tags3 = await Array.fromAsync(t3.getTags(session));
     assertEquals(tags3.length, 1);
@@ -207,7 +208,8 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(m.getHtml(session))).join(""),
       '<a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention">@<span>john@example.com</span></a>',
+        'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
+        "</span></a>",
     );
     const tags = await Array.fromAsync(m.getTags(session));
     assertEquals(tags.length, 1);
@@ -226,7 +228,7 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(m2.getHtml(session))).join(""),
       '<a href="https://example.com/@jane" translate="no" ' +
-        'class="h-card u-url mention">Jane Doe</a>',
+        'class="h-card u-url mention" target="_blank">Jane Doe</a>',
     );
     const tags2 = await Array.fromAsync(m2.getTags(session));
     assertEquals(tags2.length, 1);
@@ -249,7 +251,7 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(m3.getHtml(session))).join(""),
       '<a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention">John Doe</a>',
+        'class="h-card u-url mention" target="_blank">John Doe</a>',
     );
     const tags3 = await Array.fromAsync(m3.getTags(session));
     assertEquals(tags3.length, 1);
@@ -265,7 +267,8 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(m4.getHtml(session))).join(""),
       '<a href="https://hollo.social/@fedify" translate="no" ' +
-        'class="h-card u-url mention">@<span>fedify@hollo.social</span></a>',
+        'class="h-card u-url mention" target="_blank">@<span>' +
+        "fedify@hollo.social</span></a>",
     );
     const tags4 = await Array.fromAsync(m4.getTags(session));
     assertEquals(tags4.length, 1);
@@ -281,7 +284,8 @@ Deno.test({
     assertEquals(
       (await Array.fromAsync(m5.getHtml(session))).join(""),
       '<a href="https://hollo.social/@fedify" translate="no" ' +
-        'class="h-card u-url mention">@<span>fedify@hollo.social</span></a>',
+        'class="h-card u-url mention" target="_blank">@<span>' +
+        "fedify@hollo.social</span></a>",
     );
     const tags5 = await Array.fromAsync(m5.getTags(session));
     assertEquals(tags5.length, 1);
@@ -315,4 +319,31 @@ Deno.test("strong()", async () => {
   );
   assertEquals(await Array.fromAsync(t.getTags(session)), []);
   assertEquals(t.getCachedObjects(), []);
+});
+
+Deno.test("link()", async () => {
+  const session = bot.getSession("https://example.com");
+  const t = link(em("label"), "https://example.com/");
+  assertEquals(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    '<a href="https://example.com/" target="_blank"><em>label</em></a>',
+  );
+  assertEquals(await Array.fromAsync(t.getTags(session)), []);
+  assertEquals(t.getCachedObjects(), []);
+
+  const t2 = link("label", "https://example.com/");
+  assertEquals(
+    (await Array.fromAsync(t2.getHtml(session))).join(""),
+    '<a href="https://example.com/" target="_blank">label</a>',
+  );
+  assertEquals(await Array.fromAsync(t2.getTags(session)), []);
+  assertEquals(t2.getCachedObjects(), []);
+
+  const t3 = link("https://example.com/");
+  assertEquals(
+    (await Array.fromAsync(t3.getHtml(session))).join(""),
+    '<a href="https://example.com/" target="_blank">https://example.com/</a>',
+  );
+  assertEquals(await Array.fromAsync(t3.getTags(session)), []);
+  assertEquals(t3.getCachedObjects(), []);
 });

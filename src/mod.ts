@@ -31,4 +31,12 @@ export type {
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";
-export { em, mention, plainText, strong, type Text, text } from "./text.ts";
+export {
+  em,
+  link,
+  mention,
+  plainText,
+  strong,
+  type Text,
+  text,
+} from "./text.ts";

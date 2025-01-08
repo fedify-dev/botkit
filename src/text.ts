@@ -275,7 +275,7 @@ export class MentionText<TContextData> implements Text<TContextData> {
     }
     yield '<a href="';
     yield escape(url.href);
-    yield '" translate="no" class="h-card u-url mention">';
+    yield '" translate="no" class="h-card u-url mention" target="_blank">';
     if (label.startsWith("@")) {
       yield "@<span>";
       yield escape(label.substring(1));
@@ -465,4 +465,71 @@ export function em<TContextData>(
   text: Text<TContextData> | string,
 ): Text<TContextData> {
   return new EmText(text);
+}
+
+/**
+ * A text tree that renders a link.  You normally don't need to instantiate
+ * this directly; use the {@link link} function instead.
+ * @typeParam TContextData The type of the context data.
+ */
+export class LinkText<TContextData> implements Text<TContextData> {
+  #label: Text<TContextData>;
+  #href: URL;
+
+  /**
+   * Creates a {@link LinkText} tree with a label and a URL.
+   * @param label The label of the link.
+   * @param href The URL of the link.  It has to be an absolute URL.
+   */
+  constructor(label: Text<TContextData> | string, href: URL | string) {
+    this.#label = typeof label === "string" ? new PlainText(label) : label;
+    this.#href = typeof href === "string" ? new URL(href) : href;
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    yield '<a href="';
+    yield escape(this.#href.href);
+    yield '" target="_blank">';
+    yield* this.#label.getHtml(session);
+    yield "</a>";
+  }
+
+  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+    return this.#label.getTags(session);
+  }
+
+  getCachedObjects(): Object[] {
+    return this.#label.getCachedObjects();
+  }
+}
+
+/**
+ * Creates a link to the given `href` with the `label`.  You can use this
+ * function to create a {@link LinkText} tree.
+ * @typeParam TContextData The type of the context data.
+ * @param label The displayed label of the link.
+ * @param href The link target.  It has to be an absolute URL.
+ * @returns A {@link LinkText} tree.
+ */
+export function link<TContextData>(
+  label: Text<TContextData> | string,
+  href: URL | string,
+): Text<TContextData>;
+
+/**
+ * Creates a link to the given `url` with no label.  You can use this function
+ * to create a {@link LinkText} tree.  The label of the link will be the same
+ * as the given `url`.
+ * @param url The link target.  It has to be an absolute URL.
+ * @returns A {@link LinkText} tree.
+ */
+export function link<TContextData>(url: URL | string): Text<TContextData>;
+
+export function link<TContextData>(
+  label: Text<TContextData> | string | URL,
+  href?: URL | string,
+): Text<TContextData> {
+  return href == null
+    ? new LinkText(String(label), label as string)
+    : new LinkText(isText(label) ? label : label.toString(), href);
 }
