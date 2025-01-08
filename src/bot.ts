@@ -31,6 +31,7 @@ export {
   type SemVer,
   type Software,
 } from "@fedify/fedify/nodeinfo";
+export { Application, Service } from "@fedify/fedify/vocab";
 
 /**
  * A bot that can interact with the ActivityPub network.
@@ -161,7 +162,8 @@ export interface CreateBotOptions<TContextData> {
   readonly icon?: URL;
 
   /**
-   * The header URL of the bot.  It can be changed after the bot is federated.
+   * The header image URL of the bot.  It can be changed after the bot is
+   * federated.
    */
   readonly image?: URL;
 
