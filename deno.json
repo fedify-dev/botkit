@@ -34,8 +34,10 @@
     ]
   },
   "tasks": {
-    "check": "deno check src/ && deno lint && deno fmt --check",
+    "check": "deno check src/ && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty",
     "test": "deno test --allow-net=hollo.social",
-    "test-all": "deno task check && deno task test"
+    "test-all": "deno task check && deno task test",
+    "hooks:install": "deno run --allow-read=deno.json,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",
+    "hooks:pre-commit": "deno task check"
   }
 }
