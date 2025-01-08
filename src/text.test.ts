@@ -30,7 +30,7 @@ import {
 } from "@std/assert";
 import type { BotWithVoidContextData } from "./mod.ts";
 import type { Session } from "./session.ts";
-import { em, isText, link, mention, strong, text } from "./text.ts";
+import { em, isText, link, mention, text } from "./text.ts";
 
 const defaultDocumentLoader = getDocumentLoader();
 
