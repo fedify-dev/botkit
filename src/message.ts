@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import type {
   Actor,
+  Announce,
   Article,
   ChatMessage,
   Document,
@@ -149,4 +150,67 @@ export interface Message<T extends MessageClass, TContextData> {
     text: Text<TContextData>,
     options?: SessionPublishOptionsWithClass<T>,
   ): Promise<Message<T, TContextData>>;
+
+  /**
+   * Shares the message.
+   *
+   * It throws an error if the visibility of the message is neither `"public"`
+   * nor `"unlisted"`.
+   * @param options The options for sharing the message.
+   * @returns The shared message.
+   * @throws {TypeError} If the visibility of the message is not `"public"` or
+   *                     `"unlisted"`.
+   */
+  share(options?: MessageShareOptions): Promise<SharedMessage<TContextData>>;
+}
+
+/**
+ * Options for sharing a message.
+ */
+export interface MessageShareOptions {
+  /**
+   * The visibility of the shared message.  If omitted, the visibility of the
+   * original message will be used.
+   */
+  readonly visibility?: Exclude<MessageVisibility, "direct" | "unknown">;
+}
+
+/**
+ * A shared message in the ActivityPub network.  It is a thin wrapper around
+ * an `Announce`, which is a Fedify object.
+ */
+export interface SharedMessage<TContextData> {
+  /**
+   * The underlying raw shared message object.
+   */
+  readonly raw: Announce;
+
+  /**
+   * The URI of the shared message.
+   */
+  readonly id: URL;
+
+  /**
+   * The actor who shared the message.
+   */
+  readonly actor: Actor;
+
+  /**
+   * The visibility of the shared message.
+   */
+  readonly visibility: MessageVisibility;
+
+  /**
+   * The original message.
+   */
+  readonly original: Message<MessageClass, TContextData>;
+
+  /**
+   * Undoes the shared message.
+   *
+   * If the shared message is not made by the bot, it silently fails.
+   *
+   * If the shared message is already undone, it silently fails.
+   */
+  unshare(): Promise<void>;
 }

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   type Actor,
+  Announce,
   Article,
   ChatMessage,
   Create,
@@ -30,11 +31,19 @@ import {
   PUBLIC_COLLECTION,
   Question,
   Tombstone,
+  Undo,
 } from "@fedify/fedify";
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
+import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS } from "xss";
-import type { Message, MessageClass, MessageVisibility } from "./message.ts";
+import type {
+  Message,
+  MessageClass,
+  MessageShareOptions,
+  MessageVisibility,
+  SharedMessage,
+} from "./message.ts";
 import type { SessionImpl } from "./session-impl.ts";
 import type {
   SessionPublishOptions,
@@ -60,7 +69,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
 
   constructor(
     session: SessionImpl<TContextData>,
-    message: Omit<Message<T, TContextData>, "delete" | "reply">,
+    message: Omit<Message<T, TContextData>, "delete" | "reply" | "share">,
   ) {
     this.session = session;
     this.raw = message.raw;
@@ -158,6 +167,97 @@ export class MessageImpl<T extends MessageClass, TContextData>
       | SessionPublishOptionsWithClass<MessageClass>,
   ): Promise<Message<MessageClass, TContextData>> {
     return this.session.publish(text, { ...options, replyTo: this.id });
+  }
+
+  async share(
+    options: MessageShareOptions = {},
+  ): Promise<SharedMessage<TContextData>> {
+    const published = new Date();
+    const id = uuidv7(+published);
+    const visibility = options.visibility ?? this.visibility;
+    const originalActor = this.actor.id == null ? [] : [this.actor.id];
+    const uri = this.session.context.getObjectUri(Announce, { id });
+    const announce = new Announce({
+      id: uri,
+      actor: this.session.context.getActorUri(this.session.bot.identifier),
+      published: published.toTemporalInstant(),
+      object: this.id,
+      tos: visibility === "public"
+        ? [PUBLIC_COLLECTION]
+        : visibility === "unlisted" || visibility === "followers"
+        ? [
+          this.session.context.getFollowersUri(this.session.bot.identifier),
+        ]
+        : [],
+      ccs: visibility === "public"
+        ? [
+          this.session.context.getFollowersUri(this.session.bot.identifier),
+          ...originalActor,
+        ]
+        : visibility === "unlisted"
+        ? [PUBLIC_COLLECTION, ...originalActor]
+        : originalActor,
+    });
+    const kv = this.session.bot.kv;
+    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
+    const messageKey: KvKey = [...listKey, id];
+    await kv.set(messageKey, await announce.toJsonLd(this.session.context));
+    const lockKey: KvKey = [...listKey, "lock"];
+    do {
+      await kv.set(lockKey, id);
+      const set = new Set(await kv.get<string[]>(listKey) ?? []);
+      set.add(id);
+      const list = [...set];
+      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      await kv.set(listKey, list);
+    } while (await kv.get(lockKey) !== id);
+    await this.session.context.sendActivity(
+      this.session.bot,
+      "followers",
+      announce,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+      },
+    );
+    const actor = await announce.getActor(this.session.context);
+    if (actor == null) throw new TypeError("The actor is required.");
+    return {
+      raw: announce,
+      id: uri,
+      actor,
+      visibility,
+      original: this,
+      unshare: async () => {
+        const lockId = `${id}:delete`;
+        do {
+          await kv.set(lockKey, lockId);
+          const set = new Set(await kv.get<string[]>(listKey) ?? []);
+          set.delete(id);
+          const list = [...set];
+          list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+          await kv.set(listKey, list);
+        } while (await kv.get(lockKey) !== lockId);
+        await kv.delete(messageKey);
+        await this.session.context.sendActivity(
+          this.session.bot,
+          "followers",
+          new Undo({
+            id: new URL("#delete", uri),
+            actor: this.session.context.getActorUri(
+              this.session.bot.identifier,
+            ),
+            tos: announce.toIds,
+            ccs: announce.ccIds,
+            object: announce,
+          }),
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+          },
+        );
+      },
+    };
   }
 }
 

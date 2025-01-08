@@ -16,6 +16,7 @@
 import {
   Accept,
   type Actor,
+  Announce,
   type Application,
   Article,
   ChatMessage,
@@ -127,6 +128,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       Question,
       "/ap/question/{id}",
       (ctx, values) => this.dispatchMessage(Question, ctx, values.id),
+    );
+    this.federation.setObjectDispatcher(
+      Announce,
+      "/ap/announce/{id}",
+      this.dispatchAnnounce.bind(this),
     );
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
@@ -273,6 +279,20 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     const object = await create.getObject(ctx);
     if (object == null || !(object instanceof cls)) return null;
     return object;
+  }
+
+  async dispatchAnnounce(
+    ctx: RequestContext<TContextData>,
+    values: { id: string },
+  ): Promise<Announce | null> {
+    const json = await this.kv.get([...this.kvPrefixes.messages, values.id]);
+    if (json == null) return null;
+    try {
+      return await Announce.fromJsonLd(json, ctx);
+    } catch (e) {
+      if (e instanceof TypeError) return null;
+      throw e;
+    }
   }
 
   async onFollowed(

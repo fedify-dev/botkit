@@ -25,7 +25,13 @@ export {
   Service,
   type Software,
 } from "./bot.ts";
-export type { Message, MessageClass, MessageVisibility } from "./message.ts";
+export type {
+  Message,
+  MessageClass,
+  MessageShareOptions,
+  MessageVisibility,
+  SharedMessage,
+} from "./message.ts";
 export type {
   Session,
   SessionPublishOptions,

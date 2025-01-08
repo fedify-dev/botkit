@@ -77,7 +77,7 @@ export interface SessionPublishOptions {
    * The visibility of the published message.  If omitted, `"public"` will be
    * used.
    */
-  readonly visibility?: MessageVisibility;
+  readonly visibility?: Exclude<MessageVisibility, "unknown">;
 
   /**
    * The media attachments of the published message.
