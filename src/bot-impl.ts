@@ -413,20 +413,23 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     };
     const replyTarget = ctx.parseUri(object.replyTargetId);
     if (
+      this.onReply != null &&
       replyTarget?.type === "object" &&
       // @ts-ignore: replyTarget.class satisfies (typeof messageClasses)[number]
       messageClasses.includes(replyTarget.class)
     ) {
       const message = await getMessage();
-      await this.onReply?.(session, message);
+      await this.onReply(session, message);
     }
     for await (const tag of object.getTags(ctx)) {
-      if (tag instanceof Mention && tag.href != null) {
+      if (
+        tag instanceof Mention && tag.href != null && this.onMention != null
+      ) {
         const parsed = ctx.parseUri(tag.href);
         if (
           parsed?.type === "actor" && parsed.identifier === this.identifier
         ) {
-          await this.onMention?.(session, await getMessage());
+          await this.onMention(session, await getMessage());
           break;
         }
       }
