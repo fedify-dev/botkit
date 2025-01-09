@@ -1,4 +1,4 @@
-import { createBot, mention, text } from "@fedify/botkit";
+import { createBot, Image, mention, text } from "@fedify/botkit";
 import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
 import { configure, getConsoleSink } from "@logtape/logtape";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -35,6 +35,17 @@ const bot = createBot<void>({
 bot.onFollow = async (session, follower) => {
   await session.publish(text`Thanks for following me, ${follower}!`, {
     visibility: "direct",
+    attachments: [
+      new Image({
+        mediaType: "image/png",
+        url: new URL(
+          "https://repository-images.githubusercontent.com/913141583/852a1091-14d5-46a0-b3bf-8d2f45ef6e7f",
+        ),
+        name: "BotKit logo",
+        width: 1280,
+        height: 640,
+      }),
+    ],
   });
 };
 

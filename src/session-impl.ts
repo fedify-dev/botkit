@@ -98,6 +98,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       replyTarget: options.replyTarget?.id,
       tags,
       attribution: this.context.getActorUri(this.bot.identifier),
+      attachments: options.attachments ?? [],
       tos: visibility === "public"
         ? [PUBLIC_COLLECTION, ...mentionedActorIds]
         : visibility === "unlisted" || visibility === "followers"
