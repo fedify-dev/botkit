@@ -1,23 +1,5 @@
 import { createBot, Image, mention, text } from "@fedify/botkit";
 import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
-import { configure, getConsoleSink } from "@logtape/logtape";
-import { AsyncLocalStorage } from "node:async_hooks";
-
-await configure({
-  sinks: {
-    console: getConsoleSink(),
-  },
-  loggers: [
-    { category: "botkit", lowestLevel: "info", sinks: ["console"] },
-    { category: "fedify", lowestLevel: "info", sinks: ["console"] },
-    {
-      category: ["logtape", "meta"],
-      lowestLevel: "warning",
-      sinks: ["console"],
-    },
-  ],
-  contextLocalStorage: new AsyncLocalStorage(),
-});
 
 const kv = await Deno.openKv();
 
@@ -27,6 +9,9 @@ const bot = createBot<void>({
   summary: text`Hi, there! I'm a simple fediverse bot created by ${
     mention("@hongminhee@hollo.social")
   }.`,
+  icon: new URL(
+    "https://repository-images.githubusercontent.com/913141583/852a1091-14d5-46a0-b3bf-8d2f45ef6e7f",
+  ),
   kv: new DenoKvStore(kv),
   queue: new DenoKvMessageQueue(kv),
   behindProxy: true,

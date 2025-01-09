@@ -27,7 +27,8 @@
   "lock": false,
   "exclude": [
     ".github",
-    ".vscode"
+    ".vscode",
+    "docs"
   ],
   "fmt": {
     "exclude": [
