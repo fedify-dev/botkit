@@ -76,7 +76,7 @@ export function isText<TContextData>(
  */
 export class TemplatedText<TContextData> implements Text<TContextData> {
   #strings: TemplateStringsArray;
-  #values: unknown[];
+  #values: Text<TContextData>[];
 
   /**
    * Creates a text tree with a template string and values.
@@ -86,8 +86,10 @@ export class TemplatedText<TContextData> implements Text<TContextData> {
   constructor(strings: TemplateStringsArray, ...values: unknown[]) {
     this.#strings = strings;
     this.#values = values.map((v) => {
+      if (isText<TContextData>(v)) return v;
+      if (v instanceof URL) return link(v);
       if (isActor(v)) return mention(v);
-      return v;
+      return new PlainText(String(v));
     });
   }
 
@@ -122,11 +124,7 @@ export class TemplatedText<TContextData> implements Text<TContextData> {
       yield escape(text);
       if (i < this.#values.length) {
         const value = this.#values[i];
-        if (isText<TContextData>(value)) {
-          yield* value.getHtml(session);
-        } else {
-          yield escape(String(value));
-        }
+        yield* value.getHtml(session);
       }
     }
     if (p === "opened") yield "</p>";
@@ -196,7 +194,12 @@ export class PlainText<TContextData> implements Text<TContextData> {
   }
 
   async *getHtml(_session: Session<TContextData>): AsyncIterable<string> {
-    yield escape(this.text);
+    let first = true;
+    for (const line of this.text.split("\n")) {
+      if (!first) yield "<br>";
+      yield escape(line);
+      first = false;
+    }
   }
 
   async *getTags(_session: Session<TContextData>): AsyncIterable<Link> {
@@ -208,8 +211,11 @@ export class PlainText<TContextData> implements Text<TContextData> {
 }
 
 /**
- * A function that creates a {@link PlainText} tree.  It only does one simple
- * thing: escaping the given text so that it can be safely rendered as HTML.
+ * A function that creates a {@link PlainText} tree.  It only does two simple
+ * things:
+ *
+ * - Escaping the given text so that it can be safely rendered as HTML
+ * - Splitting the text by line breaks and rendering them as hard line breaks
  * @typeParam TContextData The type of the context data.
  * @param text The plain text.
  * @returns A {@link PlainText} tree.
@@ -531,5 +537,50 @@ export function link<TContextData>(
 ): Text<TContextData> {
   return href == null
     ? new LinkText(String(label), label as string)
-    : new LinkText(isText(label) ? label : label.toString(), href);
+    : new LinkText(
+      isText<TContextData>(label) ? label : label.toString(),
+      href,
+    );
+}
+
+/**
+ * A text tree that renders a inline code.  You normally don't need to
+ * instantiate this directly; use the {@link code} function instead.
+ */
+export class CodeText<TContextData> implements Text<TContextData> {
+  readonly #code: Text<TContextData>;
+
+  /**
+   * Creates a {@link CodeText} tree with a code.
+   * @param code The code to render.
+   */
+  constructor(code: Text<TContextData> | string) {
+    this.#code = typeof code === "string" ? new PlainText(code) : code;
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    yield "<code>";
+    yield* this.#code.getHtml(session);
+    yield "</code>";
+  }
+
+  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+    return this.#code.getTags(session);
+  }
+
+  getCachedObjects(): Object[] {
+    return [];
+  }
+}
+
+/**
+ * Applies `<code>` tag to a text.  You can use this function to create
+ * a {@link CodeText} tree.
+ * @param code The code to render.
+ * @returns A {@link CodeText} tree.
+ */
+export function code<TContextData>(
+  code: Text<TContextData> | string,
+): Text<TContextData> {
+  return new CodeText(code);
 }

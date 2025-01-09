@@ -28,9 +28,9 @@ import {
   assertFalse,
   assertInstanceOf,
 } from "@std/assert";
-import type { BotWithVoidContextData } from "./mod.ts";
+import type { BotWithVoidContextData } from "./bot.ts";
 import type { Session } from "./session.ts";
-import { em, isText, link, mention, text } from "./text.ts";
+import { code, em, isText, link, mention, type Text, text } from "./text.ts";
 
 const defaultDocumentLoader = getDocumentLoader();
 
@@ -128,7 +128,7 @@ Deno.test({
   permissions: {},
   async fn() {
     const session = bot.getSession("https://example.com");
-    const t = text`Hello, <${123}>`;
+    const t: Text<void> = text`Hello, <${123}>`;
     assertEquals(
       (await Array.fromAsync(t.getHtml(session))).join(""),
       "<p>Hello, &lt;123&gt;</p>",
@@ -136,7 +136,7 @@ Deno.test({
     assertEquals(await Array.fromAsync(t.getTags(session)), []);
     assertEquals(t.getCachedObjects(), []);
 
-    const t2 = text`Hello, ${em("World")}`;
+    const t2: Text<void> = text`Hello, ${em("World")}`;
     assertEquals(
       (await Array.fromAsync(t2.getHtml(session))).join(""),
       "<p>Hello, <em>World</em></p>",
@@ -149,7 +149,7 @@ Deno.test({
       preferredUsername: "john",
       url: new URL("https://example.com/@john"),
     });
-    const t3 = text`Hello, ${mention(actor)}`;
+    const t3: Text<void> = text`Hello, ${mention(actor)}`;
     assertEquals(
       (await Array.fromAsync(t3.getHtml(session))).join(""),
       '<p>Hello, <a href="https://example.com/@john" translate="no" ' +
@@ -166,7 +166,7 @@ Deno.test({
     assertInstanceOf(cache3[0], Person);
     assertEquals(cache3[0].id, new URL("https://example.com/users/john"));
 
-    const t4 = text`Hello\nworld!`;
+    const t4: Text<void> = text`Hello\nworld!`;
     assertEquals(
       (await Array.fromAsync(t4.getHtml(session))).join(""),
       "<p>Hello<br>world!</p>",
@@ -174,7 +174,7 @@ Deno.test({
     assertEquals(await Array.fromAsync(t4.getTags(session)), []);
     assertEquals(t4.getCachedObjects(), []);
 
-    const t5 = text`Hello\nworld!\n\nGoodbye!\n\t\n \nHello!`;
+    const t5: Text<void> = text`Hello\nworld!\n\nGoodbye!\n\t\n \nHello!`;
     assertEquals(
       (await Array.fromAsync(t5.getHtml(session))).join(""),
       "<p>Hello<br>world!</p><p>Goodbye!</p><p>Hello!</p>",
@@ -182,13 +182,34 @@ Deno.test({
     assertEquals(await Array.fromAsync(t5.getTags(session)), []);
     assertEquals(t5.getCachedObjects(), []);
 
-    const t6 = text`\n\n\nHello\nworld\n\n\nGoodbye!\n`;
+    const t6: Text<void> = text`\n\n\nHello\nworld\n\n\nGoodbye!\n`;
     assertEquals(
       (await Array.fromAsync(t6.getHtml(session))).join(""),
       "<p>Hello<br>world</p><p>Goodbye!</p>",
     );
     assertEquals(await Array.fromAsync(t6.getTags(session)), []);
     assertEquals(t6.getCachedObjects(), []);
+
+    const t7: Text<void> = text`Here's a link: ${new URL(
+      "https://fedify.dev/",
+    )}.`;
+    assertEquals(
+      (await Array.fromAsync(t7.getHtml(session))).join(""),
+      '<p>Here&#39;s a link: <a href="https://fedify.dev/" target="_blank">' +
+        "https://fedify.dev/</a>.</p>",
+    );
+    assertEquals(await Array.fromAsync(t7.getTags(session)), []);
+    assertEquals(t7.getCachedObjects(), []);
+
+    const t8: Text<void> = text`Here's a multiline text:
+    
+${"First line.\nSecond line."}`;
+    assertEquals(
+      (await Array.fromAsync(t8.getHtml(session))).join(""),
+      "<p>Here&#39;s a multiline text:</p><p>First line.<br>Second line.</p>",
+    );
+    assertEquals(await Array.fromAsync(t8.getTags(session)), []);
+    assertEquals(t8.getCachedObjects(), []);
   },
 });
 
@@ -198,7 +219,7 @@ Deno.test({
   permissions: { net: ["hollo.social"] },
   async fn() {
     const session = bot.getSession("https://example.com");
-    const m = mention(
+    const m: Text<void> = mention(
       new Person({
         id: new URL("https://example.com/users/john"),
         preferredUsername: "john",
@@ -221,7 +242,7 @@ Deno.test({
     assertInstanceOf(cache[0], Person);
     assertEquals(cache[0].id, new URL("https://example.com/users/john"));
 
-    const m2 = mention(
+    const m2: Text<void> = mention(
       "Jane Doe",
       new URL("https://example.com/@jane"),
     );
@@ -240,7 +261,7 @@ Deno.test({
     assertInstanceOf(cache2[0], Person);
     assertEquals(cache2[0].id, new URL("https://example.com/@jane"));
 
-    const m3 = mention(
+    const m3: Text<void> = mention(
       "John Doe",
       new Person({
         id: new URL("https://example.com/users/john"),
@@ -263,7 +284,7 @@ Deno.test({
     assertInstanceOf(cache3[0], Person);
     assertEquals(cache3[0].id, new URL("https://example.com/users/john"));
 
-    const m4 = mention("@fedify@hollo.social");
+    const m4: Text<void> = mention("@fedify@hollo.social");
     assertEquals(
       (await Array.fromAsync(m4.getHtml(session))).join(""),
       '<a href="https://hollo.social/@fedify" translate="no" ' +
@@ -280,7 +301,7 @@ Deno.test({
     assertInstanceOf(cache4[0], Person);
     assertEquals(cache4[0].id, new URL("https://hollo.social/@fedify"));
 
-    const m5 = mention(new URL("https://hollo.social/@fedify"));
+    const m5: Text<void> = mention(new URL("https://hollo.social/@fedify"));
     assertEquals(
       (await Array.fromAsync(m5.getHtml(session))).join(""),
       '<a href="https://hollo.social/@fedify" translate="no" ' +
@@ -301,7 +322,7 @@ Deno.test({
 
 Deno.test("em()", async () => {
   const session = bot.getSession("https://example.com");
-  const t = em("Hello, World");
+  const t: Text<void> = em("Hello, World");
   assertEquals(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<em>Hello, World</em>",
@@ -312,7 +333,7 @@ Deno.test("em()", async () => {
 
 Deno.test("strong()", async () => {
   const session = bot.getSession("https://example.com");
-  const t = em("Hello, World");
+  const t: Text<void> = em("Hello, World");
   assertEquals(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<em>Hello, World</em>",
@@ -323,7 +344,7 @@ Deno.test("strong()", async () => {
 
 Deno.test("link()", async () => {
   const session = bot.getSession("https://example.com");
-  const t = link(em("label"), "https://example.com/");
+  const t: Text<void> = link(em("label"), "https://example.com/");
   assertEquals(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank"><em>label</em></a>',
@@ -331,7 +352,7 @@ Deno.test("link()", async () => {
   assertEquals(await Array.fromAsync(t.getTags(session)), []);
   assertEquals(t.getCachedObjects(), []);
 
-  const t2 = link("label", "https://example.com/");
+  const t2: Text<void> = link("label", "https://example.com/");
   assertEquals(
     (await Array.fromAsync(t2.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank">label</a>',
@@ -339,11 +360,30 @@ Deno.test("link()", async () => {
   assertEquals(await Array.fromAsync(t2.getTags(session)), []);
   assertEquals(t2.getCachedObjects(), []);
 
-  const t3 = link("https://example.com/");
+  const t3: Text<void> = link("https://example.com/");
   assertEquals(
     (await Array.fromAsync(t3.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank">https://example.com/</a>',
   );
   assertEquals(await Array.fromAsync(t3.getTags(session)), []);
   assertEquals(t3.getCachedObjects(), []);
+
+  const t4: Text<void> = link(em("label"), "https://example.com/");
+  assertEquals(
+    (await Array.fromAsync(t4.getHtml(session))).join(""),
+    '<a href="https://example.com/" target="_blank"><em>label</em></a>',
+  );
+  assertEquals(await Array.fromAsync(t4.getTags(session)), []);
+  assertEquals(t4.getCachedObjects(), []);
+});
+
+Deno.test("code()", async () => {
+  const session = bot.getSession("https://example.com");
+  const t: Text<void> = code("a + b");
+  assertEquals(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    "<code>a + b</code>",
+  );
+  assertEquals(await Array.fromAsync(t.getTags(session)), []);
+  assertEquals(t.getCachedObjects(), []);
 });
