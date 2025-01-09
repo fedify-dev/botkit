@@ -22,13 +22,14 @@ import type {
   Hashtag,
   Note,
   Question,
-} from "@fedify/fedify";
+} from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
 import type {
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";
 import type { Text } from "./text.ts";
+export { Article, ChatMessage, Note, Question } from "@fedify/fedify/vocab";
 
 /**
  * A possible message class.
