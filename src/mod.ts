@@ -14,6 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 export {
+  InProcessMessageQueue,
+  type InProcessMessageQueueOptions,
+  MemoryKvStore,
+  ParallelMessageQueue,
+} from "@fedify/fedify/federation";
+export {
   Application,
   type Bot,
   type BotKvPrefixes,
