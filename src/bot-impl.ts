@@ -28,6 +28,7 @@ import {
   type Federation,
   Follow,
   generateCryptoKeyPair,
+  Image,
   importJwk,
   type InboxContext,
   isActor,
@@ -184,8 +185,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       preferredUsername: this.username,
       name: this.name,
       summary,
-      icon: this.icon,
-      image: this.image,
+      icon: new Image({ url: this.icon }),
+      image: new Image({ url: this.image }),
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
