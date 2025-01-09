@@ -67,6 +67,8 @@ export class MessageImpl<T extends MessageClass, TContextData>
   readonly mentions: readonly Actor[];
   readonly hashtags: readonly Hashtag[];
   readonly attachments: readonly Document[];
+  readonly published?: Temporal.Instant;
+  readonly updated?: Temporal.Instant;
 
   constructor(
     session: SessionImpl<TContextData>,
@@ -84,6 +86,8 @@ export class MessageImpl<T extends MessageClass, TContextData>
     this.mentions = message.mentions;
     this.hashtags = message.hashtags;
     this.attachments = message.attachments;
+    this.published = message.published;
+    this.updated = message.updated;
   }
 
   async delete(): Promise<void> {
@@ -342,5 +346,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     mentions,
     hashtags,
     attachments,
+    published: raw.published ?? undefined,
+    updated: raw.updated ?? undefined,
   });
 }

@@ -126,6 +126,16 @@ export interface Message<T extends MessageClass, TContextData> {
   readonly attachments: readonly Document[];
 
   /**
+   * The published time of the message.
+   */
+  readonly published?: Temporal.Instant;
+
+  /**
+   * The updated time of the message, if it is updated.
+   */
+  readonly updated?: Temporal.Instant;
+
+  /**
    * Deletes the message, if possible.
    *
    * If the message is not published by the bot, it will silently fail.
