@@ -105,6 +105,11 @@ export interface Message<T extends MessageClass, TContextData> {
   readonly html: string;
 
   /**
+   * The original message in reply to, if the message is a reply.
+   */
+  readonly replyTarget?: Message<MessageClass, TContextData>;
+
+  /**
    * The actors mentioned in the message.
    */
   readonly mentions: readonly Actor[];

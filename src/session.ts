@@ -41,6 +41,11 @@ export interface Session<TContextData> {
   readonly context: Context<TContextData>;
 
   /**
+   * The URI of the bot actor.
+   */
+  readonly actorId: URL;
+
+  /**
    * Publishes a message attributed to the bot.
    * @param text The content of the note.
    * @param options The options for publishing the message.

@@ -49,3 +49,14 @@ export type MentionEventHandler<TContextData> = (
   session: Session<TContextData>,
   message: Message<MessageClass, TContextData>,
 ) => void | Promise<void>;
+
+/**
+ * An event handler for a reply to the bot.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param reply The reply message.
+ */
+export type ReplyEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  reply: Message<MessageClass, TContextData>,
+) => void | Promise<void>;

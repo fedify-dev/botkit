@@ -44,6 +44,12 @@ bot.onUnfollow = async (session, follower) => {
   });
 };
 
+bot.onReply = async (session, message) => {
+  const botUri = session.actorId.href;
+  if (message.mentions.some((a) => a.id?.href === botUri)) return;
+  await message.reply(text`Thanks for your reply, ${message.actor}!`);
+};
+
 bot.onMention = async (_session, message) => {
   await message.reply(text`Hi, ${message.actor}!`);
 };

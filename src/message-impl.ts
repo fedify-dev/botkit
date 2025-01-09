@@ -51,7 +51,7 @@ import type {
 } from "./session.ts";
 import type { Text } from "./text.ts";
 
-const messageClasses = [Article, ChatMessage, Note, Question];
+export const messageClasses = [Article, ChatMessage, Note, Question];
 
 export class MessageImpl<T extends MessageClass, TContextData>
   implements Message<T, TContextData> {
@@ -63,6 +63,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
   readonly language?: LanguageTag | undefined;
   readonly text: string;
   readonly html: string;
+  readonly replyTarget?: Message<MessageClass, TContextData> | undefined;
   readonly mentions: readonly Actor[];
   readonly hashtags: readonly Hashtag[];
   readonly attachments: readonly Document[];
@@ -79,6 +80,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     this.language = message.language;
     this.text = message.text;
     this.html = message.html;
+    this.replyTarget = message.replyTarget;
     this.mentions = message.mentions;
     this.hashtags = message.hashtags;
     this.attachments = message.attachments;
@@ -169,7 +171,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     return this.session.publish(text, {
       visibility: this.visibility === "unknown" ? "direct" : this.visibility,
       ...options,
-      replyTo: this.id,
+      replyTarget: this,
     });
   }
 
@@ -274,6 +276,7 @@ const textXss = new FilterXSS({
 export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
+  replyTarget?: Message<MessageClass, TContextData>,
 ): Promise<Message<T, TContextData>> {
   if (raw.id == null) throw new TypeError(`The raw.id is required.`);
   else if (raw.content == null) {
@@ -305,6 +308,15 @@ export async function createMessage<T extends MessageClass, TContextData>(
   for await (const attachment of raw.getAttachments(session.context)) {
     if (attachment instanceof Document) attachments.push(attachment);
   }
+  if (replyTarget == null) {
+    const rt = await raw.getReplyTarget(session.context);
+    if (
+      rt instanceof Article || rt instanceof ChatMessage ||
+      rt instanceof Note || rt instanceof Question
+    ) {
+      replyTarget = await createMessage(rt, session);
+    }
+  }
   return new MessageImpl(session, {
     raw,
     id: raw.id,
@@ -326,6 +338,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
       : undefined,
     text: unescape(text),
     html,
+    replyTarget,
     mentions,
     hashtags,
     attachments,

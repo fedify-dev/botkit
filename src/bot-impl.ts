@@ -50,10 +50,11 @@ import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
 import type {
   FollowEventHandler,
   MentionEventHandler,
+  ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
-import { createMessage } from "./message-impl.ts";
-import type { MessageClass } from "./message.ts";
+import { createMessage, messageClasses } from "./message-impl.ts";
+import type { Message, MessageClass } from "./message.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
@@ -76,6 +77,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onFollow?: FollowEventHandler<TContextData>;
   onUnfollow?: UnfollowEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
+  onReply?: ReplyEventHandler<TContextData>;
 
   constructor(options: CreateBotOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -403,16 +405,28 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ) {
       return;
     }
+    const session = this.getSession(ctx);
+    let messageCache: Message<MessageClass, TContextData> | null = null;
+    const getMessage = async () => {
+      if (messageCache != null) return messageCache;
+      return messageCache = await createMessage(object, session);
+    };
+    const replyTarget = ctx.parseUri(object.replyTargetId);
+    if (
+      replyTarget?.type === "object" &&
+      // @ts-ignore: replyTarget.class satisfies (typeof messageClasses)[number]
+      messageClasses.includes(replyTarget.class)
+    ) {
+      const message = await getMessage();
+      await this.onReply?.(session, message);
+    }
     for await (const tag of object.getTags(ctx)) {
       if (tag instanceof Mention && tag.href != null) {
         const parsed = ctx.parseUri(tag.href);
         if (
-          parsed?.type === "actor" && parsed.identifier === this.identifier &&
-          this.onMention != null
+          parsed?.type === "actor" && parsed.identifier === this.identifier
         ) {
-          const session = this.getSession(ctx);
-          const message = await createMessage(object, session);
-          await this.onMention(session, message);
+          await this.onMention?.(session, await getMessage());
           break;
         }
       }

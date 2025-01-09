@@ -27,6 +27,7 @@ import { BotImpl } from "./bot-impl.ts";
 import type {
   FollowEventHandler,
   MentionEventHandler,
+  ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
 import type { Session } from "./session.ts";
@@ -96,6 +97,11 @@ export interface Bot<TContextData> {
    * An event handler for a message mentioned to the bot.
    */
   onMention?: MentionEventHandler<TContextData>;
+
+  /**
+   * An event handler for a reply to the bot.
+   */
+  onReply?: ReplyEventHandler<TContextData>;
 }
 
 /**
@@ -290,6 +296,12 @@ export function createBot<TContextData = void>(
     },
     set onMention(value) {
       bot.onMention = value;
+    },
+    get onReply() {
+      return bot.onReply;
+    },
+    set onReply(value) {
+      bot.onReply = value;
     },
   } satisfies Bot<TContextData>;
   // @ts-ignore: the wrapper implements BotWithVoidContextData

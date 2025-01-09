@@ -35,12 +35,17 @@ import type {
 } from "./session.ts";
 import type { Text } from "./text.ts";
 
-export interface SessionImplPublishOptions extends SessionPublishOptions {
-  replyTo?: URL;
+export interface SessionImplPublishOptions<TContextData>
+  extends SessionPublishOptions {
+  replyTarget?: Message<MessageClass, TContextData>;
 }
 
-export interface SessionImplPublishOptionsWithClass<T extends MessageClass>
-  extends SessionPublishOptionsWithClass<T>, SessionImplPublishOptions {
+export interface SessionImplPublishOptionsWithClass<
+  T extends MessageClass,
+  TContextData,
+> extends
+  SessionPublishOptionsWithClass<T>,
+  SessionImplPublishOptions<TContextData> {
 }
 
 export class SessionImpl<TContextData> implements Session<TContextData> {
@@ -52,19 +57,23 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     this.context = context;
   }
 
+  get actorId() {
+    return this.context.getActorUri(this.bot.identifier);
+  }
+
   async publish(
     content: Text<TContextData>,
-    options?: SessionImplPublishOptions,
+    options?: SessionImplPublishOptions<TContextData>,
   ): Promise<Message<Note, TContextData>>;
   async publish<T extends MessageClass>(
     content: Text<TContextData>,
-    options: SessionImplPublishOptionsWithClass<T>,
+    options: SessionImplPublishOptionsWithClass<T, TContextData>,
   ): Promise<Message<T, TContextData>>;
   async publish(
     content: Text<TContextData>,
     options:
-      | SessionImplPublishOptions
-      | SessionImplPublishOptionsWithClass<MessageClass> = {},
+      | SessionImplPublishOptions<TContextData>
+      | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},
   ): Promise<Message<MessageClass, TContextData>> {
     const published = new Date();
     const id = uuidv7(+published);
@@ -83,9 +92,10 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     }
     const msg = new cls({
       id: this.context.getObjectUri<MessageClass>(cls, { id }),
-      content: options.language == null
-        ? contentHtml
-        : new LanguageString(contentHtml, options.language),
+      contents: options.language == null
+        ? [contentHtml]
+        : [new LanguageString(contentHtml, options.language), contentHtml],
+      replyTarget: options.replyTarget?.id,
       tags,
       attribution: this.context.getActorUri(this.bot.identifier),
       tos: visibility === "public"
@@ -167,6 +177,6 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox },
       );
     }
-    return await createMessage(msg, this);
+    return await createMessage(msg, this, options.replyTarget);
   }
 }
