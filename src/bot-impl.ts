@@ -33,6 +33,7 @@ import {
   isActor,
   type KvKey,
   type KvStore,
+  Mention,
   type NodeInfo,
   Note,
   Object,
@@ -46,7 +47,8 @@ import {
 } from "@fedify/fedify";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
-import type { MessageClass } from "./mod.ts";
+import { createMessage } from "./message-impl.ts";
+import type { MentionEventHandler, MessageClass } from "./mod.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
@@ -65,6 +67,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly software?: Software;
   readonly behindProxy: boolean;
   readonly federation: Federation<TContextData>;
+
+  onMention?: MentionEventHandler<TContextData>;
 
   constructor(options: CreateBotOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -136,8 +140,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     );
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
-      .on(Follow, this.onFollowed.bind(this))
-      .on(Undo, this.onUnfollowed.bind(this));
+      .on(Follow, this.onFollow.bind(this))
+      .on(Undo, this.onUnfollow.bind(this))
+      .on(Create, this.onCreate.bind(this));
     if (this.software != null) {
       this.federation.setNodeInfoDispatcher(
         "/nodeinfo/2.1",
@@ -295,7 +300,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
   }
 
-  async onFollowed(
+  async onFollow(
     ctx: InboxContext<TContextData>,
     follow: Follow,
   ): Promise<void> {
@@ -340,7 +345,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     );
   }
 
-  async onUnfollowed(
+  async onUnfollow(
     _ctx: InboxContext<TContextData>,
     undo: Undo,
   ): Promise<void> {
@@ -363,6 +368,33 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     const followerKey: KvKey = [...this.kvPrefixes.followers, followerId];
     await this.kv.delete(followerKey);
     await this.kv.delete(followRequestKey);
+  }
+
+  async onCreate(
+    ctx: InboxContext<TContextData>,
+    create: Create,
+  ): Promise<void> {
+    const object = await create.getObject(ctx);
+    if (
+      !(object instanceof Article || object instanceof ChatMessage ||
+        object instanceof Note || object instanceof Question)
+    ) {
+      return;
+    }
+    for await (const tag of object.getTags(ctx)) {
+      if (tag instanceof Mention && tag.href != null) {
+        const parsed = ctx.parseUri(tag.href);
+        if (
+          parsed?.type === "actor" && parsed.identifier === this.identifier &&
+          this.onMention != null
+        ) {
+          const session = this.getSession(ctx);
+          const message = await createMessage(object, session);
+          await this.onMention(session, message);
+          break;
+        }
+      }
+    }
   }
 
   dispatchNodeInfo(_ctx: Context<TContextData>): NodeInfo {
@@ -388,13 +420,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     origin: string | URL,
     contextData: TContextData,
   ): Session<TContextData>;
-  getSession(origin: string | URL): Session<TContextData>;
-  getSession(context: Context<TContextData>): Session<TContextData>;
+  getSession(origin: string | URL): SessionImpl<TContextData>;
+  getSession(context: Context<TContextData>): SessionImpl<TContextData>;
 
   getSession(
     origin: string | URL | Context<TContextData>,
     contextData?: TContextData,
-  ): Session<TContextData> {
+  ): SessionImpl<TContextData> {
     const ctx = typeof origin === "string" || origin instanceof URL
       ? this.federation.createContext(new URL(origin), contextData!)
       : origin;

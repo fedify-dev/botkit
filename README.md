@@ -42,12 +42,12 @@ const bot = createBot<void>({
 });
 
 // A bot can respond to a mention:
-bot.onMention(/hi|hello|what'?s\s+up/i, async (message) => {
-  await message.reply(text`Hi, ${ctx.actor}!`);
-});
+bot.onMention = async (session, message) => {
+  await message.reply(text`Hi, ${message.actor}!`);
+};
 
 // Or, a bot also can actively publish a post:
-const session = bot.getSession(new URL("https://mydomain/"));
+const session = bot.getSession("https://mydomain/");
 setInterval(async () => {
   await session.publish(text`Hi, forks! It's an hourly greeting.`);
 }, 1000 * 60 * 60);

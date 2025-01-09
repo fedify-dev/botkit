@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/mod.ts",
     "./bot": "./src/bot.ts",
+    "./events": "./src/events.ts",
     "./message": "./src/message.ts",
     "./session": "./src/session.ts",
     "./text": "./src/text.ts"

@@ -24,6 +24,7 @@ import type {
 } from "@fedify/fedify";
 import type { Software } from "@fedify/fedify/nodeinfo";
 import { BotImpl } from "./bot-impl.ts";
+import type { MentionEventHandler } from "./events.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
 export {
@@ -76,6 +77,11 @@ export interface Bot<TContextData> {
    * @returns The response to the request.
    */
   fetch(request: Request, contextData: TContextData): Promise<Response>;
+
+  /**
+   * An event handler for a message mentioned to the bot.
+   */
+  onMention?: MentionEventHandler<TContextData>;
 }
 
 /**
@@ -252,6 +258,12 @@ export function createBot<TContextData = void>(
     },
     fetch(request, contextData) {
       return bot.fetch(request, contextData);
+    },
+    get onMention() {
+      return bot.onMention;
+    },
+    set onMention(value) {
+      bot.onMention = value;
     },
   } satisfies Bot<TContextData>;
   // @ts-ignore: the wrapper implements BotWithVoidContextData

@@ -13,37 +13,16 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-export {
-  Application,
-  type Bot,
-  type BotKvPrefixes,
-  type BotWithVoidContextData,
-  createBot,
-  type CreateBotOptions,
-  parseSemVer,
-  type SemVer,
-  Service,
-  type Software,
-} from "./bot.ts";
-export type * from "./events.ts";
-export type {
-  Message,
-  MessageClass,
-  MessageShareOptions,
-  MessageVisibility,
-  SharedMessage,
-} from "./message.ts";
-export type {
-  Session,
-  SessionPublishOptions,
-  SessionPublishOptionsWithClass,
-} from "./session.ts";
-export {
-  em,
-  link,
-  mention,
-  plainText,
-  strong,
-  type Text,
-  text,
-} from "./text.ts";
+import type { Message, MessageClass } from "./message.ts";
+import type { Session } from "./session.ts";
+
+/**
+ * An event handler for a message mentioned to the bot.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param message The mentioned message.
+ */
+export type MentionEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  message: Message<MessageClass, TContextData>,
+) => void | Promise<void>;
