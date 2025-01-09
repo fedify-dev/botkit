@@ -13,6 +13,8 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import type { KvKey } from "@fedify/fedify/federation";
+import { LanguageString } from "@fedify/fedify/runtime";
 import {
   type Actor,
   Announce,
@@ -23,8 +25,6 @@ import {
   Document,
   Hashtag,
   isActor,
-  type KvKey,
-  LanguageString,
   Mention,
   Note,
   type Object,
@@ -32,7 +32,7 @@ import {
   Question,
   Tombstone,
   Undo,
-} from "@fedify/fedify";
+} from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";

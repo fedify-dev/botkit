@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 export {
-  type Actor,
-  Audio,
-  Document,
-  Image,
-  isActor,
-  Video,
-} from "@fedify/fedify/vocab";
-export {
   Application,
   type Bot,
   type BotKvPrefixes,
@@ -34,15 +26,26 @@ export {
   type Software,
 } from "./bot.ts";
 export type * from "./events.ts";
-export type {
+export {
   Article,
+  Audio,
   ChatMessage,
+  Document,
+  Hashtag,
+  Image,
+  isActor,
+  LanguageTag,
+  Note,
+  parseLanguageTag,
+  Question,
+  Video,
+} from "./message.ts";
+export type {
+  Actor,
   Message,
   MessageClass,
   MessageShareOptions,
   MessageVisibility,
-  Note,
-  Question,
   SharedMessage,
 } from "./message.ts";
 export type {

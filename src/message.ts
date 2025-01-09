@@ -29,7 +29,20 @@ import type {
   SessionPublishOptionsWithClass,
 } from "./session.ts";
 import type { Text } from "./text.ts";
-export { Article, ChatMessage, Note, Question } from "@fedify/fedify/vocab";
+export {
+  Article,
+  Audio,
+  ChatMessage,
+  Document,
+  Hashtag,
+  Image,
+  isActor,
+  Note,
+  Question,
+  Video,
+} from "@fedify/fedify/vocab";
+export type { Actor } from "@fedify/fedify/vocab";
+export { LanguageTag, parseLanguageTag } from "@phensley/language-tag";
 
 /**
  * A possible message class.
@@ -62,6 +75,8 @@ export type MessageVisibility =
   | "direct"
   /**
    * Signifies that the message is unknown; it is not clear who can see it.
+   * It is usually the case when the message is published by a minor fediverse
+   * server that is incompatible with Mastodon-style visibility.
    */
   | "unknown";
 
