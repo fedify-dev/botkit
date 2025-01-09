@@ -132,12 +132,14 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     } while (await kv.get(lockKey) !== id);
     const preferSharedInbox = visibility === "public" ||
       visibility === "unlisted" || visibility === "followers";
-    await this.context.sendActivity(
-      this.bot,
-      "followers",
-      activity,
-      { preferSharedInbox },
-    );
+    if (preferSharedInbox) {
+      await this.context.sendActivity(
+        this.bot,
+        "followers",
+        activity,
+        { preferSharedInbox },
+      );
+    }
     if (mentionedActorIds.length > 0) {
       const cachedObjects: Record<string, Object> = {};
       for (const cachedObject of content.getCachedObjects()) {

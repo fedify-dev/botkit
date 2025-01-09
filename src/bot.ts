@@ -24,7 +24,11 @@ import type {
 } from "@fedify/fedify";
 import type { Software } from "@fedify/fedify/nodeinfo";
 import { BotImpl } from "./bot-impl.ts";
-import type { MentionEventHandler } from "./events.ts";
+import type {
+  FollowEventHandler,
+  MentionEventHandler,
+  UnfollowEventHandler,
+} from "./events.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
 export {
@@ -77,6 +81,16 @@ export interface Bot<TContextData> {
    * @returns The response to the request.
    */
   fetch(request: Request, contextData: TContextData): Promise<Response>;
+
+  /**
+   * An event handler for a follow request to the bot.
+   */
+  onFollow?: FollowEventHandler<TContextData>;
+
+  /**
+   * An event handler for an unfollow event from the bot.
+   */
+  onUnfollow?: UnfollowEventHandler<TContextData>;
 
   /**
    * An event handler for a message mentioned to the bot.
@@ -258,6 +272,18 @@ export function createBot<TContextData = void>(
     },
     fetch(request, contextData) {
       return bot.fetch(request, contextData);
+    },
+    get onFollow() {
+      return bot.onFollow;
+    },
+    set onFollow(value) {
+      bot.onFollow = value;
+    },
+    get onUnfollow() {
+      return bot.onUnfollow;
+    },
+    set onUnfollow(value) {
+      bot.onUnfollow = value;
     },
     get onMention() {
       return bot.onMention;

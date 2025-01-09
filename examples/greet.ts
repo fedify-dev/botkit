@@ -32,6 +32,18 @@ const bot = createBot<void>({
   behindProxy: true,
 });
 
+bot.onFollow = async (session, follower) => {
+  await session.publish(text`Thanks for following me, ${follower}!`, {
+    visibility: "direct",
+  });
+};
+
+bot.onUnfollow = async (session, follower) => {
+  await session.publish(text`Goodbye, ${follower}!`, {
+    visibility: "direct",
+  });
+};
+
 bot.onMention = async (_session, message) => {
   await message.reply(text`Hi, ${message.actor}!`);
 };

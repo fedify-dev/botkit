@@ -47,8 +47,13 @@ import {
 } from "@fedify/fedify";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
+import type {
+  FollowEventHandler,
+  MentionEventHandler,
+  UnfollowEventHandler,
+} from "./events.ts";
 import { createMessage } from "./message-impl.ts";
-import type { MentionEventHandler, MessageClass } from "./mod.ts";
+import type { MessageClass } from "./message.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
@@ -68,6 +73,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly behindProxy: boolean;
   readonly federation: Federation<TContextData>;
 
+  onFollow?: FollowEventHandler<TContextData>;
+  onUnfollow?: UnfollowEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
 
   constructor(options: CreateBotOptions<TContextData>) {
@@ -140,9 +147,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     );
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
-      .on(Follow, this.onFollow.bind(this))
-      .on(Undo, this.onUnfollow.bind(this))
-      .on(Create, this.onCreate.bind(this));
+      .on(Follow, this.onFollowed.bind(this))
+      .on(Undo, this.onUnfollowed.bind(this))
+      .on(Create, this.onCreated.bind(this));
     if (this.software != null) {
       this.federation.setNodeInfoDispatcher(
         "/nodeinfo/2.1",
@@ -300,7 +307,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
   }
 
-  async onFollow(
+  async onFollowed(
     ctx: InboxContext<TContextData>,
     follow: Follow,
   ): Promise<void> {
@@ -343,10 +350,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         object: follow,
       }),
     );
+    if (this.onFollow != null) {
+      const session = this.getSession(ctx);
+      await this.onFollow(session, follower);
+    }
   }
 
-  async onUnfollow(
-    _ctx: InboxContext<TContextData>,
+  async onUnfollowed(
+    ctx: InboxContext<TContextData>,
     undo: Undo,
   ): Promise<void> {
     const followId = undo.objectId;
@@ -357,6 +368,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ];
     const followerId = await this.kv.get<string>(followRequestKey);
     if (followerId == null) return;
+    const followerKey: KvKey = [...this.kvPrefixes.followers, followerId];
+    const followerJson = await this.kv.get(followerKey);
+    if (followerJson == null) return;
+    const follower = await Object.fromJsonLd(followerJson, ctx);
+    if (follower.id?.href !== undo.actorId?.href) return;
     const lockKey: KvKey = [...this.kvPrefixes.followers, "lock"];
     const listKey: KvKey = this.kvPrefixes.followers;
     do {
@@ -365,12 +381,18 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       list = list.filter((id) => id !== followerId);
       await this.kv.set(listKey, list);
     } while (await this.kv.get(lockKey) !== followerId);
-    const followerKey: KvKey = [...this.kvPrefixes.followers, followerId];
     await this.kv.delete(followerKey);
     await this.kv.delete(followRequestKey);
+    if (this.onUnfollow != null) {
+      const session = this.getSession(ctx);
+      const follower = await undo.getActor(ctx);
+      if (follower != null) {
+        await this.onUnfollow(session, follower);
+      }
+    }
   }
 
-  async onCreate(
+  async onCreated(
     ctx: InboxContext<TContextData>,
     create: Create,
   ): Promise<void> {
