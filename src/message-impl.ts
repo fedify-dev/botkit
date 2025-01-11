@@ -286,7 +286,13 @@ export async function createMessage<T extends MessageClass, TContextData>(
   else if (raw.content == null) {
     throw new TypeError(`The raw.content is required.`);
   }
-  const actor = await raw.getAttribution(session.context);
+  const documentLoader = await session.context.getDocumentLoader(session.bot);
+  const options = {
+    contextLoader: session.context.contextLoader,
+    documentLoader,
+    suppressError: true,
+  };
+  const actor = await raw.getAttribution(options);
   if (actor == null) {
     throw new TypeError(`The raw.attributionId is required.`);
   }
@@ -299,9 +305,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
   const mentions: Actor[] = [];
   const mentionedActorIds = new Set<string>();
   const hashtags: Hashtag[] = [];
-  for await (const tag of raw.getTags(session.context)) {
+  for await (const tag of raw.getTags(options)) {
     if (tag instanceof Mention && tag.href != null) {
-      const obj = await session.context.lookupObject(tag.href);
+      const obj = await session.context.lookupObject(tag.href, options);
       if (isActor(obj)) mentions.push(obj);
       mentionedActorIds.add(tag.href.href);
     } else if (tag instanceof Hashtag) {
@@ -309,11 +315,11 @@ export async function createMessage<T extends MessageClass, TContextData>(
     }
   }
   const attachments: Document[] = [];
-  for await (const attachment of raw.getAttachments(session.context)) {
+  for await (const attachment of raw.getAttachments(options)) {
     if (attachment instanceof Document) attachments.push(attachment);
   }
   if (replyTarget == null) {
-    const rt = await raw.getReplyTarget(session.context);
+    const rt = await raw.getReplyTarget(options);
     if (
       rt instanceof Article || rt instanceof ChatMessage ||
       rt instanceof Note || rt instanceof Question
