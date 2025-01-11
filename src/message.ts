@@ -166,7 +166,7 @@ export interface Message<T extends MessageClass, TContextData> {
    * @returns The published message.
    */
   reply(
-    text: Text<TContextData>,
+    text: Text<"block", TContextData>,
     options?: SessionPublishOptions,
   ): Promise<Message<Note, TContextData>>;
 
@@ -178,7 +178,7 @@ export interface Message<T extends MessageClass, TContextData> {
    * @returns The published message.
    */
   reply<T extends MessageClass>(
-    text: Text<TContextData>,
+    text: Text<"block", TContextData>,
     options?: SessionPublishOptionsWithClass<T>,
   ): Promise<Message<T, TContextData>>;
 

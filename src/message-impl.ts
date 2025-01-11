@@ -159,15 +159,15 @@ export class MessageImpl<T extends MessageClass, TContextData>
   }
 
   reply(
-    text: Text<TContextData>,
+    text: Text<"block", TContextData>,
     options?: SessionPublishOptions,
   ): Promise<Message<Note, TContextData>>;
   reply<T extends MessageClass>(
-    text: Text<TContextData>,
+    text: Text<"block", TContextData>,
     options?: SessionPublishOptionsWithClass<T> | undefined,
   ): Promise<Message<T, TContextData>>;
   reply(
-    text: Text<TContextData>,
+    text: Text<"block", TContextData>,
     options?:
       | SessionPublishOptions
       | SessionPublishOptionsWithClass<MessageClass>,

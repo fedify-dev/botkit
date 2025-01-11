@@ -180,7 +180,7 @@ export interface CreateBotOptions<TContextData> {
   /**
    * The description of the bot.  It can be changed after the bot is federated.
    */
-  readonly summary?: Text<TContextData>;
+  readonly summary?: Text<"block", TContextData>;
 
   /**
    * The avatar URL of the bot.  It can be changed after the bot is federated.

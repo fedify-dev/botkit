@@ -65,7 +65,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly class: typeof Service | typeof Application;
   readonly username: string;
   readonly name?: string;
-  readonly summary?: Text<TContextData>;
+  readonly summary?: Text<"block", TContextData>;
   #summary: string | null;
   readonly icon?: URL;
   readonly image?: URL;

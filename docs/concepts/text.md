@@ -14,6 +14,35 @@ some part of the text, or include a [mention](#mentions) to another fediverse
 account.
 
 
+Blocks and inlines
+------------------
+
+The `Text` object consists of two types of elements: blocks and inlines.
+Type-wise they are represented by the `Text<"block">` and `Text<"inline">`.[^1]
+Blocks are usually used for [paragraphs](#paragraphs), and inlines are used for
+formatting constructs like [emphases](#emphases) or [links](#links).
+
+The distinction between blocks and inlines is important because some formatting
+constructs are only allowed in blocks or inlines.  For example, you cannot
+include a paragraph inside an emphasis construct.  Since the concept of blocks
+and inlines corresponds to the same concept in the HTML, you can think of them
+as the `<div>` and `<span>` elements in the HTML, respectively.
+
+The parameters that take the `Text` object, such as `Session.publish()` method
+or [`createBot()` function's `summary`
+parameter](./bot.md#createbotoptions-summary), are usually of the type
+`Text<"block">`.  The simplest way to create a `Text<"block">` object is to
+use the `text()` template string tag, which we will discuss in the right next
+section.
+
+[^1]: More precisely, the `Text` type has two type parameters: the first one
+      is the type of the element: `"block"` or `"inline"`, and the second one
+      is [`TContextData`], the [Fedify context data].
+
+[`TContextData`]: https://fedify.dev/manual/federation#tcontextdata
+[Fedify context data]: https://fedify.dev/manual/context
+
+
 Template string tag
 -------------------
 
@@ -66,6 +95,35 @@ The above code will create a text like this:
 
 There are other formatting constructs that you can use in the `Text` object.
 See the below sections for more information.
+
+> [!NOTE]
+> Although you can put a block object, it will close the current paragraph and
+> start a new block.  For example:
+>
+> ~~~~ typescript
+> text`Hello! ${text`This is a new paragraph.`}`
+> ~~~~
+>
+> The above code will create two paragraphs like this:
+>
+> > Hello!
+> > 
+> > This is a new paragraph.
+>
+> If you put a block object at the boundary of the block, it will work as
+> expected.  For example:
+>
+> ~~~~ typescript
+> text`Hello!\n\n${text`This is a new paragraph.`}\n\nThis is the last paragraph.`
+> ~~~~
+>
+> The above code will create three paragraphs like this:
+>
+> > Hello!
+> >
+> > This is a new paragraph.
+> >
+> > This is the last paragraph.
 
 ### `Actor` object
 

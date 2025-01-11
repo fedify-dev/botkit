@@ -29,7 +29,12 @@ import type { Session } from "./session.ts";
  * render the text but also extract tags (e.g., mentions) from it.
  * @typeParam TContextData The type of the context data.
  */
-export interface Text<TContextData> {
+export interface Text<TType extends "block" | "inline", TContextData> {
+  /**
+   * The type of the text.  It can be either `"block"` or `"inline"`.
+   */
+  readonly type: TType;
+
   /**
    * Render a text tree as HTML.
    * @param session The bot session.
@@ -62,10 +67,11 @@ export interface Text<TContextData> {
  */
 export function isText<TContextData>(
   value: unknown,
-): value is Text<TContextData> {
+): value is Text<"block" | "inline", TContextData> {
   return typeof value === "object" && value !== null && "getHtml" in value &&
     "getTags" in value && typeof value.getHtml === "function" &&
-    typeof value.getTags === "function";
+    typeof value.getTags === "function" && "type" in value &&
+    (value.type === "block" || value.type === "inline");
 }
 
 /**
@@ -74,9 +80,11 @@ export function isText<TContextData>(
  * instead.
  * @typeParam TContextData The type of the context data.
  */
-export class TemplatedText<TContextData> implements Text<TContextData> {
+export class TemplatedText<TContextData>
+  implements Text<"block", TContextData> {
+  readonly type = "block";
   #strings: TemplateStringsArray;
-  #values: Text<TContextData>[];
+  #values: Text<"block" | "inline", TContextData>[];
 
   /**
    * Creates a text tree with a template string and values.
@@ -94,40 +102,42 @@ export class TemplatedText<TContextData> implements Text<TContextData> {
   }
 
   async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
-    let p: "opened" | "closed" = "closed";
+    let paraState: "opened" | "closed" = "closed";
     for (let i = 0; i < this.#strings.length; i++) {
-      let text = this.#strings[i];
-      let m: RegExpMatchArray | null;
-      do {
-        m = text.match(/([ \t]*\r?\n)+/);
-        if (m != null) {
-          const prefix = text.substring(0, m.index ?? 0);
-          if (prefix.trim() !== "") {
-            if (p === "closed") {
-              yield "<p>";
-              p = "opened";
-            }
-            yield escape(prefix);
-          }
-          text = text.substring((m.index ?? 0) + m[0].length);
-          if (m[0].match(/([ \t]*\r?\n){2}/)) {
-            if (p === "opened") yield "</p><p>";
-          } else if (text.trim() !== "") {
-            yield "<br>";
-          }
+      const paragraphs = this.#strings[i].split(/([ \t]*\r?\n){2,}/g);
+      let p = 0;
+      for (const para of paragraphs) {
+        if (p > 0 && paraState === "opened") {
+          yield "</p>";
+          paraState = "closed";
         }
-      } while (m != null);
-      if (p === "closed") {
-        yield "<p>";
-        p = "opened";
+        const lines = para.split("\n");
+        let l = 0;
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+          if (l < 1 && paraState === "closed") {
+            yield "<p>";
+            paraState = "opened";
+          }
+          if (l > 0) yield "<br>";
+          yield escape(line);
+          l++;
+        }
+        p++;
       }
-      yield escape(text);
       if (i < this.#values.length) {
         const value = this.#values[i];
+        if (value.type === "block" && paraState === "opened") {
+          yield "</p>";
+          paraState = "closed";
+        } else if (value.type === "inline" && paraState === "closed") {
+          yield "<p>";
+          paraState = "opened";
+        }
         yield* value.getHtml(session);
       }
     }
-    if (p === "opened") yield "</p>";
+    if (paraState === "opened") yield "</p>";
   }
 
   async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
@@ -173,7 +183,7 @@ export class TemplatedText<TContextData> implements Text<TContextData> {
 export function text<TContextData>(
   strings: TemplateStringsArray,
   ...values: unknown[]
-): Text<TContextData> {
+): Text<"block", TContextData> {
   return new TemplatedText<TContextData>(strings, ...values);
 }
 
@@ -182,7 +192,8 @@ export function text<TContextData>(
  * instantiate this directly; use the {@link plainText} function instead.
  * @typeParam TContextData The type of the context data.
  */
-export class PlainText<TContextData> implements Text<TContextData> {
+export class PlainText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
   readonly text: string;
 
   /**
@@ -220,7 +231,9 @@ export class PlainText<TContextData> implements Text<TContextData> {
  * @param text The plain text.
  * @returns A {@link PlainText} tree.
  */
-export function plainText<TContextData>(text: string): Text<TContextData> {
+export function plainText<TContextData>(
+  text: string,
+): Text<"inline", TContextData> {
   return new PlainText(text);
 }
 
@@ -229,7 +242,8 @@ export function plainText<TContextData>(text: string): Text<TContextData> {
  * instantiate this directly; use the {@link mention} function instead.
  * @typeParam TContextData The type of the context data.
  */
-export class MentionText<TContextData> implements Text<TContextData> {
+export class MentionText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
   #label: string | ((session: Session<TContextData>) => Promise<string>);
   #actor: Actor | ((session: Session<TContextData>) => Promise<Object | null>);
   #cachedObject?: Object;
@@ -319,7 +333,9 @@ export class MentionText<TContextData> implements Text<TContextData> {
  * @param handle The handle of the actor.
  * @returns A {@link MentionText} tree.
  */
-export function mention<TContextData>(handle: string): Text<TContextData>;
+export function mention<TContextData>(
+  handle: string,
+): Text<"inline", TContextData>;
 
 /**
  * Mentions an actor.  You can use this function to create a {@link MentionText}
@@ -329,7 +345,9 @@ export function mention<TContextData>(handle: string): Text<TContextData>;
  * @param actor The actor to mention.
  * @returns A {@link MentionText} tree.
  */
-export function mention<TContextData>(actor: Actor | URL): Text<TContextData>;
+export function mention<TContextData>(
+  actor: Actor | URL,
+): Text<"inline", TContextData>;
 
 /**
  * Mentions an actor with a custom label.  You can use this function to create
@@ -344,12 +362,12 @@ export function mention<TContextData>(actor: Actor | URL): Text<TContextData>;
 export function mention<TContextData>(
   label: string,
   actor: Actor | URL,
-): Text<TContextData>;
+): Text<"inline", TContextData>;
 
 export function mention<TContextData>(
   a: string | Actor | URL,
   b?: Actor | URL,
-): Text<TContextData> {
+): Text<"inline", TContextData> {
   if (b != null) {
     return new MentionText<TContextData>(
       a as string,
@@ -392,14 +410,15 @@ export function mention<TContextData>(
  * instantiate this directly; use the {@link strong} function instead.
  * @typeParam TContextData The type of the context data.
  */
-export class StrongText<TContextData> implements Text<TContextData> {
-  #text: Text<TContextData>;
+export class StrongText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  #text: Text<"inline", TContextData>;
 
   /**
    * Creates a {@link StrongText} tree with a text.
    * @param text The text to render as `<strong>`.
    */
-  constructor(text: Text<TContextData> | string) {
+  constructor(text: Text<"inline", TContextData> | string) {
     this.#text = typeof text === "string" ? new PlainText(text) : text;
   }
 
@@ -427,8 +446,8 @@ export class StrongText<TContextData> implements Text<TContextData> {
  * @returns A {@link StrongText} tree.
  */
 export function strong<TContextData>(
-  text: Text<TContextData> | string,
-): Text<TContextData> {
+  text: Text<"inline", TContextData> | string,
+): Text<"inline", TContextData> {
   return new StrongText(text);
 }
 
@@ -437,10 +456,11 @@ export function strong<TContextData>(
  * instantiate this directly; use the {@link em} function instead.
  * @typeParam TContextData The type of the context data.
  */
-export class EmText<TContextData> implements Text<TContextData> {
-  #text: Text<TContextData>;
+export class EmText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  #text: Text<"inline", TContextData>;
 
-  constructor(text: Text<TContextData> | string) {
+  constructor(text: Text<"inline", TContextData> | string) {
     this.#text = typeof text === "string" ? new PlainText(text) : text;
   }
 
@@ -468,8 +488,8 @@ export class EmText<TContextData> implements Text<TContextData> {
  * @returns A {@link EmText} tree.
  */
 export function em<TContextData>(
-  text: Text<TContextData> | string,
-): Text<TContextData> {
+  text: Text<"inline", TContextData> | string,
+): Text<"inline", TContextData> {
   return new EmText(text);
 }
 
@@ -478,8 +498,9 @@ export function em<TContextData>(
  * this directly; use the {@link link} function instead.
  * @typeParam TContextData The type of the context data.
  */
-export class LinkText<TContextData> implements Text<TContextData> {
-  #label: Text<TContextData>;
+export class LinkText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  #label: Text<"inline", TContextData>;
   #href: URL;
 
   /**
@@ -487,7 +508,10 @@ export class LinkText<TContextData> implements Text<TContextData> {
    * @param label The label of the link.
    * @param href The URL of the link.  It has to be an absolute URL.
    */
-  constructor(label: Text<TContextData> | string, href: URL | string) {
+  constructor(
+    label: Text<"inline", TContextData> | string,
+    href: URL | string,
+  ) {
     this.#label = typeof label === "string" ? new PlainText(label) : label;
     this.#href = typeof href === "string" ? new URL(href) : href;
   }
@@ -518,9 +542,9 @@ export class LinkText<TContextData> implements Text<TContextData> {
  * @returns A {@link LinkText} tree.
  */
 export function link<TContextData>(
-  label: Text<TContextData> | string,
+  label: Text<"inline", TContextData> | string,
   href: URL | string,
-): Text<TContextData>;
+): Text<"inline", TContextData>;
 
 /**
  * Creates a link to the given `url` with no label.  You can use this function
@@ -529,12 +553,14 @@ export function link<TContextData>(
  * @param url The link target.  It has to be an absolute URL.
  * @returns A {@link LinkText} tree.
  */
-export function link<TContextData>(url: URL | string): Text<TContextData>;
+export function link<TContextData>(
+  url: URL | string,
+): Text<"inline", TContextData>;
 
 export function link<TContextData>(
-  label: Text<TContextData> | string | URL,
+  label: Text<"inline", TContextData> | string | URL,
   href?: URL | string,
-): Text<TContextData> {
+): Text<"inline", TContextData> {
   return href == null
     ? new LinkText(String(label), label as string)
     : new LinkText(
@@ -547,14 +573,15 @@ export function link<TContextData>(
  * A text tree that renders a inline code.  You normally don't need to
  * instantiate this directly; use the {@link code} function instead.
  */
-export class CodeText<TContextData> implements Text<TContextData> {
-  readonly #code: Text<TContextData>;
+export class CodeText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  readonly #code: Text<"inline", TContextData>;
 
   /**
    * Creates a {@link CodeText} tree with a code.
    * @param code The code to render.
    */
-  constructor(code: Text<TContextData> | string) {
+  constructor(code: Text<"inline", TContextData> | string) {
     this.#code = typeof code === "string" ? new PlainText(code) : code;
   }
 
@@ -580,7 +607,7 @@ export class CodeText<TContextData> implements Text<TContextData> {
  * @returns A {@link CodeText} tree.
  */
 export function code<TContextData>(
-  code: Text<TContextData> | string,
-): Text<TContextData> {
+  code: Text<"inline", TContextData> | string,
+): Text<"inline", TContextData> {
   return new CodeText(code);
 }

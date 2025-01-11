@@ -62,15 +62,15 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
   }
 
   async publish(
-    content: Text<TContextData>,
+    content: Text<"block", TContextData>,
     options?: SessionImplPublishOptions<TContextData>,
   ): Promise<Message<Note, TContextData>>;
   async publish<T extends MessageClass>(
-    content: Text<TContextData>,
+    content: Text<"block", TContextData>,
     options: SessionImplPublishOptionsWithClass<T, TContextData>,
   ): Promise<Message<T, TContextData>>;
   async publish(
-    content: Text<TContextData>,
+    content: Text<"block", TContextData>,
     options:
       | SessionImplPublishOptions<TContextData>
       | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},

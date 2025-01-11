@@ -52,7 +52,7 @@ export interface Session<TContextData> {
    * @returns The published message.
    */
   publish(
-    content: Text<TContextData>,
+    content: Text<"block", TContextData>,
     options?: SessionPublishOptions,
   ): Promise<Message<Note, TContextData>>;
 
@@ -64,7 +64,7 @@ export interface Session<TContextData> {
    * @returns The published message.
    */
   publish<T extends MessageClass>(
-    content: Text<TContextData>,
+    content: Text<"block", TContextData>,
     options: SessionPublishOptionsWithClass<T>,
   ): Promise<Message<T, TContextData>>;
 }
