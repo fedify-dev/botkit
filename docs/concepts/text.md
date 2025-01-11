@@ -200,6 +200,8 @@ The above code will create a text like this:
 Paragraphs
 ----------
 
+The `text()` template string tag creates a block `Text` object.
+
 You can create a paragraph by simply writing a text.  If you want to create
 multiple paragraphs, you can split them with two or more consecutive line
 breaks.  For example:
@@ -249,7 +251,8 @@ Emphases
 
 BotKit provides two kinds of emphasis: `strong()` emphasizes which is usually
 rendered as **bold**, and `em()` emphasizes which is usually rendered as
-_italic_.  For example:
+_italic_.  Both are inlines, so you can put them inside the interpolation.
+For example:
 
 ~~~~ typescript
 text`You can emphasize ${strong("this")} or ${em("this")}!`
@@ -273,7 +276,8 @@ The above code will create a text like this:
 Links
 -----
 
-You can make a link to a URL.  For example:
+You can make a link to a URL by using the `link()` function.  It returns
+an inline `Text` object that represents a link.  For example:
 
 ~~~~ typescript
 text`Here's a link: ${link("https://fedify.dev/")}.`
@@ -308,7 +312,7 @@ Mentions
 --------
 
 You can mention another fediverse account by using the `mention()` function.
-For example:
+It returns an inline `Text` object that represents a mention.  For example:
 
 ~~~~ typescript
 text`Hello, ${mention("@fedify@hollo.social")}!`
@@ -349,7 +353,8 @@ Code
 ----
 
 You can include a code in the text using the `code()` function,
-which is usually rendered as monospaced font.  For example:
+which is usually rendered as monospaced font.  It is an inline construct.
+For example:
 
 ~~~~ typescript
 text`Here's a code: ${code("console.log('Hello, world!')")}.`
@@ -361,3 +366,89 @@ The above code will create a text like this:
 
 > [!CAUTION]
 > It is not a code block, but an inline code.
+
+
+Markdown
+--------
+
+Sometimes you have a Markdown text and want to render it as a `Text` object.
+You can use the `markdown()` function to convert the Markdown text to the `Text`
+object.  It is a block construct.  For example:
+
+~~~~ typescript
+markdown(`
+Here's a Markdown text.
+
+- I can have a list.
+- I can have a **bold** text.
+- I can have an _italic_ text.
+`)
+~~~~
+
+The above code will create a text like this:
+
+> Here's a Markdown text.
+>
+>  -  I can have a list.
+>  -  I can have a **bold** text.
+>  -  I can have an _italic_ text.
+
+You can also put the `markdown()` function inside the interpolation:
+
+~~~~ typescript
+text`The following is a Markdown text: 
+
+${markdown(`
+Here's a Markdown text.
+
+- I can have a list.
+- I can have a **bold** text.
+- I can have an _italic_ text.
+`)
+`
+~~~~
+
+The above code will create a text like this:
+
+> The following is a Markdown text:
+>
+> Here's a Markdown text.
+>
+> -  I can have a list.
+> -  I can have a **bold** text.
+> -  I can have an _italic_ text.
+
+Besides the standard Markdown syntax, the `markdown()` function also supports
+the following mentioning syntax for the fediverse:
+
+~~~~ typescript
+markdown(`Hello, @fedify@hollo.social!`)
+~~~~
+
+The above code will create a text like this:
+
+> Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!
+
+> [!NOTE]
+> The `markdown()` function does not only format the mention but also notifies
+> the mentioned account.  The mentioned account will receive a notification
+> about the mention.  If you want to just link to the account without
+> notifying, use the normal link syntax instead:
+>
+> ~~~~ typescript
+> markdown(`Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!`)
+> ~~~~ 
+
+If you want `@`-syntax to be treated as a normal text, turn off the syntax
+by setting the `mentions` option to `false`:
+
+~~~~ typescript
+markdown(`Hello, @fedify@hollo.social!`, { mentions: false })
+~~~~
+
+The above code will create a text like this:
+
+> Hello, @fedify@hollo.social!
+
+> [!NOTE]
+> The `markdown()` function does not support raw HTML syntax.

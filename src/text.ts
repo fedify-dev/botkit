@@ -21,7 +21,12 @@ import {
   Mention,
   type Object,
 } from "@fedify/fedify";
+import {
+  mention as mentionPlugin,
+  toFullHandle,
+} from "@fedify/markdown-it-mention";
 import { escape } from "@std/html/entities";
+import MarkdownIt from "markdown-it";
 import type { Session } from "./session.ts";
 
 /**
@@ -610,4 +615,146 @@ export function code<TContextData>(
   code: Text<"inline", TContextData> | string,
 ): Text<"inline", TContextData> {
   return new CodeText(code);
+}
+
+/**
+ * The options for rendering a Markdown text.
+ */
+export interface MarkdownTextOptions {
+  /**
+   * Whether to render mentions in the Markdown text.
+   * @default {true}
+   */
+  readonly mentions?: boolean;
+
+  /**
+   * Whether to automatically linkify URLs in the Markdown text.
+   * @default {true}
+   */
+  readonly linkify?: boolean;
+}
+
+interface MarkdownEnv {
+  mentions: string[];
+  actors?: Record<string, string | null>;
+}
+
+/**
+ * A text tree that renders a Markdown text.  You normally don't need to
+ * instantiate this directly; use the {@link markdown} function instead.
+ */
+export class MarkdownText<TContextData> implements Text<"block", TContextData> {
+  readonly type = "block";
+  readonly #content: string;
+  readonly #markdownIt: typeof MarkdownIt;
+  readonly #mentions?: string[];
+  #actors?: Record<string, Object>;
+
+  /**
+   * Creates a {@link MarkdownText} tree with a Markdown content.
+   * @param content The Markdown content.
+   * @param options The options for rendering the Markdown content.
+   */
+  constructor(content: string, options: MarkdownTextOptions = {}) {
+    this.#content = content;
+    const md = MarkdownIt({
+      html: false,
+      linkify: options.linkify ?? true,
+    });
+    if (options.mentions ?? true) {
+      md.use(mentionPlugin, {
+        link(handle: string, env: MarkdownEnv) {
+          if (env.actors == null) return `acct:${handle}`;
+          return env.actors[handle] ?? null;
+        },
+        linkAttributes(_handle: string, _env: MarkdownEnv) {
+          return {
+            translate: "no",
+            class: "h-card u-url mention",
+            target: "_blank",
+          };
+        },
+        label: toFullHandle,
+      });
+      const env: MarkdownEnv = { mentions: [] };
+      md.render(content, env);
+      this.#mentions = env.mentions;
+    }
+    this.#markdownIt = md;
+  }
+
+  async #getMentionedActors(
+    session: Session<TContextData>,
+  ): Promise<Record<string, Object>> {
+    if (this.#mentions == null) return {};
+    if (this.#actors != null) return this.#actors;
+    const documentLoader = await session.context.getDocumentLoader(session.bot);
+    const objects = await Promise.all(
+      this.#mentions.map((m) =>
+        session.context.lookupObject(m, { documentLoader })
+      ),
+    );
+    const actors: Record<string, Object> = {};
+    for (let i = 0; i < this.#mentions.length; i++) {
+      const object = objects[i];
+      if (object != null) actors[this.#mentions[i]] = object;
+    }
+    this.#actors = actors;
+    return actors;
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    if (this.#mentions == null) {
+      yield this.#markdownIt.render(this.#content);
+      return;
+    }
+    const actors: Record<string, string | null> = globalThis.Object.fromEntries(
+      globalThis.Object.entries(
+        await this.#getMentionedActors(session),
+      ).filter(([_, obj]) => isActor(obj)).map((
+        [handle, actor],
+      ) =>
+        [
+          handle,
+          (actor.url instanceof Link
+            ? actor.url.href?.href
+            : actor.url?.href) ?? actor.id?.href ?? null,
+        ] satisfies [string, string | null]
+      ).filter(([_, url]) => url != null),
+    );
+    const env: MarkdownEnv = { mentions: [], actors };
+    yield this.#markdownIt.render(this.#content, env);
+  }
+
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+    if (this.#mentions == null) return;
+    const actors = await this.#getMentionedActors(session);
+    for (const [handle, object] of globalThis.Object.entries(actors)) {
+      if (!isActor(object) || object.id == null) continue;
+      yield new Mention({
+        name: handle,
+        href: object.id,
+      });
+    }
+  }
+
+  getCachedObjects(): Object[] {
+    return this.#actors == null ? [] : globalThis.Object.values(this.#actors);
+  }
+}
+
+/**
+ * Renders a Markdown text.  You can use this function to create
+ * a {@link MarkdownText} tree.  The mentions in the Markdown text
+ * will be rendered as links unless the `mentions` option is set to
+ * `false`.
+ * @param content The Markdown content.
+ * @param options The options for rendering the Markdown content.
+ * @returns A {@link MarkdownText} tree.
+ */
+export function markdown<TContextData>(
+  content: string,
+  options: MarkdownTextOptions = {},
+): Text<"block", TContextData> {
+  return new MarkdownText(content, options);
 }

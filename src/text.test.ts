@@ -30,7 +30,16 @@ import {
 } from "@std/assert";
 import type { BotWithVoidContextData } from "./bot.ts";
 import type { Session } from "./session.ts";
-import { code, em, isText, link, mention, type Text, text } from "./text.ts";
+import {
+  code,
+  em,
+  isText,
+  link,
+  markdown,
+  mention,
+  type Text,
+  text,
+} from "./text.ts";
 
 const defaultDocumentLoader = getDocumentLoader();
 
@@ -408,4 +417,46 @@ Deno.test("code()", async () => {
   );
   assertEquals(await Array.fromAsync(t.getTags(session)), []);
   assertEquals(t.getCachedObjects(), []);
+});
+
+Deno.test("markdown()", async () => {
+  const session = bot.getSession("https://example.com");
+  const md = `Here's a Markdown text.
+
+- I can have a list.
+- I can have a **bold** text.
+- I can have an _italic_ text.
+- I can mention @fedify@hollo.social.`;
+  const t: Text<"block", void> = markdown(md);
+  assertEquals(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    "<p>Here's a Markdown text.</p>\n<ul>\n" +
+      "<li>I can have a list.</li>\n" +
+      "<li>I can have a <strong>bold</strong> text.</li>\n" +
+      "<li>I can have an <em>italic</em> text.</li>\n" +
+      "<li>I can mention " +
+      '<a  translate="no" class="h-card u-url mention" target="_blank" href="https://hollo.social/@fedify">' +
+      '<span class="at">@</span><span class="user">fedify</span>' +
+      '<span class="at">@</span><span class="domain">hollo.social</span></a>.</li>\n' +
+      "</ul>\n",
+  );
+  const tags = await Array.fromAsync(t.getTags(session));
+  assertEquals(tags.length, 1);
+  assertInstanceOf(tags[0], Mention);
+  assertEquals(tags[0].name, "@fedify@hollo.social");
+  assertEquals(tags[0].href, new URL("https://hollo.social/@fedify"));
+  const cache = t.getCachedObjects();
+  assertEquals(cache.length, 1);
+  assertInstanceOf(cache[0], Person);
+  assertEquals(cache[0].id, new URL("https://hollo.social/@fedify"));
+
+  const t2: Text<"block", void> = markdown("@fedify@hollo.social", {
+    mentions: false,
+  });
+  assertEquals(
+    (await Array.fromAsync(t2.getHtml(session))).join(""),
+    "<p>@fedify@hollo.social</p>\n",
+  );
+  assertEquals(await Array.fromAsync(t2.getTags(session)), []);
+  assertEquals(t2.getCachedObjects(), []);
 });
