@@ -292,7 +292,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
     documentLoader,
     suppressError: true,
   };
-  const actor = await raw.getAttribution(options);
+  const actor = raw.attributionId?.href === session.actorId?.href
+    ? await session.bot.dispatchActor(session.context, session.bot.identifier)
+    : await raw.getAttribution(options);
   if (actor == null) {
     throw new TypeError(`The raw.attributionId is required.`);
   }
