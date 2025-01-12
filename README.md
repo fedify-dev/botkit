@@ -1,7 +1,7 @@
 <img src="./logo.svg" alt="BotKit by Fedify" width="203" height="165">
 
-BotKit by Fedify
-================
+[BotKit] by Fedify
+==================
 
 [![GitHub Actions][GitHub Actions badge]][GitHub Actions]
 
@@ -10,7 +10,7 @@ BotKit by Fedify
 > Although it currently supports only Deno, it will support Node.js and Bun
 > later.
 
-BotKit is a framework for creating [ActivityPub] bots.  It is powered by
+[BotKit] is a framework for creating [ActivityPub] bots.  It is powered by
 [Fedify], a lower-level library for creating ActivityPub server applications.
 Unlike Mastodon bots, BotKit is designed to create a standalone ActivityPub bot,
 which is a complete ActivityPub server in itself and not limited to Mastodon's
@@ -55,6 +55,9 @@ setInterval(async () => {
 export default bot;
 ~~~~
 
+For more information, see the [BotKit docs][BotKit].
+
+[BotKit]: https://botkit.fedi.dev/
 [GitHub Actions]: https://github.com/dahlia/botkit/actions/workflows/main.yaml
 [GitHub Actions badge]: https://github.com/dahlia/botkit/actions/workflows/main.yaml/badge.svg
 [ActivityPub]: https://activitypub.rocks/
