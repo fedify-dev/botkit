@@ -34,6 +34,7 @@ import {
   isActor,
   type KvKey,
   type KvStore,
+  Link,
   Mention,
   type NodeInfo,
   Note,
@@ -66,7 +67,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly username: string;
   readonly name?: string;
   readonly summary?: Text<"block", TContextData>;
-  #summary: string | null;
+  #summary: { text: string; tags: Link[] } | null;
   readonly icon?: URL;
   readonly image?: URL;
   readonly kv: KvStore;
@@ -167,6 +168,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<Actor | null> {
     if (this.identifier !== identifier) return null;
     let summary: string | null = null;
+    let tags: Link[] = [];
     if (this.summary != null) {
       if (this.#summary == null) {
         const session = this.getSession(ctx);
@@ -174,9 +176,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         for await (const chunk of this.summary.getHtml(session)) {
           summary += chunk;
         }
-        this.#summary = summary;
+        for await (const tag of this.summary.getTags(session)) {
+          tags.push(tag);
+        }
+        this.#summary = { text: summary, tags };
       } else {
-        summary = this.#summary;
+        summary = this.#summary.text;
+        tags = this.#summary.tags;
       }
     }
     const keyPairs = await ctx.getActorKeyPairs(identifier);
@@ -185,6 +191,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       preferredUsername: this.username,
       name: this.name,
       summary,
+      tags,
       icon: new Image({ url: this.icon }),
       image: new Image({ url: this.image }),
       inbox: ctx.getInboxUri(identifier),
