@@ -138,6 +138,28 @@ The header image URL of the bot.  It can be changed after the bot is federated.
 > the header image so that it looks fine on the most fediverse platforms,
 > you need to change the image file itself.
 
+### `~CreateBotOptions.properties`
+
+The custom properties of the bot. Usually you would like to put some metadata
+about the bot like the website URL, the source code repository URL, etc. here.
+Note that the property names should be human-readable and property values are of
+the `Text` type (see also the [*Text* chapter](./text.md)):
+
+~~~~ typescript
+import { createBot, link, mention } from "@fedify/botkit";
+
+const bot = createBot<void>({
+  // Omitted other options for brevity
+  properties: {
+    Website: link("https://botkit.fedify.dev/"),
+    Repository: link("https://github.com/dahlia/botkit"),
+    Creator: mention("@hongminhee@hollo.social"),
+  },
+});
+~~~~
+
+It can be changed after the bot is federated.
+
 ### `~CreateBotOptions.queue`
 
 The message queue for handling incoming and outgoing activities.  If omitted,

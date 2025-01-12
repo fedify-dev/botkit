@@ -20,7 +20,6 @@ import type {
   KvKey,
   KvStore,
   MessageQueue,
-  Object,
   Service,
 } from "@fedify/fedify";
 import type { Software } from "@fedify/fedify/nodeinfo";
@@ -38,7 +37,7 @@ export {
   type SemVer,
   type Software,
 } from "@fedify/fedify/nodeinfo";
-export { Application, PropertyValue, Service } from "@fedify/fedify/vocab";
+export { Application, Service } from "@fedify/fedify/vocab";
 
 /**
  * A bot that can interact with the ActivityPub network.
@@ -195,11 +194,10 @@ export interface CreateBotOptions<TContextData> {
   readonly image?: URL;
 
   /**
-   * The attachments to the bot actor.  You usually need to set it when you
-   * want to add some custom properties using `PropertyValue` to the bot actor.
-   * It can be changed after the bot is federated.
+   * The custom properties of the bot.  It can be changed after the bot is
+   * federated.
    */
-  readonly attachments?: Object[];
+  readonly properties?: Record<string, Text<"block" | "inline", TContextData>>;
 
   /**
    * The underlying key-value store to use for storing data.

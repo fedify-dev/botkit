@@ -40,6 +40,7 @@ import {
   Note,
   Object,
   type PageItems,
+  PropertyValue,
   Question,
   type Recipient,
   type RequestContext,
@@ -70,7 +71,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   #summary: { text: string; tags: Link[] } | null;
   readonly icon?: URL;
   readonly image?: URL;
-  readonly attachments: Object[];
+  readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
   readonly kv: KvStore;
   readonly kvPrefixes: BotKvPrefixes;
   readonly software?: Software;
@@ -91,7 +92,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.#summary = null;
     this.icon = options.icon;
     this.image = options.image;
-    this.attachments = options.attachments ?? [];
+    this.properties = options.properties ?? {};
     this.kv = options.kv;
     this.kvPrefixes = {
       keyPairs: ["_botkit", "keyPairs"],
@@ -169,11 +170,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     identifier: string,
   ): Promise<Actor | null> {
     if (this.identifier !== identifier) return null;
+    const session = this.getSession(ctx);
     let summary: string | null = null;
     let tags: Link[] = [];
     if (this.summary != null) {
       if (this.#summary == null) {
-        const session = this.getSession(ctx);
         summary = "";
         for await (const chunk of this.summary.getHtml(session)) {
           summary += chunk;
@@ -187,6 +188,18 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         tags = this.#summary.tags;
       }
     }
+    const attachments: (Object | Link | PropertyValue)[] = [];
+    for (const name in this.properties) {
+      const value = this.properties[name];
+      const pair = new PropertyValue({
+        name,
+        value: (await Array.fromAsync(value.getHtml(session))).join(""),
+      });
+      attachments.push(pair);
+      for await (const tag of value.getTags(session)) {
+        tags.push(tag);
+      }
+    }
     const keyPairs = await ctx.getActorKeyPairs(identifier);
     return new this.class({
       id: ctx.getActorUri(identifier),
@@ -196,7 +209,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       tags,
       icon: new Image({ url: this.icon }),
       image: new Image({ url: this.image }),
-      attachments: this.attachments,
+      attachments,
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),

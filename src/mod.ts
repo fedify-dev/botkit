@@ -27,7 +27,6 @@ export {
   createBot,
   type CreateBotOptions,
   parseSemVer,
-  PropertyValue,
   type SemVer,
   Service,
   type Software,
