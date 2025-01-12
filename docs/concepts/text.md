@@ -452,3 +452,32 @@ The above code will create a text like this:
 
 > [!NOTE]
 > The `markdown()` function does not support raw HTML syntax.
+
+
+Determining if the text mentions an account
+-------------------------------------------
+
+You can determine if the text mentions an account by using the `mentions()`
+function.  It returns `true` if the text mentions the account,
+otherwise `false`:
+
+~~~~ typescript
+import { type Actor, markdown, mention, mentions, text } from "@fedify/botkit";
+
+const actor: Actor = getActor(  // A hypothetical function that returns an Actor object
+  "@fedify@hollo.social"
+);
+const actor2: Actor = getActor("@another@example.com");
+
+const md = markdown("Hello, @fedify@hollo.social!");
+console.log(await mentions(md, actor));  // true
+console.log(await mentions(md, actor2));  // false
+
+const txt = text`Hi, ${actor2}!`
+console.log(await mentions(txt, actor));  // false
+console.log(await mentions(txt, actor2));  // true
+
+const noMention = text`Hello, world!`;
+console.log(await mentions(noMention, actor));  // false
+console.log(await mentions(noMention, actor2));  // false
+~~~~

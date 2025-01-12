@@ -80,6 +80,29 @@ export function isText<TContextData>(
 }
 
 /**
+ * Checks if a given `actor` is mentioned in a `text`.
+ * @param session The bot session.
+ * @param text The text object to check.
+ * @param actor The actor to check.  It can be either an `Actor` object or
+ *              an actor URI.
+ * @returns `true` if the actor is mentioned in the text, `false` otherwise.
+ */
+export async function mentions<TContextData>(
+  session: Session<TContextData>,
+  text: Text<"block" | "inline", TContextData>,
+  actor: Actor | URL,
+): Promise<boolean> {
+  if (isActor(actor)) {
+    if (actor.id == null) return false;
+    actor = actor.id;
+  }
+  for await (const tag of text.getTags(session)) {
+    if (tag instanceof Mention && tag.href?.href === actor.href) return true;
+  }
+  return false;
+}
+
+/**
  * A text tree that renders a template string with values.  You normally
  * don't need to instantiate this directly; use the {@link text} function
  * instead.

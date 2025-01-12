@@ -37,6 +37,7 @@ import {
   link,
   markdown,
   mention,
+  mentions,
   type Text,
   text,
 } from "./text.ts";
@@ -132,6 +133,22 @@ Deno.test("isText()", () => {
   const t2 = em("Hello, World");
   assert(isText(t2));
   assertFalse(isText("Hello, World"));
+});
+
+Deno.test("mentions()", async () => {
+  const session = bot.getSession("https://example.com");
+  const actor = new URL("https://hollo.social/@fedify");
+  const actor2 = new URL("https://example.com/users/john");
+  const actor3 = new Person({ id: actor });
+  const t: Text<"block", void> = text`Hello, world!`;
+  assertFalse(await mentions(session, t, actor));
+  assertFalse(await mentions(session, t, actor2));
+  assertFalse(await mentions(session, t, actor3));
+
+  const m: Text<"inline", void> = mention(actor);
+  assert(await mentions(session, m, actor));
+  assertFalse(await mentions(session, m, actor2));
+  assert(await mentions(session, m, actor3));
 });
 
 Deno.test({
