@@ -34,7 +34,7 @@ import {
   isActor,
   type KvKey,
   type KvStore,
-  Link,
+  type Link,
   Mention,
   type NodeInfo,
   Note,
@@ -70,6 +70,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   #summary: { text: string; tags: Link[] } | null;
   readonly icon?: URL;
   readonly image?: URL;
+  readonly attachments: Object[];
   readonly kv: KvStore;
   readonly kvPrefixes: BotKvPrefixes;
   readonly software?: Software;
@@ -90,6 +91,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.#summary = null;
     this.icon = options.icon;
     this.image = options.image;
+    this.attachments = options.attachments ?? [];
     this.kv = options.kv;
     this.kvPrefixes = {
       keyPairs: ["_botkit", "keyPairs"],
@@ -194,6 +196,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       tags,
       icon: new Image({ url: this.icon }),
       image: new Image({ url: this.image }),
+      attachments: this.attachments,
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
