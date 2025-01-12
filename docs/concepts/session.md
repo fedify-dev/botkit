@@ -50,3 +50,35 @@ bot.onMention = async (session, message) => {
 ~~~~
 
 To learn more about event handlers, see the [*Events* section](./events.md).
+
+
+Determining the actor URI of the bot
+------------------------------------
+
+The `Session` object has an `actorId` property that contains the URI of the bot
+actor.  You can use this URI to refer to the bot in messages:
+
+~~~~ typescript
+bot.onFollow = async (session, actor) => {
+  await session.publish(
+    text`Hi, ${actor}! I'm ${session.actorId}. Thanks for following me!`
+  );
+};
+~~~~
+
+
+Determining the fediverse handle of the bot
+-------------------------------------------
+
+The `Session` object has an `actorHandle` property that contains the fediverse
+handle of the bot.  It looks like an email address except that it starts with
+an `@` symbol: `@myBot@myDomain`.  You can use this handle to refer to the bot
+in messages:
+
+~~~~ typescript
+bot.onFollow = async (session, actor) => {
+  await session.publish(
+    markdown(`I'm ${session.actorHandle}. Thanks for following me!`)
+  );
+};
+~~~~

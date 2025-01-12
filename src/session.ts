@@ -46,6 +46,11 @@ export interface Session<TContextData> {
   readonly actorId: URL;
 
   /**
+   * The fediverse handle of the bot actor.  It starts with `@`.
+   */
+  readonly actorHandle: `@${string}@${string}`;
+
+  /**
    * Publishes a message attributed to the bot.
    * @param text The content of the note.
    * @param options The options for publishing the message.

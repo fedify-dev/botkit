@@ -115,6 +115,7 @@ const bot: BotWithVoidContextData = {
       bot,
       context: ctx,
       actorId: ctx.getActorUri(bot.identifier),
+      actorHandle: `@bot@${ctx.host}` as const,
       publish(_content: unknown, _options: unknown) {
         throw new Error("Not implemented");
       },

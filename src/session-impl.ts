@@ -61,6 +61,10 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     return this.context.getActorUri(this.bot.identifier);
   }
 
+  get actorHandle() {
+    return `@${this.bot.username}@${this.context.host}` as const;
+  }
+
   async publish(
     content: Text<"block", TContextData>,
     options?: SessionImplPublishOptions<TContextData>,
