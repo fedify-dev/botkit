@@ -25,6 +25,7 @@ import {
   Document,
   Hashtag,
   isActor,
+  type Link,
   Mention,
   Note,
   type Object,
@@ -321,7 +322,17 @@ export async function createMessage<T extends MessageClass, TContextData>(
     if (attachment instanceof Document) attachments.push(attachment);
   }
   if (replyTarget == null) {
-    const rt = await raw.getReplyTarget(options);
+    let rt: Link | Object | null;
+    const parsed = session.context.parseUri(raw.replyTargetId);
+    // @ts-ignore: The `class` property satisfies the `MessageClass` type.
+    if (parsed?.type === "object" && messageClasses.includes(parsed.class)) {
+      rt = await session.bot.dispatchMessage(
+        // @ts-ignore: The `class` property satisfies the `MessageClass` type.
+        parsed.class,
+        session.context,
+        parsed.values.id,
+      );
+    } else rt = await raw.getReplyTarget(options);
     if (
       rt instanceof Article || rt instanceof ChatMessage ||
       rt instanceof Note || rt instanceof Question

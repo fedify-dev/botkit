@@ -302,7 +302,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   async dispatchMessage<T extends MessageClass>(
     // deno-lint-ignore no-explicit-any
     cls: new (values: any) => T,
-    ctx: RequestContext<TContextData>,
+    ctx: Context<TContextData>,
     id: string,
   ): Promise<T | null> {
     const json = await this.kv.get([...this.kvPrefixes.messages, id]);
