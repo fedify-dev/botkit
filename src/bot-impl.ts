@@ -75,6 +75,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly icon?: URL;
   readonly image?: URL;
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
+  #properties: { pairs: PropertyValue[]; tags: Link[] } | null;
   readonly kv: KvStore;
   readonly kvPrefixes: BotKvPrefixes;
   readonly software?: Software;
@@ -96,6 +97,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.icon = options.icon;
     this.image = options.image;
     this.properties = options.properties ?? {};
+    this.#properties = null;
     this.kv = options.kv;
     this.kvPrefixes = {
       keyPairs: ["_botkit", "keyPairs"],
@@ -181,51 +183,68 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
   }
 
-  async dispatchActor(
-    ctx: Context<TContextData>,
-    identifier: string,
-  ): Promise<Actor | null> {
-    if (this.identifier !== identifier) return null;
-    const session = this.getSession(ctx);
-    let summary: string | null = null;
-    let tags: Link[] = [];
-    if (this.summary != null) {
-      if (this.#summary == null) {
-        summary = "";
-        for await (const chunk of this.summary.getHtml(session)) {
-          summary += chunk;
-        }
-        for await (const tag of this.summary.getTags(session)) {
-          tags.push(tag);
-        }
-        this.#summary = { text: summary, tags };
-      } else {
-        summary = this.#summary.text;
-        tags = this.#summary.tags;
+  async #getSummary(
+    session: Session<TContextData>,
+  ): Promise<{ text: string; tags: Link[] } | null> {
+    if (this.summary == null) return null;
+    if (this.#summary == null) {
+      let summary = "";
+      const tags: Link[] = [];
+      for await (const chunk of this.summary.getHtml(session)) {
+        summary += chunk;
       }
+      for await (const tag of this.summary.getTags(session)) {
+        tags.push(tag);
+      }
+      return this.#summary = { text: summary, tags };
     }
-    const attachments: (Object | Link | PropertyValue)[] = [];
+    return this.#summary;
+  }
+
+  async #getProperties(
+    session: Session<TContextData>,
+  ): Promise<{ pairs: PropertyValue[]; tags: Link[] }> {
+    if (this.#properties != null) return this.#properties;
+    const pairs: PropertyValue[] = [];
+    const tags: Link[] = [];
     for (const name in this.properties) {
       const value = this.properties[name];
       const pair = new PropertyValue({
         name,
         value: (await Array.fromAsync(value.getHtml(session))).join(""),
       });
-      attachments.push(pair);
+      pairs.push(pair);
       for await (const tag of value.getTags(session)) {
         tags.push(tag);
       }
     }
+    return this.#properties = { pairs, tags };
+  }
+
+  async dispatchActor(
+    ctx: Context<TContextData>,
+    identifier: string,
+  ): Promise<Actor | null> {
+    if (this.identifier !== identifier) return null;
+    const session = this.getSession(ctx);
+    const summary = await this.#getSummary(session);
+    const { pairs, tags } = await this.#getProperties(session);
+    const allTags = summary == null ? tags : [...tags, ...summary.tags];
     const keyPairs = await ctx.getActorKeyPairs(identifier);
     return new this.class({
       id: ctx.getActorUri(identifier),
       preferredUsername: this.username,
       name: this.name,
-      summary,
-      tags,
+      summary: summary == null ? null : summary.text,
+      attachments: pairs,
+      tags: allTags.filter((tag, i) =>
+        allTags.findIndex((t) =>
+          t.name?.toString() === tag.name?.toString() &&
+          t.href?.href === tag.href?.href
+        ) === i
+      ),
       icon: new Image({ url: this.icon }),
       image: new Image({ url: this.image }),
-      attachments,
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
