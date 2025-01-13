@@ -134,7 +134,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       .setOutboxDispatcher(
         "/ap/actor/{identifier}/outbox",
         this.dispatchOutbox.bind(this),
-      );
+      )
+      .setFirstCursor(this.getOutboxFirstCursor.bind(this))
+      .setCounter(this.countOutbox.bind(this));
     this.federation.setObjectDispatcher(
       Create,
       "/ap/create/{id}",
@@ -228,6 +230,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         sharedInbox: ctx.getInboxUri(),
       }),
       followers: ctx.getFollowersUri(identifier),
+      outbox: ctx.getOutboxUri(identifier),
       publicKey: keyPairs[0].cryptographicKey,
       assertionMethods: keyPairs.map((pair) => pair.multikey),
     });
