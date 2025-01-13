@@ -328,7 +328,7 @@ Then, you can use the tunneling service to expose your bot to the public
 internet, for example, with [`fedify tunnel`]:[^1]
 
 ~~~~ bash
-fedify tunnel --port 8000
+fedify tunnel 8000
 ~~~~
 
 The above command will show a temporary public hostname that your bot can be
