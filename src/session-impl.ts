@@ -152,12 +152,13 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     } while (await kv.get(lockKey) !== id);
     const preferSharedInbox = visibility === "public" ||
       visibility === "unlisted" || visibility === "followers";
+    const excludeBaseUris = [new URL(this.context.origin)];
     if (preferSharedInbox) {
       await this.context.sendActivity(
         this.bot,
         "followers",
         activity,
-        { preferSharedInbox },
+        { preferSharedInbox, excludeBaseUris },
       );
     }
     if (mentionedActorIds.length > 0) {
@@ -184,7 +185,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         this.bot,
         mentionedActors,
         activity,
-        { preferSharedInbox },
+        { preferSharedInbox, excludeBaseUris },
       );
     }
     return await createMessage(msg, this, options.replyTarget);
