@@ -198,7 +198,7 @@ const bot = createBot<void>({
 ~~~~
 
 Here, we will use [`fedify tunnel`] to expose the bot to the public internet.
-[Install the `fedify` command first][1], and then run the following command:
+[Install the `fedify` command first][2], and then run the following command:
 
 ~~~~ bash
 fedify tunnel --port 8000
@@ -221,7 +221,7 @@ Press ^C to close the tunnel.
 [`fedify tunnel`]: https://fedify.dev/cli#fedify-tunnel-exposing-a-local-http-server-to-the-public-internet
 [ngrok]: https://ngrok.com/
 [Tailscale Funnel]: https://tailscale.com/kb/1223/funnel
-[1]: https://fedify.dev/cli#installation
+[2]: https://fedify.dev/cli#installation
 
 
 Testing the bot
