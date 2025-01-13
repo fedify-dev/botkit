@@ -49,6 +49,7 @@ import {
   type Software,
   Undo,
 } from "@fedify/fedify";
+import { PUBLIC_COLLECTION } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
@@ -236,6 +237,33 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     });
   }
 
+  async getPermissionChecker(
+    ctx: RequestContext<TContextData>,
+  ): Promise<(object: Object) => boolean> {
+    let owner: Actor | null;
+    try {
+      owner = await ctx.getSignedKeyOwner();
+    } catch {
+      owner = null;
+    }
+    let follower = owner == null;
+    const ownerUri = owner?.id;
+    if (ownerUri != null) {
+      const f = await this.kv.get<unknown>([
+        ...this.kvPrefixes.followers,
+        ownerUri.href,
+      ]);
+      follower = f != null;
+    }
+    const followersUri = ctx.getFollowersUri(this.identifier);
+    return (object: Object): boolean => {
+      const recipients = [...object.toIds, ...object.ccIds].map((u) => u.href);
+      if (recipients.includes(PUBLIC_COLLECTION.href)) return true;
+      if (recipients.includes(followersUri.href)) return follower;
+      return ownerUri == null ? false : recipients.includes(ownerUri.href);
+    };
+  }
+
   mapHandle(_ctx: Context<TContextData>, username: string): string | null {
     return username === this.username ? this.identifier : null;
   }
@@ -321,7 +349,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   }
 
   async dispatchOutbox(
-    ctx: Context<TContextData>,
+    ctx: RequestContext<TContextData>,
     identifier: string,
     cursor: string | null,
   ): Promise<PageItems<Activity> | null> {
@@ -330,20 +358,25 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       [];
     const WINDOW = 50;
     let nextCursor: string | null = null;
+    messageIds.reverse();
     if (cursor != null) {
       const index = cursor === "" ? 0 : messageIds.indexOf(cursor);
       if (index < 0) return { items: [] };
       nextCursor = messageIds[index + WINDOW] ?? null;
       messageIds = messageIds.slice(index, index + WINDOW);
     }
+    const isVisible = await this.getPermissionChecker(ctx);
     const messages = (await Promise.all(
       messageIds.map(async (id) => {
         const json = await this.kv.get([...this.kvPrefixes.messages, id]);
+        let activity: Activity;
         try {
-          return await Activity.fromJsonLd(json, ctx);
+          activity = await Activity.fromJsonLd(json, ctx);
         } catch {
           return null;
         }
+        if (isVisible(activity)) return activity;
+        return null;
       }),
     )).filter((message): message is Activity => message != null);
     return { items: messages, nextCursor };
@@ -373,18 +406,22 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<Create | null> {
     const json = await this.kv.get([...this.kvPrefixes.messages, values.id]);
     if (json == null) return null;
+    let create: Create;
     try {
-      return await Create.fromJsonLd(json, ctx);
+      create = await Create.fromJsonLd(json, ctx);
     } catch (e) {
       if (e instanceof TypeError) return null;
       throw e;
     }
+    const isVisible = await this.getPermissionChecker(ctx);
+    if (isVisible(create)) return create;
+    return null;
   }
 
   async dispatchMessage<T extends MessageClass>(
     // deno-lint-ignore no-explicit-any
     cls: new (values: any) => T,
-    ctx: Context<TContextData>,
+    ctx: Context<TContextData> | RequestContext<TContextData>,
     id: string,
   ): Promise<T | null> {
     const json = await this.kv.get([...this.kvPrefixes.messages, id]);
@@ -395,6 +432,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     } catch (e) {
       if (e instanceof TypeError) return null;
       throw e;
+    }
+    if ("request" in ctx) {
+      // TODO: Split this method into two
+      const isVisible = await this.getPermissionChecker(ctx);
+      if (!isVisible(create)) return null;
     }
     const object = await create.getObject(ctx);
     if (object == null || !(object instanceof cls)) return null;
@@ -407,12 +449,15 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<Announce | null> {
     const json = await this.kv.get([...this.kvPrefixes.messages, values.id]);
     if (json == null) return null;
+    let announce: Announce;
     try {
-      return await Announce.fromJsonLd(json, ctx);
+      announce = await Announce.fromJsonLd(json, ctx);
     } catch (e) {
       if (e instanceof TypeError) return null;
       throw e;
     }
+    const isVisible = await this.getPermissionChecker(ctx);
+    return isVisible(announce) ? announce : null;
   }
 
   async onFollowed(

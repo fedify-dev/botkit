@@ -326,9 +326,11 @@ export async function createMessage<T extends MessageClass, TContextData>(
     const parsed = session.context.parseUri(raw.replyTargetId);
     // @ts-ignore: The `class` property satisfies the `MessageClass` type.
     if (parsed?.type === "object" && messageClasses.includes(parsed.class)) {
+      // @ts-ignore: The `class` property satisfies the `MessageClass` type.
+      // deno-lint-ignore no-explicit-any
+      const cls: new (values: any) => T = parsed.class;
       rt = await session.bot.dispatchMessage(
-        // @ts-ignore: The `class` property satisfies the `MessageClass` type.
-        parsed.class,
+        cls,
         session.context,
         parsed.values.id,
       );
