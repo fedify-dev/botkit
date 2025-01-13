@@ -201,7 +201,7 @@ Here, we will use [`fedify tunnel`] to expose the bot to the public internet.
 [Install the `fedify` command first][2], and then run the following command:
 
 ~~~~ bash
-fedify tunnel --port 8000
+fedify tunnel 8000
 ~~~~
 
 The above command will expose your bot to the public internet, and you will get
