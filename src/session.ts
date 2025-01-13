@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import type {
+  Actor,
   Article,
   ChatMessage,
   Context,
@@ -49,6 +50,12 @@ export interface Session<TContextData> {
    * The fediverse handle of the bot actor.  It starts with `@`.
    */
   readonly actorHandle: `@${string}@${string}`;
+
+  /**
+   * Gets the `Actor` object of the bot.
+   * @returns The `Actor` object of the bot.
+   */
+  getActor(): Promise<Actor>;
 
   /**
    * Publishes a message attributed to the bot.

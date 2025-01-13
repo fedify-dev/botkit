@@ -294,7 +294,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     suppressError: true,
   };
   const actor = raw.attributionId?.href === session.actorId?.href
-    ? await session.bot.dispatchActor(session.context, session.bot.identifier)
+    ? await session.getActor()
     : await raw.getAttribution(options);
   if (actor == null) {
     throw new TypeError(`The raw.attributionId is required.`);

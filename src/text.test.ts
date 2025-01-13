@@ -73,6 +73,7 @@ const keyPair: CryptoKeyPair = {
   privateKey: await importJwk({
     kty: "RSA",
     alg: "RS256",
+    // cSpell: disable
     n: "15DAu9S9sROZ_NonfZm5S0PSeYuh2POeo0cpvvGnp_T9jQWjMuGdhwOPT7OOD9N-R1IY-2hXkk-RjfWNzbxMoNKvOpz_1MHRg18W5Lw60mIxZFztLKlNhOZS7rVrlJc--jj1wLETEfY5ocYCyRZm25UeT_Q1JSePdnhEGVXo4sSqoUcMV5Bgys5PlISfQj_bHDpcIi9snJ70hOzYTy7k7fNuCHHsK08DN4bZMG58qQNrPFtZW6fgpQiu0kgtUBFgQu-uUNn1h0io-7OhMU2dXeV8lwCILhIFRvrRV9vKQydBejbyYuzFY-Xq98biB9Aox8GD0jJE4tTVj6CpsmaN9yq6nI8ibWjnk87IKdU3jex5zB8chR0cm2tyIWr6dKhCTexmtYTF0pGW7PZ2Dnn31BU3cPkrkplu752D4eQ47BsAspMsHRxXE3NtqlmN02Y-6AIzt1tuPBPHldQHUpxtGrwFh9b9biC2mtb_w6F0oyxVyZsAZnuK2tN0-uX_iMPoC5VLnPrzgWjQiMArivg4u1cQ35hrvuFYFAdNf2WaBDyDNxaCoTD28z9bF1titlbQ48tDw0adZ1Zp8_x12JqA5HNpqDfmyT4KPU_6Ag7J7cGfGeO2vsjcc1oGhqZ-n6JlnSvVImHS5eKC6CDhW7ceuKC_oX-XPWWQQHhPniwM2RE",
     e: "AQAB",
     d: "eAD5ipdQUrfazcyUl3Nwl9nV3hxBqYlWEweW0dmtv-6_CDbPN5AqJfNxYKlQuLbAYevuRGc9-RGasjC1FIdzEUS4kCS-ty5--GeDUysGhABuBrVEw8wsf4PJP2J31WytfpcfGHp7Z1BvnQOioVd7Q1qsWU5WF60CTK1_G6ubzkI1yzrGQCj7-WsJGmEKV9M8o2ZJzC4ihL5o2WcQtGQixeTyqHjjROjjnZHQbwnTFDP3Cs6_3CqFANrol9_eeehyclED9bag3QMyL408ezn-FTugNF_zb9JQZcdTq1mMK_46kVLtdOzipk5klDN_uWHEkg_E1sttVemuShri3ZICDUSd70Y4VeQxNLUKJNBSYdSLmcVgfIHaXMmcrknmBuz23SrGR6JZR4DSJtr3sylR2tlOxpZhJAUZf17f8aZD7EnbR7qcNtjZmf8RyAKrEXLgL6f3jm6FfE_b027kcmLMXL7bJtlTBYnM9MrBnXSsJftHRrmB1Xe-0Hq24Q7ctrhRhFF3Ij8MjNRjdn6NWdIXzltreblLEO44iTJtlWeYtg-C9566F_yWZnjDZEQ8nvBhpCM3iXlRfzhlEebBoBbf-Mf-0hJRRUL3EtGuMueylzeyk4tTzvOfK2FUnVAi8bIhjz4m8RhN7kC4ubqUXZbKwzjeI1dhWyfDphrPiRtCetE",
@@ -84,21 +85,25 @@ const keyPair: CryptoKeyPair = {
       "MVKMpNXrlizeny-cn1zGyx3un3bukwwrZHENhE-DITuEvLVYPwAHIYgZJ_nBblbWzxJrRU1pVt4dguL7jOYqmmpg9gE4eD2zKfUFSY45wSf2eVIOfCnAvnN1y0Nwrgn0bdRi_sSw-6orP99eBcL8mVrNhmqzYDfnAe3o8DwPZBhzJBOi43iQNA9_Y84ONuzvYpCGozDhdRhbeeOt62Hg9BFWRSCU3srMo33l3DMgWv80Pb0os7_ApAckzu2rfwYOvQxAPb44DUBKivcANjHR_Mzs9ITtZP-720zI-4tQSVjeeuSuokp64J-nVCZL0MxNGtfB-S_tFeG56s5EoFZLHQ",
     qi:
       "1J7CfWYlg4Igsu2N7bhgLzbc1l6A3odyyOlM70uH8P41kCYgpRDdH8Ms8yOJE-F13ha5drICZqsD7IjgG0cZONJ_0xTeka0AYMvCwjuJZ_4CzVFYNICxSHFUI-sCu1p-zb70eXU6fiwOFgzoPbnrwywpbxcTV_8H0XszwPcI3fjrGk6N-hi23Ur1gIjhnri_-x8mzwmtPA1ID1G17U4X93mP7dlYCzGigq8ORbSdZthOKdjtHXITBOgpcTiuyTTwAEqh3xyXscfsgzi0X6olBevJCGeTzOrqQX026JmNVykaS1-o_ea_Y0cD0q6Nxd5TwLZMCLZi1M5PLHhGlJg9MQ",
+    // cSpell: enable
     key_ops: ["sign"],
     ext: true,
   }, "private"),
   publicKey: await importJwk({
     kty: "RSA",
     alg: "RS256",
+    // cSpell: disable
     n: "15DAu9S9sROZ_NonfZm5S0PSeYuh2POeo0cpvvGnp_T9jQWjMuGdhwOPT7OOD9N-R1IY-2hXkk-RjfWNzbxMoNKvOpz_1MHRg18W5Lw60mIxZFztLKlNhOZS7rVrlJc--jj1wLETEfY5ocYCyRZm25UeT_Q1JSePdnhEGVXo4sSqoUcMV5Bgys5PlISfQj_bHDpcIi9snJ70hOzYTy7k7fNuCHHsK08DN4bZMG58qQNrPFtZW6fgpQiu0kgtUBFgQu-uUNn1h0io-7OhMU2dXeV8lwCILhIFRvrRV9vKQydBejbyYuzFY-Xq98biB9Aox8GD0jJE4tTVj6CpsmaN9yq6nI8ibWjnk87IKdU3jex5zB8chR0cm2tyIWr6dKhCTexmtYTF0pGW7PZ2Dnn31BU3cPkrkplu752D4eQ47BsAspMsHRxXE3NtqlmN02Y-6AIzt1tuPBPHldQHUpxtGrwFh9b9biC2mtb_w6F0oyxVyZsAZnuK2tN0-uX_iMPoC5VLnPrzgWjQiMArivg4u1cQ35hrvuFYFAdNf2WaBDyDNxaCoTD28z9bF1titlbQ48tDw0adZ1Zp8_x12JqA5HNpqDfmyT4KPU_6Ag7J7cGfGeO2vsjcc1oGhqZ-n6JlnSvVImHS5eKC6CDhW7ceuKC_oX-XPWWQQHhPniwM2RE",
     e: "AQAB",
+    // cSpell: enable
     key_ops: ["verify"],
     ext: true,
   }, "public"),
 };
 
-federation.setActorDispatcher("/ap/actor/{identifier}", (_ctx, identifier) => {
+federation.setActorDispatcher("/ap/actor/{identifier}", (ctx, identifier) => {
   return new Person({
+    id: ctx.getActorUri(identifier),
     preferredUsername: identifier,
   });
 }).setKeyPairsDispatcher((_ctx, _identifier) => {
@@ -117,6 +122,13 @@ const bot: BotWithVoidContextData = {
       context: ctx,
       actorId: ctx.getActorUri(bot.identifier),
       actorHandle: `@bot@${ctx.host}` as const,
+      getActor() {
+        const actor = new Person({
+          id: ctx.getActorUri(bot.identifier),
+          preferredUsername: "bot",
+        });
+        return Promise.resolve(actor);
+      },
       publish(_content: unknown, _options: unknown) {
         throw new Error("Not implemented");
       },
@@ -366,6 +378,83 @@ Deno.test({
     assertEquals(cache5.length, 1);
     assertInstanceOf(cache5[0], Person);
     assertEquals(cache5[0].id, new URL("https://hollo.social/@fedify"));
+
+    const m6: Text<"inline", void> = mention("@bot@example.com");
+    assertEquals(
+      (await Array.fromAsync(m6.getHtml(session))).join(""),
+      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+        'class="h-card u-url mention" target="_blank">@<span>' +
+        "bot@example.com</span></a>",
+    );
+    const tags6 = await Array.fromAsync(m6.getTags(session));
+    assertEquals(tags6.length, 1);
+    assertInstanceOf(tags6[0], Mention);
+    assertEquals(tags6[0].name, "@bot@example.com");
+    assertEquals(tags6[0].href, new URL("https://example.com/ap/actor/bot"));
+    const cache6 = m6.getCachedObjects();
+    assertEquals(cache6.length, 1);
+    assertInstanceOf(cache6[0], Person);
+    assertEquals(cache6[0].id, new URL("https://example.com/ap/actor/bot"));
+
+    const m7: Text<"inline", void> = mention(
+      "Example",
+      new URL("https://example.com/ap/actor/bot"),
+    );
+    assertEquals(
+      (await Array.fromAsync(m7.getHtml(session))).join(""),
+      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+        'class="h-card u-url mention" target="_blank">Example</a>',
+    );
+    const tags7 = await Array.fromAsync(m7.getTags(session));
+    assertEquals(tags7.length, 1);
+    assertInstanceOf(tags7[0], Mention);
+    assertEquals(tags7[0].name, "Example");
+    assertEquals(tags7[0].href, new URL("https://example.com/ap/actor/bot"));
+    const cache7 = m7.getCachedObjects();
+    assertEquals(cache7.length, 1);
+    assertInstanceOf(cache7[0], Person);
+    assertEquals(cache7[0].id, new URL("https://example.com/ap/actor/bot"));
+
+    const m8: Text<"inline", void> = mention(
+      new Person({
+        id: new URL("https://example.com/ap/actor/bot"),
+        preferredUsername: "bot",
+      }),
+    );
+    assertEquals(
+      (await Array.fromAsync(m8.getHtml(session))).join(""),
+      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+        'class="h-card u-url mention" target="_blank">@<span>' +
+        "bot@example.com</span></a>",
+    );
+    const tags8 = await Array.fromAsync(m8.getTags(session));
+    assertEquals(tags8.length, 1);
+    assertInstanceOf(tags8[0], Mention);
+    assertEquals(tags8[0].name, "@bot@example.com");
+    assertEquals(tags8[0].href, new URL("https://example.com/ap/actor/bot"));
+    const cache8 = m8.getCachedObjects();
+    assertEquals(cache8.length, 1);
+    assertInstanceOf(cache8[0], Person);
+    assertEquals(cache8[0].id, new URL("https://example.com/ap/actor/bot"));
+
+    const m9: Text<"inline", void> = mention(
+      new URL("https://example.com/ap/actor/bot"),
+    );
+    assertEquals(
+      (await Array.fromAsync(m9.getHtml(session))).join(""),
+      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+        'class="h-card u-url mention" target="_blank">@<span>' +
+        "bot@example.com</span></a>",
+    );
+    const tags9 = await Array.fromAsync(m9.getTags(session));
+    assertEquals(tags9.length, 1);
+    assertInstanceOf(tags9[0], Mention);
+    assertEquals(tags9[0].name, "@bot@example.com");
+    assertEquals(tags9[0].href, new URL("https://example.com/ap/actor/bot"));
+    const cache9 = m9.getCachedObjects();
+    assertEquals(cache9.length, 1);
+    assertInstanceOf(cache9[0], Person);
+    assertEquals(cache9[0].id, new URL("https://example.com/ap/actor/bot"));
   },
 });
 
@@ -477,4 +566,21 @@ Deno.test("markdown()", async () => {
   );
   assertEquals(await Array.fromAsync(t2.getTags(session)), []);
   assertEquals(t2.getCachedObjects(), []);
+
+  const t3: Text<"block", void> = markdown("@bot@example.com");
+  assertEquals(
+    (await Array.fromAsync(t3.getHtml(session))).join(""),
+    '<p><a  translate="no" class="h-card u-url mention" target="_blank" href="https://example.com/ap/actor/bot">' +
+      '<span class="at">@</span><span class="user">bot</span>' +
+      '<span class="at">@</span><span class="domain">example.com</span></a></p>\n',
+  );
+  const tags3 = await Array.fromAsync(t3.getTags(session));
+  assertEquals(tags3.length, 1);
+  assertInstanceOf(tags3[0], Mention);
+  assertEquals(tags3[0].name, "@bot@example.com");
+  assertEquals(tags3[0].href, new URL("https://example.com/ap/actor/bot"));
+  const cache3 = t3.getCachedObjects();
+  assertEquals(cache3.length, 1);
+  assertInstanceOf(cache3[0], Person);
+  assertEquals(cache3[0].id, new URL("https://example.com/ap/actor/bot"));
 });

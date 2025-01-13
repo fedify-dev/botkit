@@ -82,3 +82,14 @@ bot.onFollow = async (session, actor) => {
   );
 };
 ~~~~
+
+
+Getting the bot's `Actor` object
+--------------------------------
+
+The `Session` object has a `~Session.getActor()` method that returns the `Actor`
+object of the bot:
+
+~~~~ typescript
+const actor: Actor = session.getActor();
+~~~~

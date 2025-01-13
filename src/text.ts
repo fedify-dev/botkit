@@ -397,9 +397,11 @@ export function mention<TContextData>(
   b?: Actor | URL,
 ): Text<"inline", TContextData> {
   if (b != null) {
+    // (label: string, actor: Actor | URL)
     return new MentionText<TContextData>(
       a as string,
       isActor(b) ? b : async (session) => {
+        if (session.actorId.href === b.href) return await session.getActor();
         const documentLoader = await session.context.getDocumentLoader(
           session.bot,
         );
@@ -407,9 +409,11 @@ export function mention<TContextData>(
       },
     );
   } else if (typeof a === "string") {
+    // (handle: string)
     return new MentionText<TContextData>(
       a,
       async (session) => {
+        if (session.actorHandle === a) return await session.getActor();
         const documentLoader = await session.context.getDocumentLoader(
           session.bot,
         );
@@ -417,14 +421,23 @@ export function mention<TContextData>(
       },
     );
   } else if (isActor(a)) {
+    // (actor: Actor)
     return new MentionText<TContextData>(
-      (session) => getActorHandle(a, session.context),
+      (session) =>
+        a.id?.href === session.actorId.href
+          ? Promise.resolve(session.actorHandle)
+          : getActorHandle(a, session.context),
       a,
     );
   }
+  // (actor: URL)
   return new MentionText<TContextData>(
-    (session) => getActorHandle(a, session.context),
+    (session) =>
+      a.href === session.actorId.href
+        ? Promise.resolve(session.actorHandle)
+        : getActorHandle(a, session.context),
     async (session) => {
+      if (a.href === session.actorId.href) return await session.getActor();
       const documentLoader = await session.context.getDocumentLoader(
         session.bot,
       );
@@ -714,7 +727,9 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
     const documentLoader = await session.context.getDocumentLoader(session.bot);
     const objects = await Promise.all(
       this.#mentions.map((m) =>
-        session.context.lookupObject(m, { documentLoader })
+        m === session.actorHandle
+          ? session.getActor()
+          : session.context.lookupObject(m, { documentLoader })
       ),
     );
     const actors: Record<string, Object> = {};

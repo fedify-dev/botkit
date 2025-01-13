@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
+  type Actor,
   type Context,
   Create,
   isActor,
@@ -63,6 +64,10 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
 
   get actorHandle() {
     return `@${this.bot.username}@${this.context.host}` as const;
+  }
+
+  async getActor(): Promise<Actor> {
+    return (await this.bot.dispatchActor(this.context, this.bot.identifier))!;
   }
 
   async publish(
