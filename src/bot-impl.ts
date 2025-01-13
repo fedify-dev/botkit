@@ -122,10 +122,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       )
       .mapHandle(this.mapHandle.bind(this))
       .setKeyPairsDispatcher(this.keyPairsDispatcher.bind(this));
-    this.federation.setFollowersDispatcher(
-      "/ap/actor/{identifier}/followers",
-      this.dispatchFollowers.bind(this),
-    );
+    this.federation
+      .setFollowersDispatcher(
+        "/ap/actor/{identifier}/followers",
+        this.dispatchFollowers.bind(this),
+      )
+      .setFirstCursor(this.getFollowersFirstCursor.bind(this))
+      .setCounter(this.countFollowers.bind(this));
     this.federation.setObjectDispatcher(
       Create,
       "/ap/create/{id}",
@@ -271,7 +274,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     const WINDOW = 50;
     let nextCursor: string | null = null;
     if (cursor != null) {
-      const index = followerIds.indexOf(cursor);
+      const index = cursor === "" ? 0 : followerIds.indexOf(cursor);
       if (index < 0) return { items: [] };
       nextCursor = followerIds[index + WINDOW] ?? null;
       followerIds = followerIds.slice(index, index + WINDOW);
@@ -287,6 +290,25 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       }),
     )).filter(isActor);
     return { items: followers, nextCursor };
+  }
+
+  getFollowersFirstCursor(
+    _ctx: Context<TContextData>,
+    identifier: string,
+  ): string | null {
+    if (identifier !== this.identifier) return null;
+    return "";
+  }
+
+  async countFollowers(
+    _ctx: Context<TContextData>,
+    identifier: string,
+  ): Promise<number | null> {
+    if (identifier !== this.identifier) return null;
+    const followerIds =
+      await this.kv.get<string[]>(this.kvPrefixes.followers) ??
+        [];
+    return followerIds.length;
   }
 
   async dispatchCreate(
