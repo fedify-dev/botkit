@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   Accept,
+  Activity,
   type Actor,
   Announce,
   type Application,
@@ -129,6 +130,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       )
       .setFirstCursor(this.getFollowersFirstCursor.bind(this))
       .setCounter(this.countFollowers.bind(this));
+    this.federation
+      .setOutboxDispatcher(
+        "/ap/actor/{identifier}/outbox",
+        this.dispatchOutbox.bind(this),
+      );
     this.federation.setObjectDispatcher(
       Create,
       "/ap/create/{id}",
@@ -309,6 +315,53 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       await this.kv.get<string[]>(this.kvPrefixes.followers) ??
         [];
     return followerIds.length;
+  }
+
+  async dispatchOutbox(
+    ctx: Context<TContextData>,
+    identifier: string,
+    cursor: string | null,
+  ): Promise<PageItems<Activity> | null> {
+    if (identifier !== this.identifier) return null;
+    let messageIds = await this.kv.get<string[]>(this.kvPrefixes.messages) ??
+      [];
+    const WINDOW = 50;
+    let nextCursor: string | null = null;
+    if (cursor != null) {
+      const index = cursor === "" ? 0 : messageIds.indexOf(cursor);
+      if (index < 0) return { items: [] };
+      nextCursor = messageIds[index + WINDOW] ?? null;
+      messageIds = messageIds.slice(index, index + WINDOW);
+    }
+    const messages = (await Promise.all(
+      messageIds.map(async (id) => {
+        const json = await this.kv.get([...this.kvPrefixes.messages, id]);
+        try {
+          return await Activity.fromJsonLd(json, ctx);
+        } catch {
+          return null;
+        }
+      }),
+    )).filter((message): message is Activity => message != null);
+    return { items: messages, nextCursor };
+  }
+
+  getOutboxFirstCursor(
+    _ctx: Context<TContextData>,
+    identifier: string,
+  ): string | null {
+    if (identifier !== this.identifier) return null;
+    return "";
+  }
+
+  async countOutbox(
+    _ctx: Context<TContextData>,
+    identifier: string,
+  ): Promise<number | null> {
+    if (identifier !== this.identifier) return null;
+    const messageIds = await this.kv.get<string[]>(this.kvPrefixes.messages) ??
+      [];
+    return messageIds.length;
   }
 
   async dispatchCreate(
