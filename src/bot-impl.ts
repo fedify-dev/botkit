@@ -49,6 +49,7 @@ import {
   Undo,
 } from "@fedify/fedify";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
+import metadata from "../deno.json" with { type: "json" };
 import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
 import type {
   FollowEventHandler,
@@ -105,6 +106,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.federation = createFederation<TContextData>({
       kv: options.kv,
       queue: options.queue,
+      userAgent: {
+        software: `BotKit/${metadata.version}`,
+      },
     });
     this.behindProxy = options.behindProxy ?? false;
     this.initialize();
