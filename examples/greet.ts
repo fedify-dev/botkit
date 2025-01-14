@@ -53,7 +53,7 @@ bot.onMention = async (_session, message) => {
 const session = bot.getSession(Deno.env.get("ORIGIN") ?? "http://localhost");
 setInterval(async () => {
   const message = await session.publish(
-    text`Hi, forks! It's a minutely greeting. It will be deleted in 30 seconds.`,
+    text`Hi, folks! It's a minutely greeting. It will be deleted in 30 seconds.`,
   );
   setTimeout(async () => {
     await message.delete();

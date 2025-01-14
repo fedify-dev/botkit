@@ -49,7 +49,7 @@ bot.onMention = async (session, message) => {
 // Or, a bot also can actively publish a post:
 const session = bot.getSession("https://mydomain/");
 setInterval(async () => {
-  await session.publish(text`Hi, forks! It's an hourly greeting.`);
+  await session.publish(text`Hi, folks! It's an hourly greeting.`);
 }, 1000 * 60 * 60);
 
 export default bot;
