@@ -57,7 +57,7 @@ export default bot;
 
 For more information, see the [BotKit docs][BotKit].
 
-[BotKit]: https://botkit.fedi.dev/
+[BotKit]: https://botkit.fedify.dev/
 [GitHub Actions]: https://github.com/dahlia/botkit/actions/workflows/main.yaml
 [GitHub Actions badge]: https://github.com/dahlia/botkit/actions/workflows/main.yaml/badge.svg
 [ActivityPub]: https://activitypub.rocks/
