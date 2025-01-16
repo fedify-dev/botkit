@@ -4,6 +4,7 @@
 ==================
 
 [![GitHub Actions][GitHub Actions badge]][GitHub Actions]
+[![Codecov][Codecov badge]][Codecov]
 
 > [!NOTE]
 > BotKit is still in early development.  The API may change in the future.
@@ -60,6 +61,8 @@ For more information, see the [BotKit docs][BotKit].
 [BotKit]: https://botkit.fedify.dev/
 [GitHub Actions]: https://github.com/dahlia/botkit/actions/workflows/main.yaml
 [GitHub Actions badge]: https://github.com/dahlia/botkit/actions/workflows/main.yaml/badge.svg
+[Codecov]: https://codecov.io/gh/dahlia/botkit
+[Codecov badge]: https://codecov.io/gh/dahlia/botkit/graph/badge.svg?token=dMbBbQvk4v
 [ActivityPub]: https://activitypub.rocks/
 [Fedify]: https://fedify.dev/
 

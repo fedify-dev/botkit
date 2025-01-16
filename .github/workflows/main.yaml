@@ -8,12 +8,32 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
     steps:
     - uses: actions/checkout@v4
     - uses: denoland/setup-deno@v2
       with:
         deno-version: v2.x
-    - run: deno task test-all
+    - run: deno task test --coverage --junit-path=junit.xml
+      env:
+        RUST_BACKTRACE: ${{ runner.debug }}
+    - uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        check_name: "Test Results"
+        files: junit.xml
+      continue-on-error: true
+    - if: '!cancelled()'
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+    - run: deno coverage --lcov > coverage.lcov
+    - uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage.lcov
+    - run: deno task check
 
   publish:
     if: github.event_name == 'push'

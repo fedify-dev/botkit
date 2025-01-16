@@ -38,6 +38,7 @@ import {
   markdown,
   mention,
   mentions,
+  strong,
   type Text,
   text,
 } from "./text.ts";
@@ -471,10 +472,10 @@ Deno.test("em()", async () => {
 
 Deno.test("strong()", async () => {
   const session = bot.getSession("https://example.com");
-  const t: Text<"inline", void> = em("Hello, World");
+  const t: Text<"inline", void> = strong("Hello, World");
   assertEquals(
     (await Array.fromAsync(t.getHtml(session))).join(""),
-    "<em>Hello, World</em>",
+    "<strong>Hello, World</strong>",
   );
   assertEquals(await Array.fromAsync(t.getTags(session)), []);
   assertEquals(t.getCachedObjects(), []);
