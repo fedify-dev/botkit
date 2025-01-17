@@ -65,6 +65,11 @@ import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
 
+export interface BotImplOptions<TContextData>
+  extends CreateBotOptions<TContextData> {
+  collectionWindow?: number;
+}
+
 export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly identifier: string;
   readonly class: typeof Service | typeof Application;
@@ -80,6 +85,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly kvPrefixes: BotKvPrefixes;
   readonly software?: Software;
   readonly behindProxy: boolean;
+  readonly collectionWindow: number;
   readonly federation: Federation<TContextData>;
 
   onFollow?: FollowEventHandler<TContextData>;
@@ -87,7 +93,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
 
-  constructor(options: CreateBotOptions<TContextData>) {
+  constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
     this.class = options.class ?? Service;
     this.username = options.username;
@@ -115,6 +121,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       },
     });
     this.behindProxy = options.behindProxy ?? false;
+    this.collectionWindow = options.collectionWindow ?? 50;
     this.initialize();
   }
 
@@ -125,7 +132,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         this.dispatchActor.bind(this),
       )
       .mapHandle(this.mapHandle.bind(this))
-      .setKeyPairsDispatcher(this.keyPairsDispatcher.bind(this));
+      .setKeyPairsDispatcher(this.dispatchActorKeyPairs.bind(this));
     this.federation
       .setFollowersDispatcher(
         "/ap/actor/{identifier}/followers",
@@ -183,7 +190,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
   }
 
-  async #getSummary(
+  async getActorSummary(
     session: Session<TContextData>,
   ): Promise<{ text: string; tags: Link[] } | null> {
     if (this.summary == null) return null;
@@ -201,7 +208,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return this.#summary;
   }
 
-  async #getProperties(
+  async getActorProperties(
     session: Session<TContextData>,
   ): Promise<{ pairs: PropertyValue[]; tags: Link[] }> {
     if (this.#properties != null) return this.#properties;
@@ -227,8 +234,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<Actor | null> {
     if (this.identifier !== identifier) return null;
     const session = this.getSession(ctx);
-    const summary = await this.#getSummary(session);
-    const { pairs, tags } = await this.#getProperties(session);
+    const summary = await this.getActorSummary(session);
+    const { pairs, tags } = await this.getActorProperties(session);
     const allTags = summary == null ? tags : [...tags, ...summary.tags];
     const keyPairs = await ctx.getActorKeyPairs(identifier);
     return new this.class({
@@ -243,8 +250,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
           t.href?.href === tag.href?.href
         ) === i
       ),
-      icon: new Image({ url: this.icon }),
-      image: new Image({ url: this.image }),
+      icon: this.icon == null ? null : new Image({ url: this.icon }),
+      image: this.image == null ? null : new Image({ url: this.image }),
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),
@@ -256,38 +263,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     });
   }
 
-  async getPermissionChecker(
-    ctx: RequestContext<TContextData>,
-  ): Promise<(object: Object) => boolean> {
-    let owner: Actor | null;
-    try {
-      owner = await ctx.getSignedKeyOwner();
-    } catch {
-      owner = null;
-    }
-    let follower = owner == null;
-    const ownerUri = owner?.id;
-    if (ownerUri != null) {
-      const f = await this.kv.get<unknown>([
-        ...this.kvPrefixes.followers,
-        ownerUri.href,
-      ]);
-      follower = f != null;
-    }
-    const followersUri = ctx.getFollowersUri(this.identifier);
-    return (object: Object): boolean => {
-      const recipients = [...object.toIds, ...object.ccIds].map((u) => u.href);
-      if (recipients.includes(PUBLIC_COLLECTION.href)) return true;
-      if (recipients.includes(followersUri.href)) return follower;
-      return ownerUri == null ? false : recipients.includes(ownerUri.href);
-    };
-  }
-
   mapHandle(_ctx: Context<TContextData>, username: string): string | null {
     return username === this.username ? this.identifier : null;
   }
 
-  async keyPairsDispatcher(
+  async dispatchActorKeyPairs(
     _ctx: Context<TContextData>,
     identifier: string,
   ): Promise<CryptoKeyPair[]> {
@@ -327,13 +307,12 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if (identifier !== this.identifier) return null;
     let followerIds = await this.kv.get<string[]>(this.kvPrefixes.followers) ??
       [];
-    const WINDOW = 50;
     let nextCursor: string | null = null;
     if (cursor != null) {
       const index = cursor === "" ? 0 : followerIds.indexOf(cursor);
       if (index < 0) return { items: [] };
-      nextCursor = followerIds[index + WINDOW] ?? null;
-      followerIds = followerIds.slice(index, index + WINDOW);
+      nextCursor = followerIds[index + this.collectionWindow] ?? null;
+      followerIds = followerIds.slice(index, index + this.collectionWindow);
     }
     const followers = (await Promise.all(
       followerIds.map(async (id) => {
@@ -367,6 +346,33 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return followerIds.length;
   }
 
+  async getPermissionChecker(
+    ctx: RequestContext<TContextData>,
+  ): Promise<(object: Object) => boolean> {
+    let owner: Actor | null;
+    try {
+      owner = await ctx.getSignedKeyOwner();
+    } catch {
+      owner = null;
+    }
+    let follower = false;
+    const ownerUri = owner?.id;
+    if (ownerUri != null) {
+      const f = await this.kv.get<unknown>([
+        ...this.kvPrefixes.followers,
+        ownerUri.href,
+      ]);
+      follower = f != null;
+    }
+    const followersUri = ctx.getFollowersUri(this.identifier);
+    return (object: Object): boolean => {
+      const recipients = [...object.toIds, ...object.ccIds].map((u) => u.href);
+      if (recipients.includes(PUBLIC_COLLECTION.href)) return true;
+      if (recipients.includes(followersUri.href) && follower) return true;
+      return ownerUri == null ? false : recipients.includes(ownerUri.href);
+    };
+  }
+
   async dispatchOutbox(
     ctx: RequestContext<TContextData>,
     identifier: string,
@@ -375,14 +381,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if (identifier !== this.identifier) return null;
     let messageIds = await this.kv.get<string[]>(this.kvPrefixes.messages) ??
       [];
-    const WINDOW = 50;
     let nextCursor: string | null = null;
-    messageIds.reverse();
+    messageIds = messageIds.toReversed();
     if (cursor != null) {
       const index = cursor === "" ? 0 : messageIds.indexOf(cursor);
       if (index < 0) return { items: [] };
-      nextCursor = messageIds[index + WINDOW] ?? null;
-      messageIds = messageIds.slice(index, index + WINDOW);
+      nextCursor = messageIds[index + this.collectionWindow] ?? null;
+      messageIds = messageIds.slice(index, index + this.collectionWindow);
     }
     const isVisible = await this.getPermissionChecker(ctx);
     const messages = (await Promise.all(
@@ -628,7 +633,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   getSession(
     origin: string | URL,
     contextData: TContextData,
-  ): Session<TContextData>;
+  ): SessionImpl<TContextData>;
   getSession(origin: string | URL): SessionImpl<TContextData>;
   getSession(context: Context<TContextData>): SessionImpl<TContextData>;
 

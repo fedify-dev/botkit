@@ -310,7 +310,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
   const hashtags: Hashtag[] = [];
   for await (const tag of raw.getTags(options)) {
     if (tag instanceof Mention && tag.href != null) {
-      const obj = await session.context.lookupObject(tag.href, options);
+      const obj = tag.href.href === session.actorId?.href
+        ? await session.getActor()
+        : await session.context.lookupObject(tag.href, options);
       if (isActor(obj)) mentions.push(obj);
       mentionedActorIds.add(tag.href.href);
     } else if (tag instanceof Hashtag) {
