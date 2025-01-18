@@ -37,7 +37,7 @@ import {
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
-import { FilterXSS } from "xss";
+import { FilterXSS, getDefaultWhiteList } from "xss";
 import type {
   Message,
   MessageClass,
@@ -272,7 +272,13 @@ export class MessageImpl<T extends MessageClass, TContextData>
   }
 }
 
-const htmlXss = new FilterXSS();
+const allowList = getDefaultWhiteList();
+const htmlXss = new FilterXSS({
+  allowList: {
+    ...allowList,
+    a: [...allowList.a ?? [], "class", "translate"],
+  },
+});
 const textXss = new FilterXSS({
   allowList: {},
   stripIgnoreTag: true,
