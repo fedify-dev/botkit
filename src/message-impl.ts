@@ -231,7 +231,9 @@ export class MessageImpl<T extends MessageClass, TContextData>
         excludeBaseUris: [new URL(this.session.context.origin)],
       },
     );
-    const actor = await announce.getActor(this.session.context);
+    const actor = announce.actorId?.href === this.session.actorId.href
+      ? await this.session.getActor()
+      : await announce.getActor(this.session.context);
     if (actor == null) throw new TypeError("The actor is required.");
     return {
       raw: announce,
@@ -289,9 +291,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
   session: SessionImpl<TContextData>,
   replyTarget?: Message<MessageClass, TContextData>,
 ): Promise<Message<T, TContextData>> {
-  if (raw.id == null) throw new TypeError(`The raw.id is required.`);
+  if (raw.id == null) throw new TypeError("The raw.id is required.");
   else if (raw.content == null) {
-    throw new TypeError(`The raw.content is required.`);
+    throw new TypeError("The raw.content is required.");
   }
   const documentLoader = await session.context.getDocumentLoader(session.bot);
   const options = {
@@ -303,7 +305,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     ? await session.getActor()
     : await raw.getAttribution(options);
   if (actor == null) {
-    throw new TypeError(`The raw.attributionId is required.`);
+    throw new TypeError("The raw.attributionId is required.");
   }
   const content = raw.content.toString();
   const text = textXss.process(content);

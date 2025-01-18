@@ -150,16 +150,16 @@ Deno.test("SessionImpl.publish()", async (t) => {
   });
 });
 
-interface SentActivity {
+export interface SentActivity {
   recipients: "followers" | Recipient[];
   activity: Activity;
 }
 
-interface MockContext extends Context<void> {
+export interface MockContext extends Context<void> {
   sentActivities: SentActivity[];
 }
 
-function createMockContext(
+export function createMockContext(
   bot: BotImpl<void>,
   origin: URL | string,
 ): MockContext {
