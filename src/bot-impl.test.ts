@@ -1,22 +1,48 @@
-import { MemoryKvStore } from "@fedify/fedify/federation";
+// BotKit by Fedify: A framework for creating ActivityPub bots
+// Copyright (C) 2025 Hong Minhee <https://hongminhee.org/>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import { type InboxContext, MemoryKvStore } from "@fedify/fedify/federation";
 import { exportJwk } from "@fedify/fedify/sig";
 import {
+  Accept,
+  type Activity,
+  type Actor,
   Announce,
   Article,
   Create,
+  Follow,
   Image,
   Mention,
   Note,
+  Object,
   Person,
+  Place,
   PropertyValue,
   PUBLIC_COLLECTION,
+  type Recipient,
   Service,
+  Undo,
 } from "@fedify/fedify/vocab";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
+import { assertNotEquals } from "@std/assert/not-equals";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
+import type { Message, MessageClass } from "./message.ts";
+import type { Session } from "./session.ts";
 import { mention, strong, text } from "./text.ts";
 
 Deno.test("BotImpl.getActorSummary()", async (t) => {
@@ -919,6 +945,404 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
   );
 });
 
+Deno.test("BotImpl.onFollowed()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const followed: [Session<void>, Actor][] = [];
+  bot.onFollow = (session, actor) => void (followed.push([session, actor]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  await t.step("without actor", async () => {
+    const followWithoutActor = new Follow({
+      id: new URL("https://example.com/ap/actor/john/follows/bot"),
+      object: new URL("https://example.com/ap/actor/bot"),
+    });
+    await bot.onFollowed(ctx, followWithoutActor);
+    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      undefined,
+    );
+  });
+
+  await t.step("with wrong actor", async () => {
+    const followWithWrongActor = new Follow({
+      id: new URL("https://example.com/ap/actor/bot/follows/bot"),
+      actor: new URL("https://example.com/ap/actor/bot"),
+      object: new URL("https://example.com/ap/actor/bot"),
+    });
+    await bot.onFollowed(ctx, followWithWrongActor);
+    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followers,
+        "https://example.com/ap/actor/bot",
+      ]),
+      undefined,
+    );
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      undefined,
+    );
+  });
+
+  const actor = new Person({
+    id: new URL("https://example.com/ap/actor/john"),
+    preferredUsername: "john",
+  });
+
+  await t.step("with wrong recipient", async () => {
+    const followWithWrongRecipient = new Follow({
+      id: new URL("https://example.com/ap/actor/john/follows/bot"),
+      actor,
+      object: new URL("https://example.com/ap/actor/non-existent"),
+    });
+    await bot.onFollowed(ctx, followWithWrongRecipient);
+    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followers,
+        "https://example.com/ap/actor/john",
+      ]),
+      undefined,
+    );
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      undefined,
+    );
+  });
+
+  await t.step("with correct follow", async () => {
+    const follow = new Follow({
+      id: new URL("https://example.com/ap/actor/john/follows/bot"),
+      actor,
+      object: new URL("https://example.com/ap/actor/bot"),
+    });
+    await bot.onFollowed(ctx, follow);
+    assertEquals(await kv.get(bot.kvPrefixes.followers), [
+      "https://example.com/ap/actor/john",
+    ]);
+    const storedFollower = await kv.get([
+      ...bot.kvPrefixes.followers,
+      "https://example.com/ap/actor/john",
+    ]);
+    assertNotEquals(storedFollower, undefined);
+    const deserializedFollower = await Object.fromJsonLd(storedFollower);
+    assertInstanceOf(deserializedFollower, Person);
+    assertEquals(deserializedFollower.id, actor.id);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      "https://example.com/ap/actor/john",
+    );
+    assertEquals(ctx.sentActivities.length, 1);
+    const { activity, recipients } = ctx.sentActivities[0];
+    assertInstanceOf(activity, Accept);
+    assertEquals(activity.actorId, new URL("https://example.com/ap/actor/bot"));
+    assertEquals(activity.objectId, follow.id);
+    assertEquals(recipients.length, 1);
+    assertEquals(recipients[0], actor);
+    assertEquals(ctx.forwardedRecipients, []);
+    assertEquals(followed.length, 1);
+    const [session, followerActor] = followed[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(followerActor, Person);
+    assertEquals(followerActor.id, actor.id);
+  });
+});
+
+Deno.test("BotImpl.onUnfollowed()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const unfollowed: [Session<void>, Actor][] = [];
+  bot.onUnfollow = (session, actor) => void (unfollowed.push([session, actor]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  await kv.set(bot.kvPrefixes.followers, ["https://example.com/ap/actor/john"]);
+  await kv.set(
+    [...bot.kvPrefixes.followers, "https://example.com/ap/actor/john"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      "type": "Person",
+      "id": "https://example.com/ap/actor/john",
+      "preferredUsername": "john",
+    },
+  );
+  await kv.set(
+    [
+      ...bot.kvPrefixes.followRequests,
+      "https://example.com/ap/actor/john/follows/bot",
+    ],
+    "https://example.com/ap/actor/john",
+  );
+
+  async function assertNoEffect() {
+    assertEquals(await kv.get(bot.kvPrefixes.followers), [
+      "https://example.com/ap/actor/john",
+    ]);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followers,
+        "https://example.com/ap/actor/john",
+      ]),
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "Person",
+        "id": "https://example.com/ap/actor/john",
+        "preferredUsername": "john",
+      },
+    );
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      "https://example.com/ap/actor/john",
+    );
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+    assertEquals(unfollowed, []);
+  }
+
+  await t.step("without Follow object", async () => {
+    const undo = new Undo({
+      actor: new URL("https://example.com/ap/actor/john"),
+    });
+    await bot.onUnfollowed(ctx, undo);
+    await assertNoEffect();
+  });
+
+  await t.step("without Follow.id", async () => {
+    const undo = new Undo({
+      actor: new URL("https://example.com/ap/actor/john"),
+      object: new Follow({}),
+    });
+    await bot.onUnfollowed(ctx, undo);
+    await assertNoEffect();
+  });
+
+  await t.step("with non-existent Follow.id", async () => {
+    const undo = new Undo({
+      actor: new URL("https://example.com/ap/actor/john"),
+      object: new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/non-existent"),
+      }),
+    });
+    await bot.onUnfollowed(ctx, undo);
+    await assertNoEffect();
+  });
+
+  await t.step("with incorrect Follow.actorId", async () => {
+    const undo = new Undo({
+      actor: new URL("https://example.com/ap/actor/wrong-actor"),
+      object: new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/bot"),
+      }),
+    });
+    await bot.onUnfollowed(ctx, undo);
+    await assertNoEffect();
+  });
+
+  await t.step("with correct Follow object", async () => {
+    const undo = new Undo({
+      actor: new Person({
+        id: new URL("https://example.com/ap/actor/john"),
+        preferredUsername: "john",
+      }),
+      object: new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/bot"),
+      }),
+    });
+    await bot.onUnfollowed(ctx, undo);
+    assertEquals(await kv.get(bot.kvPrefixes.followers), []);
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followers,
+        "https://example.com/ap/actor/john",
+      ]),
+      undefined,
+    );
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followRequests,
+        "https://example.com/ap/actor/john/follows/bot",
+      ]),
+      undefined,
+    );
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+    assertEquals(unfollowed.length, 1);
+    const [session, follower] = unfollowed[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(follower, Person);
+    assertEquals(follower.id, new URL("https://example.com/ap/actor/john"));
+  });
+});
+
+Deno.test("BotImpl.onCreated()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  let replied: [Session<void>, Message<MessageClass, void>][] = [];
+  bot.onReply = (session, msg) => void (replied.push([session, msg]));
+  let mentioned: [Session<void>, Message<MessageClass, void>][] = [];
+  bot.onMention = (session, msg) => void (mentioned.push([session, msg]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  await t.step("without object", async () => {
+    const createWithoutObject = new Create({
+      actor: new URL("https://example.com/ap/actor/john"),
+    });
+    await bot.onCreated(ctx, createWithoutObject);
+    assertEquals(replied, []);
+    assertEquals(mentioned, []);
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+  });
+
+  await t.step("with non-message object", async () => {
+    const createWithNonMessageObject = new Create({
+      actor: new URL("https://example.com/ap/actor/john"),
+      object: new Place({}),
+    });
+    await bot.onCreated(ctx, createWithNonMessageObject);
+    assertEquals(replied, []);
+    assertEquals(mentioned, []);
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+  });
+
+  await kv.set(
+    bot.kvPrefixes.messages,
+    ["a6358f1b-c978-49d3-8065-37a1df6168de"],
+  );
+  await kv.set(
+    [...bot.kvPrefixes.messages, "a6358f1b-c978-49d3-8065-37a1df6168de"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Create",
+      id: "https://example.com/ap/create/a6358f1b-c978-49d3-8065-37a1df6168de",
+      actor: "https://example.com/ap/actor/bot",
+      to: "https://www.w3.org/ns/activitystreams#Public",
+      cc: "https://example.com/ap/actor/bot/followers",
+      object: {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Note",
+        id: "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
+        attributedTo: "https://example.com/ap/actor/bot",
+        to: "https://www.w3.org/ns/activitystreams#Public",
+        cc: "https://example.com/ap/actor/bot/followers",
+        content: "Hello, world!",
+      },
+    },
+  );
+
+  await t.step("on reply", async () => {
+    const create = new Create({
+      id: new URL(
+        "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+      ),
+      actor: new URL("https://example.com/ap/actor/john"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/john/followers"),
+      object: new Note({
+        id: new URL(
+          "https://example.com/ap/note/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+        ),
+        attribution: new Person({
+          id: new URL("https://example.com/ap/actor/john"),
+          preferredUsername: "john",
+        }),
+        to: PUBLIC_COLLECTION,
+        cc: new URL("https://example.com/ap/actor/john/followers"),
+        content: "It's reply!",
+        replyTarget: new URL(
+          "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
+        ),
+      }),
+    });
+    await bot.onCreated(ctx, create);
+    assertEquals(replied.length, 1);
+    const [session, msg] = replied[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(msg.raw, Note);
+    assertEquals(msg.raw.id, create.objectId);
+    assert(msg.replyTarget != null);
+    assertEquals(
+      msg.replyTarget.id,
+      new URL(
+        "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
+      ),
+    );
+    assertEquals(mentioned, []);
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, ["followers"]);
+  });
+
+  replied = [];
+  ctx.forwardedRecipients = [];
+
+  await t.step("on mention", async () => {
+    const create = new Create({
+      id: new URL(
+        "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+      ),
+      actor: new URL("https://example.com/ap/actor/john"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/john/followers"),
+      object: new Note({
+        id: new URL(
+          "https://example.com/ap/note/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+        ),
+        attribution: new Person({
+          id: new URL("https://example.com/ap/actor/john"),
+          preferredUsername: "john",
+        }),
+        to: PUBLIC_COLLECTION,
+        cc: new URL("https://example.com/ap/actor/john/followers"),
+        content:
+          '<p><a href="https://example.com/ap/actor/bot">@bot</a> Hey!</p>',
+        tags: [
+          new Mention({
+            href: new URL("https://example.com/ap/actor/bot"),
+            name: "@bot",
+          }),
+        ],
+      }),
+    });
+    await bot.onCreated(ctx, create);
+    assertEquals(replied, []);
+    assertEquals(mentioned.length, 1);
+    const [session, msg] = mentioned[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(msg.raw, Note);
+    assertEquals(msg.raw.id, create.objectId);
+    assertEquals(msg.mentions.length, 1);
+    assertEquals(
+      msg.mentions[0].id,
+      new URL("https://example.com/ap/actor/bot"),
+    );
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+  });
+
+  mentioned = [];
+});
+
 Deno.test("BotImpl.dispatchNodeInfo()", () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -956,3 +1380,75 @@ Deno.test("BotImpl.dispatchNodeInfo()", () => {
     },
   });
 });
+
+Deno.test("BotImpl.fetch()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const request = new Request(
+    "http://localhost/.well-known/webfinger?resource=acct:bot@example.com",
+    {
+      headers: {
+        "X-Forwarded-Host": "example.com",
+        "X-Forwarded-Proto": "https",
+      },
+    },
+  );
+  const response = await bot.fetch(request);
+  assertEquals(response.status, 404);
+
+  const botBehindProxy = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+    behindProxy: true,
+  });
+  const response2 = await botBehindProxy.fetch(request);
+  assertEquals(response2.status, 200);
+});
+
+interface SentActivity {
+  recipients: "followers" | Recipient[];
+  activity: Activity;
+}
+
+interface MockInboxContext extends InboxContext<void> {
+  sentActivities: SentActivity[];
+  forwardedRecipients: ("followers" | Recipient)[];
+}
+
+function createMockInboxContext(
+  bot: BotImpl<void>,
+  origin: string | URL,
+  recipient?: string | null,
+): MockInboxContext {
+  const ctx = bot.federation.createContext(
+    new URL(origin),
+    undefined,
+  ) as MockInboxContext;
+  ctx.recipient = recipient ?? null;
+  ctx.sentActivities = [];
+  ctx.sendActivity = (_, recipients, activity) => {
+    ctx.sentActivities.push({
+      recipients: recipients === "followers"
+        ? "followers"
+        : Array.isArray(recipients)
+        ? recipients
+        : [recipients],
+      activity,
+    });
+    return Promise.resolve();
+  };
+  ctx.forwardedRecipients = [];
+  ctx.forwardActivity = (_, recipients) => {
+    if (recipients === "followers") {
+      ctx.forwardedRecipients.push("followers");
+    } else if (Array.isArray(recipients)) {
+      ctx.forwardedRecipients.push(...recipients);
+    } else {
+      ctx.forwardedRecipients.push(recipients);
+    }
+    return Promise.resolve();
+  };
+  return ctx;
+}

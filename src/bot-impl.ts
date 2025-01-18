@@ -489,6 +489,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     follow: Follow,
   ): Promise<void> {
     const documentLoader = await ctx.getDocumentLoader(this);
+    const botUri = ctx.getActorUri(this.identifier);
+    if (
+      follow.actorId?.href === botUri.href ||
+      follow.objectId?.href !== botUri.href
+    ) {
+      return;
+    }
     const follower = await follow.getActor({
       contextLoader: ctx.contextLoader,
       documentLoader,
@@ -594,6 +601,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       messageClasses.includes(replyTarget.class)
     ) {
       const message = await getMessage();
+      await ctx.forwardActivity(this, "followers");
       await this.onReply(session, message);
     }
     for await (const tag of object.getTags(ctx)) {
