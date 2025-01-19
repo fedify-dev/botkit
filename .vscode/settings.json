@@ -50,6 +50,8 @@
     "fedi",
     "Fedify",
     "fediverse",
+    "followee",
+    "followees",
     "halfyear",
     "hongminhee",
     "inlines",
@@ -63,6 +65,7 @@
     "Tailscale",
     "unfollow",
     "unfollowed",
+    "unfollowing",
     "unfollows",
     "uuidv7",
     "vitepress"

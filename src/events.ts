@@ -40,6 +40,28 @@ export type UnfollowEventHandler<TContextData> = (
 ) => void | Promise<void>;
 
 /**
+ * An event handler invoked when a follow request the bot sent is accepted.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param accepter The actor who accepted the follow request.
+ */
+export type AcceptEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  accepter: Actor,
+) => void | Promise<void>;
+
+/**
+ * An event handler invoked when a follow request the bot sent is rejected.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param rejecter The actor who rejected the follow request.
+ */
+export type RejectEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  rejecter: Actor,
+) => void | Promise<void>;
+
+/**
  * An event handler for a message mentioned to the bot.
  * @typeParam TContextData The type of the context data.
  * @param session The session of the bot.

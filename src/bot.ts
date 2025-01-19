@@ -25,8 +25,10 @@ import type {
 import type { Software } from "@fedify/fedify/nodeinfo";
 import { BotImpl } from "./bot-impl.ts";
 import type {
+  AcceptEventHandler,
   FollowEventHandler,
   MentionEventHandler,
+  RejectEventHandler,
   ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
@@ -92,6 +94,16 @@ export interface Bot<TContextData> {
    * An event handler for an unfollow event from the bot.
    */
   onUnfollow?: UnfollowEventHandler<TContextData>;
+
+  /**
+   * An event handler invoked when a follow request the bot sent is accepted.
+   */
+  onAccept?: AcceptEventHandler<TContextData>;
+
+  /**
+   * An event handler invoked when a follow request the bot sent is rejected.
+   */
+  onReject?: RejectEventHandler<TContextData>;
 
   /**
    * An event handler for a message mentioned to the bot.
@@ -254,9 +266,19 @@ export interface BotKvPrefixes {
   readonly followers: KvKey;
 
   /**
-   * The key prefix used for storing follow requests.
+   * The key prefix used for storing incoming follow requests.
    */
   readonly followRequests: KvKey;
+
+  /**
+   * The key prefix used for storing followees.
+   */
+  readonly followees: KvKey;
+
+  /**
+   * The key prefix used for storing outgoing follow requests.
+   */
+  readonly follows: KvKey;
 }
 
 /**

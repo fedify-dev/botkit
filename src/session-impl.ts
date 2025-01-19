@@ -25,6 +25,8 @@ import {
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify";
+import { Follow, Undo } from "@fedify/fedify/vocab";
+import { getLogger } from "@logtape/logtape";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage } from "./message-impl.ts";
@@ -35,6 +37,8 @@ import type {
   SessionPublishOptionsWithClass,
 } from "./session.ts";
 import type { Text } from "./text.ts";
+
+const logger = getLogger(["botkit", "session"]);
 
 export interface SessionImplPublishOptions<TContextData>
   extends SessionPublishOptions {
@@ -68,6 +72,102 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
 
   async getActor(): Promise<Actor> {
     return (await this.bot.dispatchActor(this.context, this.bot.identifier))!;
+  }
+
+  async follow(actor: Actor | URL | string): Promise<void> {
+    if (actor instanceof URL || typeof actor === "string") {
+      const documentLoader = await this.context.getDocumentLoader(this.bot);
+      const object = await this.context.lookupObject(actor, { documentLoader });
+      if (!isActor(object)) {
+        throw new TypeError("The resolved object is not an Actor.");
+      }
+      actor = object;
+    }
+    if (actor.id == null) {
+      throw new TypeError("The actor does not have an ID.");
+    }
+    const followee = await this.bot.kv.get([
+      ...this.bot.kvPrefixes.followees,
+      actor.id.href,
+    ]);
+    if (followee != null) {
+      logger.warn(
+        "The bot is already following the actor {actor}.",
+        { actor: actor.id.href },
+      );
+      return;
+    }
+    const id = uuidv7();
+    const follow = new Follow({
+      id: this.context.getObjectUri(Follow, { id }),
+      actor: this.context.getActorUri(this.bot.identifier),
+      object: actor.id,
+      to: actor.id,
+    });
+    await this.bot.kv.set(
+      [...this.bot.kvPrefixes.follows, id],
+      await follow.toJsonLd({
+        format: "compact",
+        contextLoader: this.context.contextLoader,
+      }),
+    );
+    await this.context.sendActivity(
+      this.bot,
+      actor,
+      follow,
+      { excludeBaseUris: [new URL(this.context.origin)] },
+    );
+  }
+
+  async unfollow(actor: Actor | URL | string): Promise<void> {
+    const documentLoader = await this.context.getDocumentLoader(this.bot);
+    if (actor instanceof URL || typeof actor === "string") {
+      const object = await this.context.lookupObject(actor, { documentLoader });
+      if (!isActor(object)) {
+        throw new TypeError("The resolved object is not an Actor.");
+      }
+      actor = object;
+    }
+    if (actor.id == null) {
+      throw new TypeError("The actor does not have an ID.");
+    }
+    const followJson = await this.bot.kv.get(
+      [...this.bot.kvPrefixes.followees, actor.id.href],
+    );
+    if (followJson == null) {
+      logger.warn(
+        "The bot is not following the actor {actor}.",
+        { actor: actor.id.href },
+      );
+      return;
+    }
+    let follow: Follow;
+    try {
+      follow = await Follow.fromJsonLd(followJson, {
+        contextLoader: this.context.contextLoader,
+        documentLoader,
+      });
+    } catch {
+      return;
+    } finally {
+      await this.bot.kv.delete([
+        ...this.bot.kvPrefixes.followees,
+        actor.id.href,
+      ]);
+    }
+    if (follow.id != null && follow.objectId?.href === actor.id.href) {
+      await this.context.sendActivity(
+        this.bot,
+        actor,
+        new Undo({
+          id: new URL("#undo", follow.id),
+          actor: this.context.getActorUri(this.bot.identifier),
+          object: follow,
+          to: actor.id,
+        }),
+        { excludeBaseUris: [new URL(this.context.origin)] },
+      );
+    }
   }
 
   async publish(

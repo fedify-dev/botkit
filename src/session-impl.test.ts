@@ -17,16 +17,127 @@ import { type Context, MemoryKvStore } from "@fedify/fedify/federation";
 import {
   type Activity,
   Create,
+  Follow,
   Note,
   Person,
   PUBLIC_COLLECTION,
   type Recipient,
+  Undo,
 } from "@fedify/fedify/vocab";
+import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { BotImpl } from "./bot-impl.ts";
 import { SessionImpl } from "./session-impl.ts";
 import { mention, text } from "./text.ts";
+
+Deno.test("SessionImpl.follow()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+
+  await t.step("follow", async () => {
+    const actor = new Person({
+      id: new URL("https://example.com/ap/actor/john"),
+      preferredUsername: "john",
+    });
+    await session.follow(actor);
+    assertEquals(ctx.sentActivities.length, 1);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, [actor]);
+    assertInstanceOf(activity, Follow);
+    const parsed = ctx.parseUri(activity.id);
+    assertEquals(parsed?.type, "object");
+    assert(parsed?.type === "object");
+    assertEquals(parsed.class, Follow);
+    assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity.objectId, actor.id);
+    assertEquals(activity.toIds, [actor.id]);
+    const followJson = await kv.get([
+      ...bot.kvPrefixes.follows,
+      parsed.values.id,
+    ]);
+    assert(followJson != null);
+    const follow = await Follow.fromJsonLd(followJson);
+    assertEquals(
+      await follow.toJsonLd({ format: "compact" }),
+      await activity.toJsonLd({ format: "compact" }),
+    );
+  });
+
+  ctx.sentActivities = [];
+
+  await t.step("follow again", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.followees, "https://example.com/ap/actor/alice"],
+      {},
+    );
+    const actor = new Person({
+      id: new URL("https://example.com/ap/actor/alice"),
+      preferredUsername: "alice",
+    });
+    await session.follow(actor);
+    assertEquals(ctx.sentActivities, []);
+  });
+});
+
+Deno.test("SessionImpl.unfollow()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+
+  await t.step("unfollow", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.followees, "https://example.com/ap/actor/alice"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/4114eadb-2596-408f-ad99-06f467c9ace0",
+        actor: "https://example.com/ap/actor/bot",
+        object: "https://example.com/ap/actor/alice",
+      },
+    );
+    const actor = new Person({
+      id: new URL("https://example.com/ap/actor/alice"),
+      preferredUsername: "alice",
+    });
+    await session.unfollow(actor);
+    assertEquals(ctx.sentActivities.length, 1);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, [actor]);
+    assertInstanceOf(activity, Undo);
+    const object = await activity.getObject(ctx);
+    assertInstanceOf(object, Follow);
+    assertEquals(
+      object.id,
+      new URL(
+        "https://example.com/ap/follow/4114eadb-2596-408f-ad99-06f467c9ace0",
+      ),
+    );
+    assertEquals(object.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.followees,
+        "https://example.com/ap/actor/alice",
+      ]),
+      undefined,
+    );
+  });
+
+  ctx.sentActivities = [];
+
+  await t.step("unfollow again", async () => {
+    const actor = new Person({
+      id: new URL("https://example.com/ap/actor/alice"),
+      preferredUsername: "alice",
+    });
+    await session.unfollow(actor);
+    assertEquals(ctx.sentActivities, []);
+  });
+});
 
 Deno.test("SessionImpl.publish()", async (t) => {
   const kv = new MemoryKvStore();

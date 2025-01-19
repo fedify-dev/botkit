@@ -22,6 +22,7 @@ import {
   Announce,
   Article,
   Create,
+  CryptographicKey,
   Follow,
   Image,
   Mention,
@@ -32,16 +33,19 @@ import {
   PropertyValue,
   PUBLIC_COLLECTION,
   type Recipient,
+  Reject,
   Service,
   Undo,
 } from "@fedify/fedify/vocab";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
+import { assertFalse } from "@std/assert/false";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertNotEquals } from "@std/assert/not-equals";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
 import type { Message, MessageClass } from "./message.ts";
+import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import { mention, strong, text } from "./text.ts";
 
@@ -612,6 +616,96 @@ Deno.test("BotImpl.countOutbox()", async () => {
   assertEquals(await bot.countOutbox(ctx, "bot"), 3);
 });
 
+Deno.test("BotImpl.dispatchFollow()", async () => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = bot.federation.createContext(
+    new Request("https://example.com/"),
+    undefined,
+  );
+  assertEquals(
+    await bot.dispatchFollow(ctx, { id: crypto.randomUUID() }),
+    null,
+  );
+
+  await kv.set(
+    [...bot.kvPrefixes.follows, "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Follow",
+      id: "https://example.com/ap/follow/b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
+      actor: "https://example.com/ap/actor/bot",
+      object: "https://example.com/ap/actor/john",
+      to: "https://example.com/ap/actor/john",
+    },
+  );
+  const follow = await bot.dispatchFollow(ctx, {
+    id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
+  });
+  assertInstanceOf(follow, Follow);
+  assertEquals(
+    follow.id,
+    new URL(
+      "https://example.com/ap/follow/b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
+    ),
+  );
+  assertEquals(follow.actorId, new URL("https://example.com/ap/actor/bot"));
+  assertEquals(follow.objectId, new URL("https://example.com/ap/actor/john"));
+  assertEquals(follow.toId, new URL("https://example.com/ap/actor/john"));
+});
+
+Deno.test("BotImpl.authorizeFollow()", async () => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = bot.federation.createContext(
+    new Request("https://example.com/"),
+    undefined,
+  );
+  await kv.set(
+    [...bot.kvPrefixes.follows, "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Follow",
+      id: "https://example.com/ap/follow/b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
+      actor: "https://example.com/ap/actor/bot",
+      object: "https://example.com/ap/actor/john",
+      to: "https://example.com/ap/actor/john",
+    },
+  );
+  assert(
+    await bot.authorizeFollow(
+      ctx,
+      { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
+      new CryptographicKey({}),
+      new Person({ id: new URL("https://example.com/ap/actor/john") }),
+    ),
+  );
+  assert(
+    await bot.authorizeFollow(
+      ctx,
+      { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
+      new CryptographicKey({}),
+      await new SessionImpl(bot, ctx).getActor(),
+    ),
+  );
+  assertFalse(
+    await bot.authorizeFollow(
+      ctx,
+      { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
+      new CryptographicKey({}),
+      new Person({ id: new URL("https://example.com/ap/actor/alice") }),
+    ),
+  );
+  assertFalse(
+    await bot.authorizeFollow(
+      ctx,
+      { id: crypto.randomUUID() },
+      new CryptographicKey({}),
+      new Person({ id: new URL("https://example.com/ap/actor/john") }),
+    ),
+  );
+});
+
 Deno.test("BotImpl.dispatchCreate()", async () => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot" });
@@ -945,6 +1039,17 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
   );
 });
 
+Deno.test("BotImpl.dispatchSharedKey()", () => {
+  const identifier = crypto.randomUUID();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+    identifier,
+  });
+  const ctx = bot.federation.createContext(new URL("https://example.com"));
+  assertEquals(bot.dispatchSharedKey(ctx), { identifier });
+});
+
 Deno.test("BotImpl.onFollowed()", async (t) => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot" });
@@ -1189,6 +1294,279 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
     assertEquals(session.context, ctx);
     assertInstanceOf(follower, Person);
     assertEquals(follower.id, new URL("https://example.com/ap/actor/john"));
+  });
+});
+
+Deno.test("BotImpl.onAccepted()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const accepted: [Session<void>, Actor][] = [];
+  bot.onAccept = (session, actor) => void (accepted.push([session, actor]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  await t.step("without object", async () => {
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+      }),
+    );
+    assertEquals(accepted, []);
+  });
+
+  await t.step("with invalid object URI", async () => {
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL("https://example.com/"),
+      }),
+    );
+    assertEquals(accepted, []);
+  });
+
+  await t.step("with non-existent object", async () => {
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(`https://example.com/ap/follow/${crypto.randomUUID()}`),
+      }),
+    );
+    assertEquals(accepted, []);
+  });
+
+  await t.step("with non-actor", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "2ca58e2a-a34a-43e6-81af-c4f21ffed0c5"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Note",
+        },
+      },
+    );
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
+        ),
+      }),
+    );
+    assertEquals(accepted, []);
+  });
+
+  await t.step("with actor without URI", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "a99ff3bf-72a2-412b-83b9-cba894d38805"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/a99ff3bf-72a2-412b-83b9-cba894d38805",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Person",
+          preferredUsername: "john",
+        },
+      },
+    );
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/a99ff3bf-72a2-412b-83b9-cba894d38805",
+        ),
+      }),
+    );
+    assertEquals(accepted, []);
+  });
+
+  await t.step("with actor", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "3bca0b8e-503a-47ea-ad69-6b7c29369fbd"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Person",
+          id: "https://example.com/ap/actor/john",
+          preferredUsername: "john",
+        },
+      },
+    );
+    await bot.onAccepted(
+      ctx,
+      new Accept({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+        ),
+      }),
+    );
+    assertEquals(accepted.length, 1);
+    const [session, actor] = accepted[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(actor, Person);
+    assertEquals(actor.id, new URL("https://example.com/ap/actor/john"));
+    const followJson = await kv.get([
+      ...bot.kvPrefixes.followees,
+      "https://example.com/ap/actor/john",
+    ]);
+    assert(followJson != null);
+    const follow = await Follow.fromJsonLd(followJson);
+    assertInstanceOf(follow, Follow);
+    assertEquals(
+      follow.id,
+      new URL(
+        "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+      ),
+    );
+    assertEquals(follow.objectId, actor.id);
+  });
+});
+
+Deno.test("BotImpl.onRejected()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const rejected: [Session<void>, Actor][] = [];
+  bot.onReject = (session, actor) => void (rejected.push([session, actor]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  await t.step("without object", async () => {
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+      }),
+    );
+    assertEquals(rejected, []);
+  });
+
+  await t.step("with invalid object URI", async () => {
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL("https://example.com/"),
+      }),
+    );
+    assertEquals(rejected, []);
+  });
+
+  await t.step("with non-existent object", async () => {
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(`https://example.com/ap/follow/${crypto.randomUUID()}`),
+      }),
+    );
+    assertEquals(rejected, []);
+  });
+
+  await t.step("with non-actor", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "2ca58e2a-a34a-43e6-81af-c4f21ffed0c5"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Note",
+        },
+      },
+    );
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
+        ),
+      }),
+    );
+    assertEquals(rejected, []);
+  });
+
+  await t.step("with actor without URI", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "a99ff3bf-72a2-412b-83b9-cba894d38805"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/a99ff3bf-72a2-412b-83b9-cba894d38805",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Person",
+          preferredUsername: "john",
+        },
+      },
+    );
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/a99ff3bf-72a2-412b-83b9-cba894d38805",
+        ),
+      }),
+    );
+    assertEquals(rejected, []);
+  });
+
+  await t.step("with actor", async () => {
+    await kv.set(
+      [...bot.kvPrefixes.follows, "3bca0b8e-503a-47ea-ad69-6b7c29369fbd"],
+      {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Follow",
+        id:
+          "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+        actor: "https://example.com/ap/actor/bot",
+        object: {
+          type: "Person",
+          id: "https://example.com/ap/actor/john",
+          preferredUsername: "john",
+        },
+      },
+    );
+    await bot.onRejected(
+      ctx,
+      new Reject({
+        actor: new URL("https://example.com/ap/actor/john"),
+        object: new URL(
+          "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+        ),
+      }),
+    );
+    assertEquals(rejected.length, 1);
+    const [session, actor] = rejected[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(actor, Person);
+    assertEquals(actor.id, new URL("https://example.com/ap/actor/john"));
+    assertEquals(
+      await kv.get([
+        ...bot.kvPrefixes.follows,
+        "3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
+      ]),
+      undefined,
+    );
   });
 });
 

@@ -49,13 +49,19 @@ import {
   type Software,
   Undo,
 } from "@fedify/fedify";
-import { PUBLIC_COLLECTION } from "@fedify/fedify/vocab";
+import {
+  type CryptographicKey,
+  PUBLIC_COLLECTION,
+  Reject,
+} from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
 import type {
+  AcceptEventHandler,
   FollowEventHandler,
   MentionEventHandler,
+  RejectEventHandler,
   ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
@@ -90,6 +96,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   onFollow?: FollowEventHandler<TContextData>;
   onUnfollow?: UnfollowEventHandler<TContextData>;
+  onAccept?: AcceptEventHandler<TContextData>;
+  onReject?: RejectEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
 
@@ -110,6 +118,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       messages: ["_botkit", "messages"],
       followers: ["_botkit", "followers"],
       followRequests: ["_botkit", "followRequests"],
+      followees: ["_botkit", "followees"],
+      follows: ["_botkit", "follows"],
       ...options.kvPrefixes ?? {},
     };
     this.software = options.software;
@@ -147,6 +157,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       )
       .setFirstCursor(this.getOutboxFirstCursor.bind(this))
       .setCounter(this.countOutbox.bind(this));
+    this.federation
+      .setObjectDispatcher(
+        Follow,
+        "/ap/follow/{id}",
+        this.dispatchFollow.bind(this),
+      )
+      .authorize(this.authorizeFollow.bind(this));
     this.federation.setObjectDispatcher(
       Create,
       "/ap/create/{id}",
@@ -181,7 +198,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
       .on(Follow, this.onFollowed.bind(this))
       .on(Undo, this.onUnfollowed.bind(this))
-      .on(Create, this.onCreated.bind(this));
+      .on(Accept, this.onAccepted.bind(this))
+      .on(Reject, this.onRejected.bind(this))
+      .on(Create, this.onCreated.bind(this))
+      .setSharedKeyDispatcher(this.dispatchSharedKey.bind(this));
     if (this.software != null) {
       this.federation.setNodeInfoDispatcher(
         "/nodeinfo/2.1",
@@ -424,6 +444,38 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return messageIds.length;
   }
 
+  async dispatchFollow(
+    ctx: RequestContext<TContextData>,
+    { id }: { id: string },
+  ): Promise<Follow | null> {
+    const result = await this.kv.get([...this.kvPrefixes.follows, id]);
+    if (result == null) return null;
+    try {
+      return await Follow.fromJsonLd(result, ctx);
+    } catch {
+      return null;
+    }
+  }
+
+  async authorizeFollow(
+    ctx: RequestContext<TContextData>,
+    { id }: { id: string },
+    _signedKey: CryptographicKey | null,
+    signedKeyOwner: Actor | null,
+  ): Promise<boolean> {
+    if (signedKeyOwner == null || signedKeyOwner.id == null) return false;
+    const result = await this.kv.get([...this.kvPrefixes.follows, id]);
+    if (result == null) return false;
+    let follow: Follow;
+    try {
+      follow = await Follow.fromJsonLd(result, ctx);
+    } catch {
+      return false;
+    }
+    return signedKeyOwner.id.href === follow.objectId?.href ||
+      signedKeyOwner.id.href === follow.actorId?.href;
+  }
+
   async dispatchCreate(
     ctx: RequestContext<TContextData>,
     values: { id: string },
@@ -484,11 +536,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return isVisible(announce) ? announce : null;
   }
 
+  dispatchSharedKey(_ctx: Context<TContextData>): { identifier: string } {
+    return { identifier: this.identifier };
+  }
+
   async onFollowed(
     ctx: InboxContext<TContextData>,
     follow: Follow,
   ): Promise<void> {
-    const documentLoader = await ctx.getDocumentLoader(this);
     const botUri = ctx.getActorUri(this.identifier);
     if (
       follow.actorId?.href === botUri.href ||
@@ -498,7 +553,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
     const follower = await follow.getActor({
       contextLoader: ctx.contextLoader,
-      documentLoader,
+      documentLoader: ctx.documentLoader,
       suppressError: true,
     });
     if (follower == null || follower.id == null) return;
@@ -573,6 +628,64 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       if (follower != null) {
         await this.onUnfollow(session, follower);
       }
+    }
+  }
+
+  async onAccepted(
+    ctx: InboxContext<TContextData>,
+    accept: Accept,
+  ): Promise<void> {
+    const parsedObj = ctx.parseUri(accept.objectId);
+    if (parsedObj?.type !== "object" || parsedObj.class !== Follow) return;
+    const followJson = await this.kv.get([
+      ...this.kvPrefixes.follows,
+      parsedObj.values.id,
+    ]);
+    if (followJson == null) return;
+    const follow = await Follow.fromJsonLd(followJson, ctx);
+    const followee = await follow.getObject(ctx);
+    if (
+      !isActor(followee) || followee.id == null ||
+      followee.id.href !== accept.actorId?.href
+    ) {
+      return;
+    }
+    await this.kv.set(
+      [...this.kvPrefixes.followees, followee.id.href],
+      followJson,
+    );
+    if (this.onAccept != null) {
+      const session = this.getSession(ctx);
+      await this.onAccept(session, followee);
+    }
+  }
+
+  async onRejected(
+    ctx: InboxContext<TContextData>,
+    reject: Reject,
+  ): Promise<void> {
+    const parsedObj = ctx.parseUri(reject.objectId);
+    if (parsedObj?.type !== "object" || parsedObj.class !== Follow) return;
+    const followJson = await this.kv.get([
+      ...this.kvPrefixes.follows,
+      parsedObj.values.id,
+    ]);
+    if (followJson == null) return;
+    const follow = await Follow.fromJsonLd(followJson, ctx);
+    const followee = await follow.getObject(ctx);
+    if (
+      !isActor(followee) || followee.id == null ||
+      followee.id.href !== reject.actorId?.href
+    ) {
+      return;
+    }
+    await this.kv.delete([
+      ...this.kvPrefixes.follows,
+      parsedObj.values.id,
+    ]);
+    if (this.onReject != null) {
+      const session = this.getSession(ctx);
+      await this.onReject(session, followee);
     }
   }
 

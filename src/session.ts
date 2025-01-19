@@ -58,6 +58,37 @@ export interface Session<TContextData> {
   getActor(): Promise<Actor>;
 
   /**
+   * Send a follow request to the specified actor.
+   *
+   * Note that it does not guarantee that the follow request will be accepted.
+   * You might need to handle {@link Bot.onAccept} and {@link Bot.onReject}
+   * events to know the result.
+   *
+   * If the bot is already following the actor, it does nothing.
+   * @param actor The actor to follow.  It can be an `Actor` object, or a `URL`
+   *              of the actor, or a URI string or a fediverse handle of the
+   *              actor.
+   * @throws {TypeError} If the actor URL is invalid or the resolved object
+   *                     is not an `Actor`.
+   */
+  follow(actor: Actor | URL | string): Promise<void>;
+
+  /**
+   * Unfollow the specified actor.
+   *
+   * Unlike {@link Session.follow}, it immediately unfollows the actor without
+   * any confirmation.
+   *
+   * If the bot is not following the actor, it does nothing.
+   * @param actor The actor to unfollow.  It can be an `Actor` object,
+   *              or a `URL` of the actor, or a URI string or a fediverse handle
+   *              of the actor.
+   * @throws {TypeError} If the actor URL is invalid or the resolved object
+   *                     is not an `Actor`.
+   */
+  unfollow(actor: Actor | URL | string): Promise<void>;
+
+  /**
    * Publishes a message attributed to the bot.
    * @param text The content of the note.
    * @param options The options for publishing the message.

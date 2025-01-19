@@ -130,7 +130,13 @@ const bot: BotWithVoidContextData = {
         });
         return Promise.resolve(actor);
       },
-      publish(_content: unknown, _options: unknown) {
+      follow() {
+        throw new Error("Not implemented");
+      },
+      unfollow() {
+        throw new Error("Not implemented");
+      },
+      publish() {
         throw new Error("Not implemented");
       },
     } satisfies Session<void>;
