@@ -122,8 +122,9 @@ bot.onFollow = async (session, actor) => {
 > follow the actor.
 >
 > If you want to know whether the actor has accepted or rejected the follow
-> request, you need to register the [`Bot.onAccept`](./events.md#accept) and
-> [`Bot.onReject`](./events.md#reject) event handlers.
+> request, you need to register
+> the [`Bot.onAcceptFollow`](./events.md#accept-follow) and
+> [`Bot.onRejectFollow`](./events.md#reject-follow) event handlers.
 
 > [!TIP]
 > It takes several kinds of objects as an argument, such as `Actor`, `string`,

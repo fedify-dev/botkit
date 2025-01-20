@@ -96,8 +96,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   onFollow?: FollowEventHandler<TContextData>;
   onUnfollow?: UnfollowEventHandler<TContextData>;
-  onAccept?: AcceptEventHandler<TContextData>;
-  onReject?: RejectEventHandler<TContextData>;
+  onAcceptFollow?: AcceptEventHandler<TContextData>;
+  onRejectFollow?: RejectEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
 
@@ -198,8 +198,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
       .on(Follow, this.onFollowed.bind(this))
       .on(Undo, this.onUnfollowed.bind(this))
-      .on(Accept, this.onAccepted.bind(this))
-      .on(Reject, this.onRejected.bind(this))
+      .on(Accept, this.onFollowAccepted.bind(this))
+      .on(Reject, this.onFollowRejected.bind(this))
       .on(Create, this.onCreated.bind(this))
       .setSharedKeyDispatcher(this.dispatchSharedKey.bind(this));
     if (this.software != null) {
@@ -631,7 +631,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
   }
 
-  async onAccepted(
+  async onFollowAccepted(
     ctx: InboxContext<TContextData>,
     accept: Accept,
   ): Promise<void> {
@@ -654,13 +654,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       [...this.kvPrefixes.followees, followee.id.href],
       followJson,
     );
-    if (this.onAccept != null) {
+    if (this.onAcceptFollow != null) {
       const session = this.getSession(ctx);
-      await this.onAccept(session, followee);
+      await this.onAcceptFollow(session, followee);
     }
   }
 
-  async onRejected(
+  async onFollowRejected(
     ctx: InboxContext<TContextData>,
     reject: Reject,
   ): Promise<void> {
@@ -683,9 +683,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       ...this.kvPrefixes.follows,
       parsedObj.values.id,
     ]);
-    if (this.onReject != null) {
+    if (this.onRejectFollow != null) {
       const session = this.getSession(ctx);
-      await this.onReject(session, followee);
+      await this.onRejectFollow(session, followee);
     }
   }
 

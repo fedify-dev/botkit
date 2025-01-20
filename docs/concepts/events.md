@@ -63,18 +63,18 @@ bot.onUnfollow = async (session, follower) => {
 ~~~~
 
 
-Accept
-------
+Accept follow
+-------------
 
-The `~Bot.onAccept` event handler is called when someone accepts your bot's
-follow request.  It receives an `Actor` object, who just accepted your bot's
-follow request, as the second argument.
+The `~Bot.onAcceptFollow` event handler is called when someone accepts your
+bot's follow request.  It receives an `Actor` object, who just accepted your
+bot's follow request, as the second argument.
 
 The following is an example of an accept event handler that sends a direct
 message when someone accepts your bot's follow request:
 
 ~~~~ typescript
-bot.onAccept = async (session, accepter) => {
+bot.onAcceptFollow = async (session, accepter) => {
   await session.publish(
     text`Thanks for accepting my follow request, ${accepter}!`,
     { visibility: "direct" },
@@ -83,18 +83,18 @@ bot.onAccept = async (session, accepter) => {
 ~~~~
 
 
-Reject
-------
+Reject follow
+-------------
 
-The `~Bot.onReject` event handler is called when someone rejects your bot's
-follow request.  It receives an `Actor` object, who just rejected your bot's
-follow request, as the second argument.
+The `~Bot.onRejectFollow` event handler is called when someone rejects your
+bot's follow request.  It receives an `Actor` object, who just rejected your
+bot's follow request, as the second argument.
 
 The following is an example of a reject event handler that sends a direct
 message when someone rejects your bot's follow request:
 
 ~~~~ typescript
-bot.onReject = async (session, rejecter) => {
+bot.onRejectFollow = async (session, rejecter) => {
   await session.publish(
     text`I'm sorry to hear that you rejected my follow request, ${rejecter}.`,
     { visibility: "direct" },

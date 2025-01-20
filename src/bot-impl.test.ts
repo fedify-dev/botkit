@@ -1297,15 +1297,16 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
   });
 });
 
-Deno.test("BotImpl.onAccepted()", async (t) => {
+Deno.test("BotImpl.onFollowAccepted()", async (t) => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot" });
   const accepted: [Session<void>, Actor][] = [];
-  bot.onAccept = (session, actor) => void (accepted.push([session, actor]));
+  bot.onAcceptFollow = (session, actor) =>
+    void (accepted.push([session, actor]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
   await t.step("without object", async () => {
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1315,7 +1316,7 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
   });
 
   await t.step("with invalid object URI", async () => {
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1326,7 +1327,7 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
   });
 
   await t.step("with non-existent object", async () => {
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1350,7 +1351,7 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
         },
       },
     );
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1377,7 +1378,7 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
         },
       },
     );
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1405,7 +1406,7 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
         },
       },
     );
-    await bot.onAccepted(
+    await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1437,15 +1438,16 @@ Deno.test("BotImpl.onAccepted()", async (t) => {
   });
 });
 
-Deno.test("BotImpl.onRejected()", async (t) => {
+Deno.test("BotImpl.onFollowRejected()", async (t) => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot" });
   const rejected: [Session<void>, Actor][] = [];
-  bot.onReject = (session, actor) => void (rejected.push([session, actor]));
+  bot.onRejectFollow = (session, actor) =>
+    void (rejected.push([session, actor]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
   await t.step("without object", async () => {
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1455,7 +1457,7 @@ Deno.test("BotImpl.onRejected()", async (t) => {
   });
 
   await t.step("with invalid object URI", async () => {
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1466,7 +1468,7 @@ Deno.test("BotImpl.onRejected()", async (t) => {
   });
 
   await t.step("with non-existent object", async () => {
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1490,7 +1492,7 @@ Deno.test("BotImpl.onRejected()", async (t) => {
         },
       },
     );
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1517,7 +1519,7 @@ Deno.test("BotImpl.onRejected()", async (t) => {
         },
       },
     );
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
@@ -1545,7 +1547,7 @@ Deno.test("BotImpl.onRejected()", async (t) => {
         },
       },
     );
-    await bot.onRejected(
+    await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),

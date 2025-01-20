@@ -98,12 +98,12 @@ export interface Bot<TContextData> {
   /**
    * An event handler invoked when a follow request the bot sent is accepted.
    */
-  onAccept?: AcceptEventHandler<TContextData>;
+  onAcceptFollow?: AcceptEventHandler<TContextData>;
 
   /**
    * An event handler invoked when a follow request the bot sent is rejected.
    */
-  onReject?: RejectEventHandler<TContextData>;
+  onRejectFollow?: RejectEventHandler<TContextData>;
 
   /**
    * An event handler for a message mentioned to the bot.

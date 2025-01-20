@@ -61,7 +61,7 @@ export interface Session<TContextData> {
    * Send a follow request to the specified actor.
    *
    * Note that it does not guarantee that the follow request will be accepted.
-   * You might need to handle {@link Bot.onAccept} and {@link Bot.onReject}
+   * You might need to handle {@link Bot.onAcceptFollow} and {@link Bot.onRejectFollow}
    * events to know the result.
    *
    * If the bot is already following the actor, it does nothing.
