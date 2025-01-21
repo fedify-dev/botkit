@@ -151,15 +151,6 @@ export interface Message<T extends MessageClass, TContextData> {
   readonly updated?: Temporal.Instant;
 
   /**
-   * Deletes the message, if possible.
-   *
-   * If the message is not published by the bot, it will silently fail.
-   *
-   * If the message is already deleted, it will be a no-op.
-   */
-  delete(): Promise<void>;
-
-  /**
    * Publishes a reply to the message.
    * @param text The content of the message.
    * @param options The options for publishing the message.
@@ -168,7 +159,7 @@ export interface Message<T extends MessageClass, TContextData> {
   reply(
     text: Text<"block", TContextData>,
     options?: SessionPublishOptions,
-  ): Promise<Message<Note, TContextData>>;
+  ): Promise<AuthorizedMessage<Note, TContextData>>;
 
   /**
    * Publishes a reply to the message.
@@ -180,7 +171,7 @@ export interface Message<T extends MessageClass, TContextData> {
   reply<T extends MessageClass>(
     text: Text<"block", TContextData>,
     options?: SessionPublishOptionsWithClass<T>,
-  ): Promise<Message<T, TContextData>>;
+  ): Promise<AuthorizedMessage<T, TContextData>>;
 
   /**
    * Shares the message.
@@ -193,6 +184,20 @@ export interface Message<T extends MessageClass, TContextData> {
    *                     `"unlisted"`.
    */
   share(options?: MessageShareOptions): Promise<SharedMessage<TContextData>>;
+}
+
+/**
+ * An authorized message in the ActivityPub network.  Usually it is a message
+ * published by the bot itself.
+ */
+export interface AuthorizedMessage<T extends MessageClass, TContextData>
+  extends Message<T, TContextData> {
+  /**
+   * Deletes the message, if possible.
+   *
+   * If the message is already deleted, it will be a no-op.
+   */
+  delete(): Promise<void>;
 }
 
 /**

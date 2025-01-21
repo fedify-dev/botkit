@@ -39,6 +39,7 @@ import { unescape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS, getDefaultWhiteList } from "xss";
 import type {
+  AuthorizedMessage,
   Message,
   MessageClass,
   MessageShareOptions,
@@ -91,88 +92,20 @@ export class MessageImpl<T extends MessageClass, TContextData>
     this.updated = message.updated;
   }
 
-  async delete(): Promise<void> {
-    const parsed = this.session.context.parseUri(this.id);
-    if (
-      parsed?.type !== "object" ||
-      !messageClasses.some((cls) => parsed.class === cls)
-    ) {
-      return;
-    }
-    const { id } = parsed.values;
-    const kv = this.session.bot.kv;
-    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
-    const lockKey: KvKey = [...listKey, "lock"];
-    const lockId = `${id}:delete`;
-    do {
-      await kv.set(lockKey, lockId);
-      const set = new Set(await kv.get<string[]>(listKey) ?? []);
-      set.delete(id);
-      const list = [...set];
-      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-      await kv.set(listKey, list);
-    } while (await kv.get(lockKey) !== lockId);
-    const messageKey: KvKey = [...listKey, id];
-    const createJson = await kv.get(messageKey);
-    if (createJson == null) return;
-    await kv.delete(messageKey);
-    const create = await Create.fromJsonLd(createJson, this.session.context);
-    const message = await create.getObject(this.session.context);
-    if (message == null) return;
-    const mentionedActorIds: Set<string> = new Set();
-    for await (const tag of message.getTags(this.session.context)) {
-      if (tag instanceof Mention && tag.href != null) {
-        mentionedActorIds.add(tag.href.href);
-      }
-    }
-    const promises: Promise<Object | null>[] = [];
-    const documentLoader = await this.session.context.getDocumentLoader(
-      this.session.bot,
-    );
-    for (const uri of mentionedActorIds) {
-      promises.push(this.session.context.lookupObject(uri, { documentLoader }));
-    }
-    const mentionedActors = (await Promise.all(promises)).filter(isActor);
-    const activity = new Delete({
-      id: new URL("#delete", this.id),
-      actor: this.session.context.getActorUri(this.session.bot.identifier),
-      tos: create.toIds,
-      ccs: create.ccIds,
-      object: new Tombstone({
-        id: this.id,
-      }),
-    });
-    const excludeBaseUris = [new URL(this.session.context.origin)];
-    await this.session.context.sendActivity(
-      this.session.bot,
-      "followers",
-      activity,
-      { preferSharedInbox: true, excludeBaseUris },
-    );
-    for (const actor of mentionedActors) {
-      await this.session.context.sendActivity(
-        this.session.bot,
-        actor,
-        activity,
-        { preferSharedInbox: true, excludeBaseUris },
-      );
-    }
-  }
-
   reply(
     text: Text<"block", TContextData>,
     options?: SessionPublishOptions,
-  ): Promise<Message<Note, TContextData>>;
+  ): Promise<AuthorizedMessage<Note, TContextData>>;
   reply<T extends MessageClass>(
     text: Text<"block", TContextData>,
     options?: SessionPublishOptionsWithClass<T> | undefined,
-  ): Promise<Message<T, TContextData>>;
+  ): Promise<AuthorizedMessage<T, TContextData>>;
   reply(
     text: Text<"block", TContextData>,
     options?:
       | SessionPublishOptions
       | SessionPublishOptionsWithClass<MessageClass>,
-  ): Promise<Message<MessageClass, TContextData>> {
+  ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     return this.session.publish(text, {
       visibility: this.visibility === "unknown" ? "direct" : this.visibility,
       ...options,
@@ -274,6 +207,78 @@ export class MessageImpl<T extends MessageClass, TContextData>
   }
 }
 
+export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
+  extends MessageImpl<T, TContextData>
+  implements AuthorizedMessage<T, TContextData> {
+  async delete(): Promise<void> {
+    const parsed = this.session.context.parseUri(this.id);
+    if (
+      parsed?.type !== "object" ||
+      !messageClasses.some((cls) => parsed.class === cls)
+    ) {
+      return;
+    }
+    const { id } = parsed.values;
+    const kv = this.session.bot.kv;
+    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
+    const lockKey: KvKey = [...listKey, "lock"];
+    const lockId = `${id}:delete`;
+    do {
+      await kv.set(lockKey, lockId);
+      const set = new Set(await kv.get<string[]>(listKey) ?? []);
+      set.delete(id);
+      const list = [...set];
+      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      await kv.set(listKey, list);
+    } while (await kv.get(lockKey) !== lockId);
+    const messageKey: KvKey = [...listKey, id];
+    const createJson = await kv.get(messageKey);
+    if (createJson == null) return;
+    await kv.delete(messageKey);
+    const create = await Create.fromJsonLd(createJson, this.session.context);
+    const message = await create.getObject(this.session.context);
+    if (message == null) return;
+    const mentionedActorIds: Set<string> = new Set();
+    for await (const tag of message.getTags(this.session.context)) {
+      if (tag instanceof Mention && tag.href != null) {
+        mentionedActorIds.add(tag.href.href);
+      }
+    }
+    const promises: Promise<Object | null>[] = [];
+    const documentLoader = await this.session.context.getDocumentLoader(
+      this.session.bot,
+    );
+    for (const uri of mentionedActorIds) {
+      promises.push(this.session.context.lookupObject(uri, { documentLoader }));
+    }
+    const mentionedActors = (await Promise.all(promises)).filter(isActor);
+    const activity = new Delete({
+      id: new URL("#delete", this.id),
+      actor: this.session.context.getActorUri(this.session.bot.identifier),
+      tos: create.toIds,
+      ccs: create.ccIds,
+      object: new Tombstone({
+        id: this.id,
+      }),
+    });
+    const excludeBaseUris = [new URL(this.session.context.origin)];
+    await this.session.context.sendActivity(
+      this.session.bot,
+      "followers",
+      activity,
+      { preferSharedInbox: true, excludeBaseUris },
+    );
+    for (const actor of mentionedActors) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        actor,
+        activity,
+        { preferSharedInbox: true, excludeBaseUris },
+      );
+    }
+  }
+}
+
 const allowList = getDefaultWhiteList();
 const htmlXss = new FilterXSS({
   allowList: {
@@ -290,6 +295,19 @@ export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
   replyTarget?: Message<MessageClass, TContextData>,
+  authorized?: true,
+): Promise<AuthorizedMessage<T, TContextData>>;
+export async function createMessage<T extends MessageClass, TContextData>(
+  raw: T,
+  session: SessionImpl<TContextData>,
+  replyTarget?: Message<MessageClass, TContextData>,
+  authorized?: boolean,
+): Promise<Message<T, TContextData>>;
+export async function createMessage<T extends MessageClass, TContextData>(
+  raw: T,
+  session: SessionImpl<TContextData>,
+  replyTarget?: Message<MessageClass, TContextData>,
+  authorized: boolean = false,
 ): Promise<Message<T, TContextData>> {
   if (raw.id == null) throw new TypeError("The raw.id is required.");
   else if (raw.content == null) {
@@ -352,7 +370,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
       replyTarget = await createMessage(rt, session);
     }
   }
-  return new MessageImpl(session, {
+  return new (authorized ? AuthorizedMessageImpl : MessageImpl)(session, {
     raw,
     id: raw.id,
     actor,

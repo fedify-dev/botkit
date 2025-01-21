@@ -48,6 +48,7 @@ export {
 } from "./message.ts";
 export type {
   Actor,
+  AuthorizedMessage,
   Message,
   MessageClass,
   MessageShareOptions,

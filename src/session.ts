@@ -24,7 +24,11 @@ import type {
 } from "@fedify/fedify";
 import type { LanguageTag } from "@phensley/language-tag";
 import type { Bot } from "./bot.ts";
-import type { Message, MessageClass, MessageVisibility } from "./message.ts";
+import type {
+  AuthorizedMessage,
+  MessageClass,
+  MessageVisibility,
+} from "./message.ts";
 import type { Text } from "./text.ts";
 
 /**
@@ -97,7 +101,7 @@ export interface Session<TContextData> {
   publish(
     content: Text<"block", TContextData>,
     options?: SessionPublishOptions,
-  ): Promise<Message<Note, TContextData>>;
+  ): Promise<AuthorizedMessage<Note, TContextData>>;
 
   /**
    * Publishes a message attributed to the bot.
@@ -109,7 +113,7 @@ export interface Session<TContextData> {
   publish<T extends MessageClass>(
     content: Text<"block", TContextData>,
     options: SessionPublishOptionsWithClass<T>,
-  ): Promise<Message<T, TContextData>>;
+  ): Promise<AuthorizedMessage<T, TContextData>>;
 }
 
 /**

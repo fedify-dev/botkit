@@ -30,7 +30,7 @@ import { getLogger } from "@logtape/logtape";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage } from "./message-impl.ts";
-import type { Message, MessageClass } from "./message.ts";
+import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
 import type {
   Session,
   SessionPublishOptions,
@@ -173,17 +173,17 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
   async publish(
     content: Text<"block", TContextData>,
     options?: SessionImplPublishOptions<TContextData>,
-  ): Promise<Message<Note, TContextData>>;
+  ): Promise<AuthorizedMessage<Note, TContextData>>;
   async publish<T extends MessageClass>(
     content: Text<"block", TContextData>,
     options: SessionImplPublishOptionsWithClass<T, TContextData>,
-  ): Promise<Message<T, TContextData>>;
+  ): Promise<AuthorizedMessage<T, TContextData>>;
   async publish(
     content: Text<"block", TContextData>,
     options:
       | SessionImplPublishOptions<TContextData>
       | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},
-  ): Promise<Message<MessageClass, TContextData>> {
+  ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     const published = new Date();
     const id = uuidv7(+published);
     const cls = "class" in options ? options.class : Note;
@@ -288,6 +288,6 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox, excludeBaseUris },
       );
     }
-    return await createMessage(msg, this, options.replyTarget);
+    return await createMessage(msg, this, options.replyTarget, true);
   }
 }

@@ -40,7 +40,7 @@ bot.onMention = async (session, message) => {
 
 When you publish a new message to the fediverse, you can get a `Message` object
 as a return value of the invoked method.  For example, in the following code
-snippet, the `Session.publish()` method returns a `Message` object:
+snippet, the `Session.publish()` method returns an `AuthorizedMessage` object:
 
 ~~~~ typescript
 const session = bot.getSession("https://mydomain");
@@ -48,6 +48,24 @@ const message = await session.publish(text`Hello, world!`);  // [!code highlight
 ~~~~
 
 For more information about publishing a message, see the section right below.
+
+
+`Message` vs. `AuthorizedMessage`
+---------------------------------
+
+There are two types of `Message` objects: `Message` and `AuthorizedMessage`.
+Everything you can do with the `Message` object can be done with the
+`AuthorizedMessage` object as well.  The only difference between them is that
+the `AuthorizedMessage` object has additional methods that require
+the authorization of the author of the message.
+
+For example, the [`delete()`](#deleting-a-message) method requires the
+authorization of the author of the message.  Therefore, the `delete()` method
+is available only in the `AuthorizedMessage` object.
+
+In general, you will get the `AuthorizedMessage` object when you publish
+a new message to the fediverse: [`Session.publish()`](#publishing-a-message) or
+[`Message.reply()`](#replying-to-a-message) method.
 
 
 Publishing a message
@@ -75,9 +93,9 @@ await session.publish(text`
 For more information about the `Text` object, see the [*Text*
 section](./text.md).
 
-The `Session.publish()` method returns a `Message` object that represents
-the message that was published.  You can use this object to interact with
-the message, such as [deleting](./message.md#deleting-a-message) it or
+The `Session.publish()` method returns an `AuthorizedMessage` object that
+represents the message that was published.  You can use this object to interact
+with the message, such as [deleting](./message.md#deleting-a-message) it or
 [replying](./message.md#replying-to-a-message) to it:
 
 ~~~~ typescript
@@ -375,7 +393,7 @@ object.
 Deleting a message
 ------------------
 
-You can delete a message by calling the `~Message.delete()` method:
+You can delete a message by calling the `~AuthorizedMessage.delete()` method:
 
 ~~~~ typescript
 const message = await session.publish(
@@ -385,11 +403,6 @@ setTimeout(async () => {
   await message.delete();  // [!code highlight]
 }, 1000 * 60);
 ~~~~
-
-> [!CAUTION]
-> This operation is possible if only the message is published by the same
-> bot that calls the `delete()` method.  If you try to delete a message
-> that is published by others, the operation will silently fail.
 
 
 Replying to a message
@@ -413,6 +426,16 @@ const reply = await message.reply(
   text`A reply with a language hint.`,
   { language: "en" },  // [!code highlight]
 );
+~~~~
+
+Like the `Session.publish()` method, the `~Message.reply()` method returns
+an `AuthorizedMessage` object that represents the reply message:
+
+~~~~ typescript
+const reply = await message.reply(text`This reply will be deleted in a minute.`);
+setTimeout(async () => {
+  await reply.delete();  // [!code highlight]
+}, 1000 * 60);
 ~~~~
 
 > [!TIP]

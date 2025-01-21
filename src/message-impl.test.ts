@@ -138,7 +138,7 @@ Deno.test("createMessage()", async () => {
   assertEquals(unknownMessage.visibility, "unknown");
 });
 
-Deno.test("MessageImpl.delete()", async () => {
+Deno.test("AuthorizedMessageImpl.delete()", async () => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot" });
   const ctx = createMockContext(bot, "https://example.com");
@@ -152,7 +152,7 @@ Deno.test("MessageImpl.delete()", async () => {
     to: PUBLIC_COLLECTION,
     cc: new URL("https://example.com/ap/actor/bot/followers"),
   });
-  const msg = await createMessage<Note, void>(note, session);
+  const msg = await createMessage<Note, void>(note, session, undefined, true);
   await kv.set(
     bot.kvPrefixes.messages,
     ["c1c792ce-a0be-4685-b396-e59e5ef8c788"],
