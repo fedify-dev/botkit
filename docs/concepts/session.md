@@ -102,6 +102,13 @@ See the [*Publishing a message* section](./message.md#publishing-a-message)
 in the *Message* concept document.
 
 
+Get published messages
+----------------------
+
+See the [*Get published messages* section](./message.md#get-published-messages)
+in the *Message* concept document.
+
+
 Following an actor
 ------------------
 

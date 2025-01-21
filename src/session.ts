@@ -114,6 +114,15 @@ export interface Session<TContextData> {
     content: Text<"block", TContextData>,
     options: SessionPublishOptionsWithClass<T>,
   ): Promise<AuthorizedMessage<T, TContextData>>;
+
+  /**
+   * Gets messages from the bot's outbox.
+   * @param options The options for getting messages.
+   * @returns An async iterable of messages.
+   */
+  getOutbox(
+    options?: SessionGetOutboxOptions,
+  ): AsyncIterable<AuthorizedMessage<MessageClass, TContextData>>;
 }
 
 /**
@@ -150,4 +159,27 @@ export interface SessionPublishOptionsWithClass<T extends MessageClass>
     : T extends Note ? typeof Note
     : T extends Question ? typeof Question
     : never;
+}
+
+/**
+ * Options for getting messages from the bot's outbox.
+ */
+export interface SessionGetOutboxOptions {
+  /**
+   * The order of the messages.  If omitted, `"newest"` will be used.
+   * @default `"newest"`
+   */
+  readonly order?: "oldest" | "newest";
+
+  /**
+   * The timestamp to get messages created at or before this time.
+   * If omitted, no limit will be applied.
+   */
+  readonly until?: Temporal.Instant;
+
+  /**
+   * The timestamp to get messages created at or after this time.
+   * If omitted, no limit will be applied.
+   */
+  readonly since?: Temporal.Instant;
 }

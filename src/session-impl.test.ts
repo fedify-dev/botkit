@@ -261,6 +261,221 @@ Deno.test("SessionImpl.publish()", async (t) => {
   });
 });
 
+Deno.test("SessionImpl.getOutbox()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+
+  await kv.set(
+    [...bot.kvPrefixes.messages, "01941f29-7c00-7fe8-ab0a-7b593990a3c0"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Create",
+      id: "https://example.com/ap/create/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+      actor: "https://example.com/ap/actor/bot",
+      to: ["https://example.com/ap/actor/bot/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+      object: {
+        type: "Note",
+        id: "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+        attributedTo: "https://example.com/ap/actor/bot",
+        to: ["https://example.com/ap/actor/bot/followers"],
+        cc: ["https://www.w3.org/ns/activitystreams#Public"],
+        content: "Hello, world!",
+        published: "2025-01-01T00:00:00Z",
+      },
+      published: "2025-01-01T00:00:00Z",
+    },
+  );
+  await kv.set(
+    [...bot.kvPrefixes.messages, "0194244f-d800-7873-8993-ef71ccd47306"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Create",
+      id: "https://example.com/ap/create/0194244f-d800-7873-8993-ef71ccd47306",
+      actor: "https://example.com/ap/actor/bot",
+      to: ["https://example.com/ap/actor/bot/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+      object: {
+        type: "Note",
+        id: "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+        attributedTo: "https://example.com/ap/actor/bot",
+        to: ["https://example.com/ap/actor/bot/followers"],
+        cc: ["https://www.w3.org/ns/activitystreams#Public"],
+        content: "Hello, world!",
+        published: "2025-01-02T00:00:00Z",
+      },
+      published: "2025-01-02T00:00:00Z",
+    },
+  );
+  await kv.set(
+    [...bot.kvPrefixes.messages, "01942976-3400-7f34-872e-2cbf0f9eeac4"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Create",
+      id: "https://example.com/ap/create/01942976-3400-7f34-872e-2cbf0f9eeac4",
+      actor: "https://example.com/ap/actor/bot",
+      to: ["https://example.com/ap/actor/bot/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+      object: {
+        type: "Note",
+        id: "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+        attributedTo: "https://example.com/ap/actor/bot",
+        to: ["https://example.com/ap/actor/bot/followers"],
+        cc: ["https://www.w3.org/ns/activitystreams#Public"],
+        content: "Hello, world!",
+        published: "2025-01-03T00:00:00Z",
+      },
+      published: "2025-01-03T00:00:00Z",
+    },
+  );
+  await kv.set(
+    [...bot.kvPrefixes.messages, "01942e9c-9000-7480-a553-7a6ce737ce14"],
+    {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Create",
+      id: "https://example.com/ap/create/01942e9c-9000-7480-a553-7a6ce737ce14",
+      actor: "https://example.com/ap/actor/bot",
+      to: ["https://example.com/ap/actor/bot/followers"],
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
+      object: {
+        type: "Note",
+        id: "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+        attributedTo: "https://example.com/ap/actor/bot",
+        to: ["https://example.com/ap/actor/bot/followers"],
+        cc: ["https://www.w3.org/ns/activitystreams#Public"],
+        content: "Hello, world!",
+        published: "2025-01-04T00:00:00Z",
+      },
+      published: "2025-01-04T00:00:00Z",
+    },
+  );
+  await kv.set(
+    bot.kvPrefixes.messages,
+    [
+      "01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+      "0194244f-d800-7873-8993-ef71ccd47306",
+      "01942976-3400-7f34-872e-2cbf0f9eeac4",
+      "01942e9c-9000-7480-a553-7a6ce737ce14",
+    ],
+  );
+
+  await t.step("default", async () => {
+    const outbox = session.getOutbox({ order: "oldest" });
+    const messages = await Array.fromAsync(outbox);
+    assertEquals(messages.length, 4);
+
+    assertEquals(
+      messages[0].id.href,
+      "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+    );
+    assertEquals(
+      messages[0].actor.id?.href,
+      "https://example.com/ap/actor/bot",
+    );
+    assertEquals(messages[0].visibility, "unlisted");
+    assertEquals(messages[0].text, "Hello, world!");
+    assertEquals(
+      messages[0].published,
+      Temporal.Instant.from("2025-01-01T00:00:00Z"),
+    );
+
+    assertEquals(
+      messages[1].id.href,
+      "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+    );
+    assertEquals(
+      messages[1].actor.id?.href,
+      "https://example.com/ap/actor/bot",
+    );
+    assertEquals(messages[1].visibility, "unlisted");
+    assertEquals(messages[1].text, "Hello, world!");
+    assertEquals(
+      messages[1].published,
+      Temporal.Instant.from("2025-01-02T00:00:00Z"),
+    );
+
+    assertEquals(
+      messages[2].id.href,
+      "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+    );
+    assertEquals(
+      messages[2].actor.id?.href,
+      "https://example.com/ap/actor/bot",
+    );
+    assertEquals(messages[2].visibility, "unlisted");
+    assertEquals(messages[2].text, "Hello, world!");
+    assertEquals(
+      messages[2].published,
+      Temporal.Instant.from("2025-01-03T00:00:00Z"),
+    );
+
+    assertEquals(
+      messages[3].id.href,
+      "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+    );
+    assertEquals(
+      messages[3].actor.id?.href,
+      "https://example.com/ap/actor/bot",
+    );
+    assertEquals(messages[3].visibility, "unlisted");
+    assertEquals(messages[3].text, "Hello, world!");
+    assertEquals(
+      messages[3].published,
+      Temporal.Instant.from("2025-01-04T00:00:00Z"),
+    );
+  });
+
+  await t.step("order: 'oldest'", async () => {
+    const outbox = session.getOutbox({ order: "oldest" });
+    const messages = await Array.fromAsync(outbox);
+    const messageIds = messages.map((msg) => msg.id.href);
+    assertEquals(messageIds, [
+      "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+      "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+      "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+      "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+    ]);
+  });
+
+  await t.step("order: 'newest'", async () => {
+    const outbox = session.getOutbox({ order: "newest" });
+    const messages = await Array.fromAsync(outbox);
+    const messageIds = messages.map((msg) => msg.id.href);
+    assertEquals(messageIds, [
+      "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+      "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+      "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+      "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+    ]);
+  });
+
+  await t.step("since", async () => {
+    const outbox = session.getOutbox({
+      since: Temporal.Instant.from("2025-01-03T00:00:00Z"),
+    });
+    const messages = await Array.fromAsync(outbox);
+    const messageIds = messages.map((msg) => msg.id.href);
+    assertEquals(messageIds, [
+      "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+      "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+    ]);
+  });
+
+  await t.step("until", async () => {
+    const outbox = session.getOutbox({
+      until: Temporal.Instant.from("2025-01-02T00:00:00Z"),
+    });
+    const messages = await Array.fromAsync(outbox);
+    const messageIds = messages.map((msg) => msg.id.href);
+    assertEquals(messageIds, [
+      "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+      "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+    ]);
+  });
+});
+
 export interface SentActivity {
   recipients: "followers" | Recipient[];
   activity: Activity;

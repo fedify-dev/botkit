@@ -27,12 +27,13 @@ import {
 } from "@fedify/fedify";
 import { Follow, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
-import { generate as uuidv7 } from "@std/uuid/unstable-v7";
+import { extractTimestamp, generate as uuidv7 } from "@std/uuid/unstable-v7";
 import type { BotImpl } from "./bot-impl.ts";
-import { createMessage } from "./message-impl.ts";
+import { createMessage, isMessageObject } from "./message-impl.ts";
 import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
 import type {
   Session,
+  SessionGetOutboxOptions,
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";
@@ -289,5 +290,44 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       );
     }
     return await createMessage(msg, this, options.replyTarget, true);
+  }
+
+  async *getOutbox(
+    options: SessionGetOutboxOptions = {},
+  ): AsyncIterable<AuthorizedMessage<MessageClass, TContextData>> {
+    const { order, until, since } = options;
+    const { kv, kvPrefixes } = this.bot;
+    const untilTs = until == null ? null : until.epochMilliseconds;
+    const sinceTs = since == null ? null : since.epochMilliseconds;
+    let messageIds = await kv.get<string[]>(kvPrefixes.messages) ?? [];
+    if (sinceTs != null) {
+      const offset = messageIds.findIndex((id) =>
+        extractTimestamp(id) >= sinceTs
+      );
+      messageIds = messageIds.slice(offset);
+    }
+    if (untilTs != null) {
+      const offset = messageIds.findLastIndex((id) =>
+        extractTimestamp(id) <= untilTs
+      );
+      messageIds = messageIds.slice(0, offset + 1);
+    }
+    if (order == null || order === "newest") {
+      messageIds = messageIds.toReversed();
+    }
+    for (const id of messageIds) {
+      const messageJson = await kv.get([...kvPrefixes.messages, id]);
+      if (messageJson == null) continue;
+      let object: Object | null;
+      try {
+        const activity = await Create.fromJsonLd(messageJson, this.context);
+        object = await activity.getObject(this.context);
+      } catch {
+        continue;
+      }
+      if (object == null || !isMessageObject(object)) continue;
+      const message = await createMessage(object, this);
+      yield message;
+    }
   }
 }

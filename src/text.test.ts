@@ -139,6 +139,9 @@ const bot: BotWithVoidContextData = {
       publish() {
         throw new Error("Not implemented");
       },
+      getOutbox() {
+        throw new Error("Not implemented");
+      },
     } satisfies Session<void>;
   },
   fetch(_req: Request) {

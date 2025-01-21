@@ -65,7 +65,9 @@ is available only in the `AuthorizedMessage` object.
 
 In general, you will get the `AuthorizedMessage` object when you publish
 a new message to the fediverse: [`Session.publish()`](#publishing-a-message) or
-[`Message.reply()`](#replying-to-a-message) method.
+[`Message.reply()`](#replying-to-a-message) method.  Or you can get all
+the published messages from the bot's outbox:
+[`Session.getOutbox()`](#get-published-messages).
 
 
 Publishing a message
@@ -421,6 +423,41 @@ import { Place } from "@fedify/fedify/vocab";
 [`Note`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Note
 [`Question`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Question
 [`Place`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Place
+
+
+Get published messages
+----------------------
+
+You can get the published messages by calling the `~Session.getOutbox()` method.
+It returns an [`AsyncIterable`] object that yields the `AuthorizedMessage`
+objects:
+
+~~~~ typescript
+for await (const message of session.getOutbox()) {
+  console.log(message.text);
+}
+~~~~
+
+The yielded messages are in the descending order of the published timestamp by
+default, but you can specify the order by providing
+the `~SessionGetOutboxOptions.order` option:
+
+~~~~ typescript
+session.getOutbox({ order: "oldest" })
+~~~~
+
+Or you can specify the range of the messages by providing
+the `~SessionGetOutboxOptions.since` and `~SessionGetOutboxOptions.until`
+options:
+
+~~~~ typescript
+session.getOutbox({
+  since: Temporal.Instant.from("2025-01-01T00:00:00Z"),
+  until: Temporal.Instant.from("2025-01-31T23:59:59.999Z"),
+})
+~~~~
+
+[`AsyncIterable`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
 
 
 Deleting a message
