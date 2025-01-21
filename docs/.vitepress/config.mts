@@ -59,6 +59,7 @@ export default defineConfig({
       { text: "Getting started", link: "/start.md" },
       concepts,
       { text: "Examples", link: "/examples.md" },
+      { text: "Changelog", link: "/changelog.md" },
     ],
 
     socialLinks: [
