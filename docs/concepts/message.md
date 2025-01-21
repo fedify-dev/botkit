@@ -389,6 +389,39 @@ object.
 
 [`Temporal.Instant`]: https://tc39.es/proposal-temporal/docs/instant.html
 
+### Want more?
+
+If you want more data from the message, you can get the raw object of
+the message through the `~Message.raw` property.  It is an instance of one
+of [`Article`], [`ChatMessage`], [`Note`], or [`Question`] class (which are
+provided by Fedify).  You can get the raw data from the object.
+
+For example, if you want to get the location of the message (Pixelfed et al.
+provide the geo location of the message), you can get it through
+the `~Message.raw` property:
+
+~~~~ typescript
+const location = await message.raw.getLocation();
+if (location instanceof Place) {
+  console.log(location.name);
+  console.log(location.latitude);
+  console.log(location.longitude);
+}
+~~~~
+
+In the above example, the [`Place`] class is declared by Fedify, so you need to
+install it and import it:
+
+~~~~ typescript
+import { Place } from "@fedify/fedify/vocab";
+~~~~
+
+[`Article`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Article
+[`ChatMessage`]: https://jsr.io/@fedify/fedify/doc/vocab/~/ChatMessage
+[`Note`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Note
+[`Question`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Question
+[`Place`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Place
+
 
 Deleting a message
 ------------------
