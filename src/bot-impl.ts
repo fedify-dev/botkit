@@ -84,8 +84,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly name?: string;
   readonly summary?: Text<"block", TContextData>;
   #summary: { text: string; tags: Link[] } | null;
-  readonly icon?: URL;
-  readonly image?: URL;
+  readonly icon?: URL | Image;
+  readonly image?: URL | Image;
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
   #properties: { pairs: PropertyValue[]; tags: Link[] } | null;
   readonly kv: KvStore;
@@ -272,8 +272,16 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
           t.href?.href === tag.href?.href
         ) === i
       ),
-      icon: this.icon == null ? null : new Image({ url: this.icon }),
-      image: this.image == null ? null : new Image({ url: this.image }),
+      icon: this.icon == null
+        ? null
+        : this.icon instanceof Image
+        ? this.icon
+        : new Image({ url: this.icon }),
+      image: this.image == null
+        ? null
+        : this.image instanceof Image
+        ? this.image
+        : new Image({ url: this.image }),
       inbox: ctx.getInboxUri(identifier),
       endpoints: new Endpoints({
         sharedInbox: ctx.getInboxUri(),

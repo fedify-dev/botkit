@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import type {
-  Application,
   Context,
   Federation,
   KvKey,
   KvStore,
   MessageQueue,
-  Service,
-} from "@fedify/fedify";
+} from "@fedify/fedify/federation";
 import type { Software } from "@fedify/fedify/nodeinfo";
+import type { Application, Image, Service } from "@fedify/fedify/vocab";
 import { BotImpl } from "./bot-impl.ts";
 import type {
   AcceptEventHandler,
@@ -40,7 +39,7 @@ export {
   type SemVer,
   type Software,
 } from "@fedify/fedify/nodeinfo";
-export { Application, Service } from "@fedify/fedify/vocab";
+export { Application, Image, Service } from "@fedify/fedify/vocab";
 
 /**
  * A bot that can interact with the ActivityPub network.
@@ -204,13 +203,13 @@ export interface CreateBotOptions<TContextData> {
   /**
    * The avatar URL of the bot.  It can be changed after the bot is federated.
    */
-  readonly icon?: URL;
+  readonly icon?: URL | Image;
 
   /**
    * The header image URL of the bot.  It can be changed after the bot is
    * federated.
    */
-  readonly image?: URL;
+  readonly image?: URL | Image;
 
   /**
    * The custom properties of the bot.  It can be changed after the bot is
