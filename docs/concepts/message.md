@@ -428,7 +428,7 @@ import { Place } from "@fedify/fedify/vocab";
 Getting published messages
 --------------------------
 
-You can get the published messages by calling the `~Session.getOutbox()` method.
+You can get the published messages by calling the `Session.getOutbox()` method.
 It returns an [`AsyncIterable`] object that yields the `AuthorizedMessage`
 objects:
 
