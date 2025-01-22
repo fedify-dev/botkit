@@ -55,6 +55,20 @@ bot.onFollow = async (session, followRequest) => {
 > or `~FollowRequest.reject()` in the `~Bot.onFollow` event handler,
 > and the configured policy is ignored for the specific follow request.
 
+> [!TIP]
+> The passed `FollowRequest` object can outlive the event handler if your bot
+> is configured the [`followerPolicy`](./bot.md#createbotoptions-followerpolicy)
+> option to `"manual"`.  The following example shows how to accept a follow
+> request after an hour:
+>
+> ~~~~ typescript {2-4}
+> bot.onFollow = async (session, followRequest) => {
+>   setTimeout(async () => {
+>     await followRequest.accept();
+>   }, 1000 * 60 * 60);
+> };
+> ~~~~
+
 
 Unfollow
 --------
