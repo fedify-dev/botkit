@@ -82,3 +82,15 @@ export type ReplyEventHandler<TContextData> = (
   session: Session<TContextData>,
   reply: Message<MessageClass, TContextData>,
 ) => void | Promise<void>;
+
+/**
+ * An event handler for a message shown to the bot's timeline.  To listen to
+ * this event, your bot needs to follow others first.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param message The message shown to the bot's timeline.
+ */
+export type MessageEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  message: Message<MessageClass, TContextData>,
+) => void | Promise<void>;

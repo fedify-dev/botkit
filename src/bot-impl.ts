@@ -61,6 +61,7 @@ import type {
   AcceptEventHandler,
   FollowEventHandler,
   MentionEventHandler,
+  MessageEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
   UnfollowEventHandler,
@@ -100,6 +101,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onRejectFollow?: RejectEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
+  onMessage?: MessageEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -729,6 +731,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
           break;
         }
       }
+    }
+    if (this.onMessage != null) {
+      await this.onMessage(session, await getMessage());
     }
   }
 

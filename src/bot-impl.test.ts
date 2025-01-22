@@ -1580,6 +1580,8 @@ Deno.test("BotImpl.onCreated()", async (t) => {
   let mentioned: [Session<void>, Message<MessageClass, void>][] = [];
   bot.onMention = (session, msg) => void (mentioned.push([session, msg]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+  let messaged: [Session<void>, Message<MessageClass, void>][] = [];
+  bot.onMessage = (session, msg) => void (messaged.push([session, msg]));
 
   await t.step("without object", async () => {
     const createWithoutObject = new Create({
@@ -1588,6 +1590,7 @@ Deno.test("BotImpl.onCreated()", async (t) => {
     await bot.onCreated(ctx, createWithoutObject);
     assertEquals(replied, []);
     assertEquals(mentioned, []);
+    assertEquals(messaged, []);
     assertEquals(ctx.sentActivities, []);
     assertEquals(ctx.forwardedRecipients, []);
   });
@@ -1600,6 +1603,7 @@ Deno.test("BotImpl.onCreated()", async (t) => {
     await bot.onCreated(ctx, createWithNonMessageObject);
     assertEquals(replied, []);
     assertEquals(mentioned, []);
+    assertEquals(messaged, []);
     assertEquals(ctx.sentActivities, []);
     assertEquals(ctx.forwardedRecipients, []);
   });
@@ -1668,11 +1672,13 @@ Deno.test("BotImpl.onCreated()", async (t) => {
       ),
     );
     assertEquals(mentioned, []);
+    assertEquals(messaged, replied);
     assertEquals(ctx.sentActivities, []);
     assertEquals(ctx.forwardedRecipients, ["followers"]);
   });
 
   replied = [];
+  messaged = [];
   ctx.forwardedRecipients = [];
 
   await t.step("on mention", async () => {
@@ -1716,11 +1722,49 @@ Deno.test("BotImpl.onCreated()", async (t) => {
       msg.mentions[0].id,
       new URL("https://example.com/ap/actor/bot"),
     );
+    assertEquals(messaged, mentioned);
     assertEquals(ctx.sentActivities, []);
     assertEquals(ctx.forwardedRecipients, []);
   });
 
   mentioned = [];
+  messaged = [];
+
+  await t.step("on message", async () => {
+    const create = new Create({
+      id: new URL(
+        "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+      ),
+      actor: new URL("https://example.com/ap/actor/john"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/john/followers"),
+      object: new Note({
+        id: new URL(
+          "https://example.com/ap/note/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+        ),
+        attribution: new Person({
+          id: new URL("https://example.com/ap/actor/john"),
+          preferredUsername: "john",
+        }),
+        to: PUBLIC_COLLECTION,
+        cc: new URL("https://example.com/ap/actor/john/followers"),
+        content: "<p>Hello!</p>",
+      }),
+    });
+    await bot.onCreated(ctx, create);
+    assertEquals(replied, []);
+    assertEquals(mentioned, []);
+    assertEquals(messaged.length, 1);
+    const [session, msg] = messaged[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(msg.raw, Note);
+    assertEquals(msg.raw.id, create.objectId);
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, []);
+  });
+
+  messaged = [];
 });
 
 Deno.test("BotImpl.dispatchNodeInfo()", () => {

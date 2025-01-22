@@ -147,7 +147,7 @@ document.
 > `~Bot.onMention` and `~Bot.onReply` event handlers are called.  You should
 > be careful not to perform unexpected actions.
 >
-> The below example shows how to avoid the on-mention event handler from
+> The below example shows how to avoid the `~Bot.onMention` event handler from
 > being called when a reply message is received:
 >
 > ~~~~ typescript
@@ -162,7 +162,7 @@ document.
 > };
 > ~~~~
 >
-> Or the other way around, you can avoid the on-reply event handler from
+> Or the other way around, you can avoid the `~Bot.onReply` event handler from
 > being called when a reply message mentioning the bot is received:
 >
 > ~~~~ typescript {6}
@@ -175,3 +175,48 @@ document.
 >     await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 >   }
 > };
+
+
+Message
+-------
+
+The `~Bot.onMessage` event handler is called when any message is received by
+your bot, which includes normal messages on the bot's timeline, mentions,
+replies, direct messages, and so on.  It receives a `Message` object, which
+represents the received message, as the second argument.
+
+The following is an example of a message event handler that follows the user
+who mentioned a specific keyword:
+
+~~~~ typescript
+bot.onMessage = async (session, message) => {
+  if (message.text.match(/\bbotkit\b/i)) {
+    await session.follow(message.actor);
+  }
+};
+~~~~
+
+> [!CAUTION]
+> The `~Bot.onMessage` event handler is called for every message that your
+> bot receives, which includes mentions and replies.  If your bot listens to
+> the `~Bot.onMention` or `~Bot.onReply` event with the `~Bot.onMessage` event
+> handler, the `~Bot.onMention` or `~Bot.onReply` event handler is called
+> first.  You should be careful not to perform unexpected actions.
+>
+> The below example shows how to avoid the `~Bot.onMessage` event handler from
+> being called when a mention message is received:
+>
+> ~~~~ typescript {6-8}
+> bot.onMention = async (session, message) => {
+>   await message.reply(text`You called me, ${message.actor}?`);
+> };
+>
+> bot.onMessage = async (session, message) => {
+>   if (message.mentions.some(m => m.href.href === session.actorId.href)) {
+>     return;
+>   }
+>   if (message.text.match(/\bbotkit\b/i)) {
+>     await session.follow(message.actor);
+>   }
+> };
+> ~~~~

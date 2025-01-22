@@ -28,6 +28,7 @@ import type {
   AcceptEventHandler,
   FollowEventHandler,
   MentionEventHandler,
+  MessageEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
   UnfollowEventHandler,
@@ -114,6 +115,12 @@ export interface Bot<TContextData> {
    * An event handler for a reply to the bot.
    */
   onReply?: ReplyEventHandler<TContextData>;
+
+  /**
+   * An event handler for a message shown to the bot's timeline.  To listen
+   * to this event, your bot needs to follow others first.
+   */
+  onMessage?: MessageEventHandler<TContextData>;
 }
 
 /**
