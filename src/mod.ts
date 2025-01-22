@@ -33,6 +33,7 @@ export {
   type Software,
 } from "./bot.ts";
 export type * from "./events.ts";
+export type { FollowRequest } from "./follow.ts";
 export {
   Article,
   Audio,

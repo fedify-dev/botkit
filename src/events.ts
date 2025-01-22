@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { Actor } from "@fedify/fedify";
+import type { Actor } from "@fedify/fedify/vocab";
+import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass } from "./message.ts";
 import type { Session } from "./session.ts";
 
@@ -21,11 +22,11 @@ import type { Session } from "./session.ts";
  * An event handler for a follow request to the bot.
  * @typeParam TContextData The type of the context data.
  * @param session The session of the bot.
- * @param follower The follower actor.
+ * @param followRequest The follow request.
  */
 export type FollowEventHandler<TContextData> = (
   session: Session<TContextData>,
-  follower: Actor,
+  followRequest: FollowRequest,
 ) => void | Promise<void>;
 
 /**

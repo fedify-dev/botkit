@@ -44,6 +44,7 @@ import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertNotEquals } from "@std/assert/not-equals";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
+import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass } from "./message.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -1050,123 +1051,156 @@ Deno.test("BotImpl.dispatchSharedKey()", () => {
   assertEquals(bot.dispatchSharedKey(ctx), { identifier });
 });
 
-Deno.test("BotImpl.onFollowed()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
-  const followed: [Session<void>, Actor][] = [];
-  bot.onFollow = (session, actor) => void (followed.push([session, actor]));
-  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
-
-  await t.step("without actor", async () => {
-    const followWithoutActor = new Follow({
-      id: new URL("https://example.com/ap/actor/john/follows/bot"),
-      object: new URL("https://example.com/ap/actor/bot"),
+for (const policy of ["accept", "reject", "manual"] as const) {
+  Deno.test(`BotImpl.onFollowed() [followerPolicy: ${policy}]`, async (t) => {
+    const kv = new MemoryKvStore();
+    const bot = new BotImpl<void>({
+      kv,
+      username: "bot",
+      followerPolicy: policy,
     });
-    await bot.onFollowed(ctx, followWithoutActor);
-    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followRequests,
-        "https://example.com/ap/actor/john/follows/bot",
-      ]),
-      undefined,
-    );
-  });
+    const followRequests: [Session<void>, FollowRequest][] = [];
+    bot.onFollow = (session, fr) => void (followRequests.push([session, fr]));
+    const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
-  await t.step("with wrong actor", async () => {
-    const followWithWrongActor = new Follow({
-      id: new URL("https://example.com/ap/actor/bot/follows/bot"),
-      actor: new URL("https://example.com/ap/actor/bot"),
-      object: new URL("https://example.com/ap/actor/bot"),
+    await t.step("without actor", async () => {
+      const followWithoutActor = new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/bot"),
+        object: new URL("https://example.com/ap/actor/bot"),
+      });
+      await bot.onFollowed(ctx, followWithoutActor);
+      assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+      assertEquals(
+        await kv.get([
+          ...bot.kvPrefixes.followRequests,
+          "https://example.com/ap/actor/john/follows/bot",
+        ]),
+        undefined,
+      );
     });
-    await bot.onFollowed(ctx, followWithWrongActor);
-    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followers,
-        "https://example.com/ap/actor/bot",
-      ]),
-      undefined,
-    );
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followRequests,
-        "https://example.com/ap/actor/john/follows/bot",
-      ]),
-      undefined,
-    );
-  });
 
-  const actor = new Person({
-    id: new URL("https://example.com/ap/actor/john"),
-    preferredUsername: "john",
-  });
-
-  await t.step("with wrong recipient", async () => {
-    const followWithWrongRecipient = new Follow({
-      id: new URL("https://example.com/ap/actor/john/follows/bot"),
-      actor,
-      object: new URL("https://example.com/ap/actor/non-existent"),
+    await t.step("with wrong actor", async () => {
+      const followWithWrongActor = new Follow({
+        id: new URL("https://example.com/ap/actor/bot/follows/bot"),
+        actor: new URL("https://example.com/ap/actor/bot"),
+        object: new URL("https://example.com/ap/actor/bot"),
+      });
+      await bot.onFollowed(ctx, followWithWrongActor);
+      assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+      assertEquals(
+        await kv.get([
+          ...bot.kvPrefixes.followers,
+          "https://example.com/ap/actor/bot",
+        ]),
+        undefined,
+      );
+      assertEquals(
+        await kv.get([
+          ...bot.kvPrefixes.followRequests,
+          "https://example.com/ap/actor/john/follows/bot",
+        ]),
+        undefined,
+      );
     });
-    await bot.onFollowed(ctx, followWithWrongRecipient);
-    assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followers,
-        "https://example.com/ap/actor/john",
-      ]),
-      undefined,
-    );
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followRequests,
-        "https://example.com/ap/actor/john/follows/bot",
-      ]),
-      undefined,
-    );
-  });
 
-  await t.step("with correct follow", async () => {
-    const follow = new Follow({
-      id: new URL("https://example.com/ap/actor/john/follows/bot"),
-      actor,
-      object: new URL("https://example.com/ap/actor/bot"),
+    const actor = new Person({
+      id: new URL("https://example.com/ap/actor/john"),
+      preferredUsername: "john",
     });
-    await bot.onFollowed(ctx, follow);
-    assertEquals(await kv.get(bot.kvPrefixes.followers), [
-      "https://example.com/ap/actor/john",
-    ]);
-    const storedFollower = await kv.get([
-      ...bot.kvPrefixes.followers,
-      "https://example.com/ap/actor/john",
-    ]);
-    assertNotEquals(storedFollower, undefined);
-    const deserializedFollower = await Object.fromJsonLd(storedFollower);
-    assertInstanceOf(deserializedFollower, Person);
-    assertEquals(deserializedFollower.id, actor.id);
-    assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followRequests,
-        "https://example.com/ap/actor/john/follows/bot",
-      ]),
-      "https://example.com/ap/actor/john",
-    );
-    assertEquals(ctx.sentActivities.length, 1);
-    const { activity, recipients } = ctx.sentActivities[0];
-    assertInstanceOf(activity, Accept);
-    assertEquals(activity.actorId, new URL("https://example.com/ap/actor/bot"));
-    assertEquals(activity.objectId, follow.id);
-    assertEquals(recipients.length, 1);
-    assertEquals(recipients[0], actor);
-    assertEquals(ctx.forwardedRecipients, []);
-    assertEquals(followed.length, 1);
-    const [session, followerActor] = followed[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(followerActor, Person);
-    assertEquals(followerActor.id, actor.id);
+
+    await t.step("with wrong recipient", async () => {
+      const followWithWrongRecipient = new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/bot"),
+        actor,
+        object: new URL("https://example.com/ap/actor/non-existent"),
+      });
+      await bot.onFollowed(ctx, followWithWrongRecipient);
+      assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+      assertEquals(
+        await kv.get([
+          ...bot.kvPrefixes.followers,
+          "https://example.com/ap/actor/john",
+        ]),
+        undefined,
+      );
+      assertEquals(
+        await kv.get([
+          ...bot.kvPrefixes.followRequests,
+          "https://example.com/ap/actor/john/follows/bot",
+        ]),
+        undefined,
+      );
+    });
+
+    await t.step("with correct follow", async () => {
+      const follow = new Follow({
+        id: new URL("https://example.com/ap/actor/john/follows/bot"),
+        actor,
+        object: new URL("https://example.com/ap/actor/bot"),
+      });
+      await bot.onFollowed(ctx, follow);
+      if (policy === "accept") {
+        assertEquals(await kv.get(bot.kvPrefixes.followers), [
+          "https://example.com/ap/actor/john",
+        ]);
+        const storedFollower = await kv.get([
+          ...bot.kvPrefixes.followers,
+          "https://example.com/ap/actor/john",
+        ]);
+        assertNotEquals(storedFollower, undefined);
+        const deserializedFollower = await Object.fromJsonLd(storedFollower);
+        assertInstanceOf(deserializedFollower, Person);
+        assertEquals(deserializedFollower.id, actor.id);
+        assertEquals(
+          await kv.get([
+            ...bot.kvPrefixes.followRequests,
+            "https://example.com/ap/actor/john/follows/bot",
+          ]),
+          "https://example.com/ap/actor/john",
+        );
+        assertEquals(ctx.sentActivities.length, 1);
+        const { activity, recipients } = ctx.sentActivities[0];
+        assertInstanceOf(activity, Accept);
+        assertEquals(
+          activity.actorId,
+          new URL("https://example.com/ap/actor/bot"),
+        );
+        assertEquals(activity.objectId, follow.id);
+        assertEquals(recipients.length, 1);
+        assertEquals(recipients[0], actor);
+        assertEquals(ctx.forwardedRecipients, []);
+        assertEquals(followRequests.length, 1);
+      } else {
+        assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
+        const storedFollower = await kv.get([
+          ...bot.kvPrefixes.followers,
+          "https://example.com/ap/actor/john",
+        ]);
+        assertEquals(storedFollower, undefined);
+        if (policy === "reject") {
+          assertEquals(ctx.sentActivities.length, 1);
+          const { activity, recipients } = ctx.sentActivities[0];
+          assertInstanceOf(activity, Reject);
+          assertEquals(
+            activity.actorId,
+            new URL("https://example.com/ap/actor/bot"),
+          );
+          assertEquals(activity.objectId, follow.id);
+          assertEquals(recipients.length, 1);
+          assertEquals(recipients[0], actor);
+          assertEquals(ctx.forwardedRecipients, []);
+        } else {
+          assertEquals(ctx.sentActivities, []);
+        }
+      }
+      const [session, followRequest] = followRequests[0];
+      assertEquals(session.bot, bot);
+      assertEquals(session.context, ctx);
+      assertInstanceOf(followRequest.follower, Person);
+      assertEquals(followRequest.follower.id, actor.id);
+    });
   });
-});
+}
 
 Deno.test("BotImpl.onUnfollowed()", async (t) => {
   const kv = new MemoryKvStore();

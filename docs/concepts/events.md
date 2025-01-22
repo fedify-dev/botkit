@@ -29,19 +29,31 @@ Follow
 ------
 
 The `~Bot.onFollow` event handler is called when someone follows your bot.
-It receives an `Actor` object, which represents the follower, as the second
-argument.
+It receives an `FollowRequest` object, which allows you to
+`~FollowRequest.accept()` or `~FollowRequest.reject()` the follow request,
+as the second argument.
 
-The following is an example of a follow event handler that sends a direct
-message to new followers:
+The following is an example of a follow event handler that accepts all follow
+requests and sends a direct message to new followers:
 
 ~~~~ typescript
-bot.onFollow = async (session, follower) => {
-  await session.publish(text`Thanks for following me, ${follower}!`, {
-    visibility: "direct",
-  });
+bot.onFollow = async (session, followRequest) => {
+  await followRequest.accept();
+  await session.publish(
+    text`Thanks for following me, ${followRequest.follower}!`,
+    { visibility: "direct" },
+  );
 };
 ~~~~
+
+> [!TIP]
+> The manual invocation of `~FollowRequest.accept()` or
+> `~FollowRequest.reject()` is preceded by
+> the [`followerPolicy`](./bot.md#createbotoptions-followerpolicy) option.
+> Even if your bot has configured the `followerPolicy` option to
+> `"accept"` or `"reject"`, you can still manually `~FollowRequest.accept()`
+> or `~FollowRequest.reject()` in the `~Bot.onFollow` event handler,
+> and the configured policy is ignored for the specific follow request.
 
 
 Unfollow

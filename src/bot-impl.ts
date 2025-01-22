@@ -66,6 +66,7 @@ import type {
   ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
+import { FollowRequestImpl } from "./follow-impl.ts";
 import { createMessage, messageClasses } from "./message-impl.ts";
 import type { Message, MessageClass } from "./message.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -88,6 +89,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly image?: URL | Image;
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
   #properties: { pairs: PropertyValue[]; tags: Link[] } | null;
+  readonly followerPolicy: "accept" | "reject" | "manual";
   readonly kv: KvStore;
   readonly kvPrefixes: BotKvPrefixes;
   readonly software?: Software;
@@ -114,6 +116,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.image = options.image;
     this.properties = options.properties ?? {};
     this.#properties = null;
+    this.followerPolicy = options.followerPolicy ?? "accept";
     this.kv = options.kv;
     this.kvPrefixes = {
       keyPairs: ["_botkit", "keyPairs"],
@@ -567,41 +570,16 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       suppressError: true,
     });
     if (follower == null || follower.id == null) return;
-    const followerKey: KvKey = [...this.kvPrefixes.followers, follower.id.href];
-    await this.kv.set(
-      followerKey,
-      await follower.toJsonLd({
-        format: "compact",
-        contextLoader: ctx.contextLoader,
-      }),
-    );
-    const lockKey: KvKey = [...this.kvPrefixes.followers, "lock"];
-    const listKey: KvKey = this.kvPrefixes.followers;
-    do {
-      await this.kv.set(lockKey, follower.id.href);
-      const list = await this.kv.get<string[]>(listKey) ?? [];
-      if (!list.includes(follower.id.href)) list.push(follower.id.href);
-      await this.kv.set(listKey, list);
-    } while (await this.kv.get(lockKey) !== follower.id.href);
-    if (follow.id != null) {
-      const followRequestKey: KvKey = [
-        ...this.kvPrefixes.followRequests,
-        follow.id.href,
-      ];
-      await this.kv.set(followRequestKey, follower.id.href);
-    }
-    await ctx.sendActivity(
-      this,
+    const session = this.getSession(ctx);
+    const followRequest = new FollowRequestImpl<TContextData>(
+      session,
+      follow,
       follower,
-      new Accept({
-        id: new URL(`#accept/${follower.id}`, ctx.getActorUri(this.identifier)),
-        actor: ctx.getActorUri(this.identifier),
-        object: follow,
-      }),
     );
-    if (this.onFollow != null) {
-      const session = this.getSession(ctx);
-      await this.onFollow(session, follower);
+    await this.onFollow?.(session, followRequest);
+    if (followRequest.state === "pending") {
+      if (this.followerPolicy === "accept") await followRequest.accept();
+      else if (this.followerPolicy === "reject") await followRequest.reject();
     }
   }
 

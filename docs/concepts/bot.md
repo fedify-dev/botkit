@@ -160,6 +160,28 @@ const bot = createBot<void>({
 
 It can be changed after the bot is federated.
 
+### `~CreateBotOptions.followerPolicy`
+
+How to handle incoming follow requests.  Possible values are:
+
+`"accept"` (default)
+:   Automatically accept all incoming follow requests.
+
+`"reject"`
+:   Automatically reject all incoming follow requests.
+
+`"manual"`
+:   Require manual handling of incoming follow requests.  You can manually
+    `~FollowRequest.accept()` or `~FollowRequest.reject()` in the
+    [`Bot.onFollow`](./events.md#follow) event handler.
+
+It can be changed after the bot is federated.
+
+> [!TIP]
+> This behavior can be overridden by manually invoking `FollowRequest.accept()`
+> or `FollowRequest.reject()` in the [`Bot.onFollow`](./events.md#follow) event
+> handler.
+
 ### `~CreateBotOptions.queue`
 
 The message queue for handling incoming and outgoing activities.  If omitted,

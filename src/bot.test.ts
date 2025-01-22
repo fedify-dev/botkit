@@ -17,6 +17,7 @@ import { MemoryKvStore } from "@fedify/fedify/federation";
 import type { Actor } from "@fedify/fedify/vocab";
 import { assertEquals } from "@std/assert/equals";
 import { createBot } from "./bot.ts";
+import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass } from "./message.ts";
 import type { Session } from "./session.ts";
 
@@ -28,7 +29,7 @@ Deno.test("createBot()", async () => {
   const session = bot.getSession("https://example.com");
   assertEquals(session.actorHandle, "@bot@example.com");
 
-  function onFollow(_session: Session<void>, _follower: Actor) {}
+  function onFollow(_session: Session<void>, _followRequest: FollowRequest) {}
   bot.onFollow = onFollow;
   assertEquals(bot.onFollow, onFollow);
 

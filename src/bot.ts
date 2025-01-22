@@ -218,6 +218,18 @@ export interface CreateBotOptions<TContextData> {
   readonly properties?: Record<string, Text<"block" | "inline", TContextData>>;
 
   /**
+   * How to handle incoming follow requests.  Note that this behavior can be
+   * overridden by manually invoking {@link FollowRequest.accept} or
+   * {@link FollowRequest.reject} in the {@link Bot.onFollow} event handler.
+   *
+   * - `"accept"` (default): Automatically accept all incoming follow requests.
+   * - `"reject"`: Automatically reject all incoming follow requests.
+   * - `"manual"`: Require manual handling of incoming follow requests.
+   * @default `"accept"`
+   */
+  readonly followerPolicy?: "accept" | "reject" | "manual";
+
+  /**
    * The underlying key-value store to use for storing data.
    */
   readonly kv: KvStore;
