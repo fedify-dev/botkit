@@ -185,16 +185,23 @@ your bot, which includes normal messages on the bot's timeline, mentions,
 replies, direct messages, and so on.  It receives a `Message` object, which
 represents the received message, as the second argument.
 
-The following is an example of a message event handler that follows the user
-who mentioned a specific keyword:
+The following is an example of a message event handler that replies to a
+message that contains the word *BotKit*:
 
 ~~~~ typescript
 bot.onMessage = async (session, message) => {
   if (message.text.match(/\bbotkit\b/i)) {
-    await session.follow(message.actor);
+    await message.reply(text`You mentioned ${em("BotKit")}!`);
   }
 };
 ~~~~
+
+> [!NOTE]
+> If your bot does not follow anyone, the `~Bot.onMessage` event handler is
+> called only when your bot receives mentions, replies, and direct messages.
+>
+> To learn more about following others, see the [*Following an actor*
+> section](./session.md#following-an-actor) in the *Session* concept document.
 
 > [!CAUTION]
 > The `~Bot.onMessage` event handler is called for every message that your
@@ -216,7 +223,7 @@ bot.onMessage = async (session, message) => {
 >     return;
 >   }
 >   if (message.text.match(/\bbotkit\b/i)) {
->     await session.follow(message.actor);
+>     await message.reply(text`You mentioned ${em("BotKit")}!`);
 >   }
 > };
 > ~~~~
