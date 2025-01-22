@@ -324,7 +324,7 @@ property recursively:
 
 ~~~~ typescript
 bot.onReply = async (session, reply) => {
-  let message: Message | undefined = reply;
+  let message: Message<MessageClass, void> | undefined = reply;
   while (message != null) {
     console.log(message);
     message = message.replyTarget;

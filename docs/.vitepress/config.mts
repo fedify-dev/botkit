@@ -51,6 +51,7 @@ export default defineConfig({
       { text: "About", link: "/intro.md" },
       { text: "Start", link: "/start.md" },
       concepts,
+      { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
     ],
 
@@ -58,6 +59,7 @@ export default defineConfig({
       { text: "What is BotKit?", link: "/intro.md" },
       { text: "Getting started", link: "/start.md" },
       concepts,
+      { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
       { text: "Changelog", link: "/changelog.md" },
     ],
