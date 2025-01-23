@@ -692,7 +692,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     let messageCache: Message<MessageClass, TContextData> | null = null;
     const getMessage = async () => {
       if (messageCache != null) return messageCache;
-      return messageCache = await createMessage(object, session);
+      return messageCache = await createMessage(object, session, {});
     };
     const replyTarget = ctx.parseUri(object.replyTargetId);
     if (

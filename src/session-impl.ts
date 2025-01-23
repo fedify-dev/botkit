@@ -262,12 +262,12 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox, excludeBaseUris },
       );
     }
+    const cachedObjects: Record<string, Object> = {};
+    for (const cachedObject of content.getCachedObjects()) {
+      if (cachedObject.id == null) continue;
+      cachedObjects[cachedObject.id.href] = cachedObject;
+    }
     if (mentionedActorIds.length > 0) {
-      const cachedObjects: Record<string, Object> = {};
-      for (const cachedObject of content.getCachedObjects()) {
-        if (cachedObject.id == null) continue;
-        cachedObjects[cachedObject.id.href] = cachedObject;
-      }
       const documentLoader = await this.context.getDocumentLoader(this.bot);
       const promises: Promise<Object | null>[] = [];
       for (const mentionedActorId of mentionedActorIds) {
@@ -289,7 +289,13 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox, excludeBaseUris },
       );
     }
-    return await createMessage(msg, this, options.replyTarget, true);
+    return await createMessage(
+      msg,
+      this,
+      cachedObjects,
+      options.replyTarget,
+      true,
+    );
   }
 
   async *getOutbox(
@@ -326,7 +332,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         continue;
       }
       if (object == null || !isMessageObject(object)) continue;
-      const message = await createMessage(object, this);
+      const message = await createMessage(object, this, {});
       yield message;
     }
   }

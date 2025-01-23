@@ -460,6 +460,32 @@ session.getOutbox({
 [`AsyncIterable`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
 
 
+Updating a message
+------------------
+
+You can update a message's content by calling the `~AuthorizedMessage.update()`
+method:
+
+~~~~ typescript
+const message = await session.publish(
+  text`This message will be updated in a minute.`
+);
+setTimeout(async () => {
+  await message.update(text`This message has been updated.`);  // [!code highlight]
+}, 1000 * 60);
+~~~~
+
+> [!NOTE]
+> Since the `~AuthorizedMessage.update()` method belongs to
+> the `AuthorizedMessage` type, you cannot call it on an unauthorized `Message`
+> object.
+
+> [!CAUTION]
+> Some ActivityPub implementations like older versions of Mastodon and Misskey
+> do not support updating messages.  For those implementations, once published
+> messages are shown as-is forever even if you update them.
+
+
 Deleting a message
 ------------------
 
@@ -473,6 +499,11 @@ setTimeout(async () => {
   await message.delete();  // [!code highlight]
 }, 1000 * 60);
 ~~~~
+
+> [!NOTE]
+> Since the `~AuthorizedMessage.delete()` method belongs to
+> the `AuthorizedMessage` type, you cannot call it on an unauthorized `Message`
+> object.
 
 
 Replying to a message

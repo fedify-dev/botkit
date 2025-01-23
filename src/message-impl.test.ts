@@ -25,6 +25,7 @@ import {
   PUBLIC_COLLECTION,
   Tombstone,
   Undo,
+  Update,
 } from "@fedify/fedify/vocab";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
@@ -40,7 +41,7 @@ Deno.test("createMessage()", async () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const session = bot.getSession("https://example.com", undefined);
   await assertRejects(
-    () => createMessage<Note, void>(new Note({}), session),
+    () => createMessage<Note, void>(new Note({}), session, {}),
     TypeError,
     "The raw.id is required.",
   );
@@ -49,6 +50,7 @@ Deno.test("createMessage()", async () => {
       createMessage<Note, void>(
         new Note({ id: new URL("https://example.com/notes/1") }),
         session,
+        {},
       ),
     TypeError,
     "The raw.content is required.",
@@ -61,6 +63,7 @@ Deno.test("createMessage()", async () => {
           content: "<p>Hello, world!</p>",
         }),
         session,
+        {},
       ),
     TypeError,
     "The raw.attributionId is required.",
@@ -83,7 +86,11 @@ Deno.test("createMessage()", async () => {
       }),
     ],
   });
-  const publicMessage = await createMessage<Note, void>(publicNote, session);
+  const publicMessage = await createMessage<Note, void>(
+    publicNote,
+    session,
+    {},
+  );
   assertEquals(publicMessage.raw, publicNote);
   assertEquals(publicMessage.id, publicNote.id);
   assertEquals(publicMessage.actor, await session.getActor());
@@ -110,6 +117,7 @@ Deno.test("createMessage()", async () => {
   const unlistedMessage = await createMessage<Note, void>(
     unlistedNote,
     session,
+    {},
   );
   assertEquals(unlistedMessage.visibility, "unlisted");
 
@@ -120,6 +128,7 @@ Deno.test("createMessage()", async () => {
   const followersMessage = await createMessage<Note, void>(
     followersNote,
     session,
+    {},
   );
   assertEquals(followersMessage.visibility, "followers");
 
@@ -127,14 +136,14 @@ Deno.test("createMessage()", async () => {
     to: new URL("https://example.com/ap/actor/bot"),
     ccs: [],
   });
-  const directMessage = await createMessage<Note, void>(direct, session);
+  const directMessage = await createMessage<Note, void>(direct, session, {});
   assertEquals(directMessage.visibility, "direct");
 
   const unknown = publicNote.clone({
     tos: [],
     ccs: [],
   });
-  const unknownMessage = await createMessage<Note, void>(unknown, session);
+  const unknownMessage = await createMessage<Note, void>(unknown, session, {});
   assertEquals(unknownMessage.visibility, "unknown");
 });
 
@@ -152,7 +161,13 @@ Deno.test("AuthorizedMessageImpl.delete()", async () => {
     to: PUBLIC_COLLECTION,
     cc: new URL("https://example.com/ap/actor/bot/followers"),
   });
-  const msg = await createMessage<Note, void>(note, session, undefined, true);
+  const msg = await createMessage<Note, void>(
+    note,
+    session,
+    {},
+    undefined,
+    true,
+  );
   await kv.set(
     bot.kvPrefixes.messages,
     ["c1c792ce-a0be-4685-b396-e59e5ef8c788"],
@@ -208,7 +223,11 @@ Deno.test("MessageImpl.reply()", async () => {
     to: new URL("https://example.com/ap/actor/john/followers"),
     cc: PUBLIC_COLLECTION,
   });
-  const originalMsg = await createMessage<Note, void>(originalPost, session);
+  const originalMsg = await createMessage<Note, void>(
+    originalPost,
+    session,
+    {},
+  );
   const reply = await originalMsg.reply(text`Hello, John!`);
   const msgIds = await kv.get<string[]>(bot.kvPrefixes.messages);
   assert(msgIds != null);
@@ -251,7 +270,11 @@ Deno.test("MessageImpl.share()", async (t) => {
     to: new URL("https://example.com/ap/actor/john/followers"),
     cc: PUBLIC_COLLECTION,
   });
-  const originalMsg = await createMessage<Note, void>(originalPost, session);
+  const originalMsg = await createMessage<Note, void>(
+    originalPost,
+    session,
+    {},
+  );
   const sharedMsg = await originalMsg.share();
   let msgId: string;
 
@@ -306,4 +329,121 @@ Deno.test("MessageImpl.share()", async (t) => {
     ]);
     assertEquals(activity.objectId, sharedMsg.id);
   });
+});
+
+Deno.test("AuthorizedMessage.update()", async (t) => {
+  const kv = new MemoryKvStore();
+  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+  const actorA = new Person({
+    id: new URL("https://example.com/ap/actor/john"),
+    preferredUsername: "john",
+  });
+  const actorB = new Person({
+    id: new URL("https://example.com/ap/actor/jane"),
+    preferredUsername: "jane",
+  });
+
+  for (
+    const visibility of ["public", "unlisted", "followers", "direct"] as const
+  ) {
+    await t.step(visibility, async () => {
+      const msg = await session.publish(text`Hello, ${actorA}`, { visibility });
+      const [id] = await kv.get<string[]>(bot.kvPrefixes.messages) ?? [];
+      const originalRaw = msg.raw;
+      ctx.sentActivities = [];
+      const before = Temporal.Now.instant();
+      await msg.update(text`Hello, ${actorB}`);
+      const after = Temporal.Now.instant();
+      assertEquals(msg.text, "Hello, @jane@example.com");
+      assertEquals(
+        msg.html,
+        '<p>Hello, <a href="https://example.com/ap/actor/jane" ' +
+          'translate="no" class="h-card u-url mention" target="_blank">' +
+          "@<span>jane@example.com</span></a></p>",
+      );
+      assertEquals(msg.mentions.length, 1);
+      assertEquals(msg.mentions[0].id, actorB.id);
+      assertEquals(msg.hashtags, []);
+      assert(msg.updated != null);
+      assert(msg.updated.epochNanoseconds >= before.epochNanoseconds);
+      assert(msg.updated.epochNanoseconds <= after.epochNanoseconds);
+      assertEquals(msg.raw.content, msg.html);
+      if (visibility === "public") {
+        assertEquals(msg.raw.toIds, [PUBLIC_COLLECTION, actorB.id]);
+        assertEquals(msg.raw.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+      } else if (visibility === "unlisted") {
+        assertEquals(msg.raw.toIds, [
+          ctx.getFollowersUri(bot.identifier),
+          actorB.id,
+        ]);
+        assertEquals(msg.raw.ccIds, [PUBLIC_COLLECTION]);
+      } else if (visibility === "followers") {
+        assertEquals(msg.raw.toIds, [
+          ctx.getFollowersUri(bot.identifier),
+          actorB.id,
+        ]);
+        assertEquals(msg.raw.ccIds, []);
+      } else {
+        assertEquals(msg.raw.toIds, [actorB.id]);
+        assertEquals(msg.raw.ccIds, []);
+      }
+      const tags = await Array.fromAsync(msg.raw.getTags());
+      assertEquals(tags.length, 1);
+      assertInstanceOf(tags[0], Mention);
+      assertEquals(tags[0].name, "@jane@example.com");
+      assertEquals(tags[0].href, actorB.id);
+      assertEquals(msg.raw.published, originalRaw.published);
+      assertEquals(msg.raw.updated, msg.updated);
+      const createJson = await kv.get([...bot.kvPrefixes.messages, id]);
+      assert(createJson != null);
+      const create = await Create.fromJsonLd(createJson);
+      assertEquals(
+        await (await create.getObject())?.toJsonLd({ format: "compact" }),
+        await msg.raw.toJsonLd({ format: "compact" }),
+      );
+      assertEquals(ctx.sentActivities.length, visibility === "direct" ? 1 : 2);
+      const { recipients, activity } = ctx.sentActivities[0];
+      assertEquals(
+        recipients,
+        visibility === "direct" ? [actorA, actorB] : "followers",
+      );
+      assertInstanceOf(activity, Update);
+      assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+      if (visibility === "public") {
+        assertEquals(activity.toIds, [PUBLIC_COLLECTION, actorA.id, actorB.id]);
+        assertEquals(activity.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+      } else if (visibility === "unlisted") {
+        assertEquals(activity.toIds, [
+          ctx.getFollowersUri(bot.identifier),
+          actorA.id,
+          actorB.id,
+        ]);
+        assertEquals(activity.ccIds, [PUBLIC_COLLECTION]);
+      } else if (visibility === "followers") {
+        assertEquals(activity.toIds, [
+          ctx.getFollowersUri(bot.identifier),
+          actorA.id,
+          actorB.id,
+        ]);
+        assertEquals(activity.ccIds, []);
+      } else {
+        assertEquals(activity.toIds, [actorA.id, actorB.id]);
+        assertEquals(activity.ccIds, []);
+      }
+      assertEquals(await activity.getObject(), msg.raw);
+      assertEquals(activity.updated, msg.updated);
+      if (visibility !== "direct") {
+        const { recipients, activity } = ctx.sentActivities[1];
+        assertEquals(recipients, [actorA, actorB]);
+        assertInstanceOf(activity, Update);
+        assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+        assertEquals(await activity.getObject(), msg.raw);
+        assertEquals(activity.updated, msg.updated);
+      }
+    });
+
+    await kv.delete(bot.kvPrefixes.messages);
+  }
 });

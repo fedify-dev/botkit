@@ -193,6 +193,12 @@ export interface Message<T extends MessageClass, TContextData> {
 export interface AuthorizedMessage<T extends MessageClass, TContextData>
   extends Message<T, TContextData> {
   /**
+   * Updates the message with new content.
+   * @param text The new content of the message.
+   */
+  update(text: Text<"block", TContextData>): Promise<void>;
+
+  /**
    * Deletes the message, if possible.
    *
    * If the message is already deleted, it will be a no-op.

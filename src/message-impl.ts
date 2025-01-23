@@ -33,6 +33,7 @@ import {
   Question,
   Tombstone,
   Undo,
+  Update,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
@@ -62,19 +63,19 @@ export function isMessageObject(value: unknown): value is MessageClass {
 export class MessageImpl<T extends MessageClass, TContextData>
   implements Message<T, TContextData> {
   readonly session: SessionImpl<TContextData>;
-  readonly raw: T;
+  raw: T;
   readonly id: URL;
   readonly actor: Actor;
   readonly visibility: MessageVisibility;
   readonly language?: LanguageTag | undefined;
-  readonly text: string;
-  readonly html: string;
+  text: string;
+  html: string;
   readonly replyTarget?: Message<MessageClass, TContextData> | undefined;
-  readonly mentions: readonly Actor[];
-  readonly hashtags: readonly Hashtag[];
+  mentions: readonly Actor[];
+  hashtags: readonly Hashtag[];
   readonly attachments: readonly Document[];
   readonly published?: Temporal.Instant;
-  readonly updated?: Temporal.Instant;
+  updated?: Temporal.Instant;
 
   constructor(
     session: SessionImpl<TContextData>,
@@ -214,6 +215,128 @@ export class MessageImpl<T extends MessageClass, TContextData>
 export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
   extends MessageImpl<T, TContextData>
   implements AuthorizedMessage<T, TContextData> {
+  async update(text: Text<"block", TContextData>): Promise<void> {
+    const parsed = this.session.context.parseUri(this.id);
+    if (
+      parsed?.type !== "object" ||
+      !messageClasses.some((cls) => parsed.class === cls)
+    ) {
+      return;
+    }
+    const { id } = parsed.values;
+    const kv = this.session.bot.kv;
+    const kvKey: KvKey = [...this.session.bot.kvPrefixes.messages, id];
+    const createJson = await kv.get(kvKey);
+    if (createJson == null) return;
+    let create = await Create.fromJsonLd(createJson, this.session.context);
+    const message = await create.getObject(this.session.context);
+    if (message == null || !isMessageObject(message)) return;
+    let contentHtml = "";
+    for await (const chunk of text.getHtml(this.session)) {
+      contentHtml += chunk;
+    }
+    const tags = await Array.fromAsync(text.getTags(this.session));
+    const mentionedActorIds: URL[] = [];
+    const hashtags: Hashtag[] = [];
+    for (const tag of tags) {
+      if (tag instanceof Mention && tag.href != null) {
+        mentionedActorIds.push(tag.href);
+      } else if (tag instanceof Hashtag) {
+        hashtags.push(tag);
+      }
+    }
+    const cachedObjects: Record<string, Object> = {};
+    for (const cachedObject of text.getCachedObjects()) {
+      if (cachedObject.id == null) continue;
+      cachedObjects[cachedObject.id.href] = cachedObject;
+    }
+    const documentLoader = await this.session.context.getDocumentLoader(
+      this.session.bot,
+    );
+    const promises: Promise<Object | null>[] = [];
+    for (const uri of mentionedActorIds) {
+      const cachedObject = cachedObjects[uri.href];
+      const promise = cachedObject == null
+        ? this.session.context.lookupObject(uri, { documentLoader })
+        : Promise.resolve(cachedObject);
+      promises.push(promise);
+    }
+    const objects = await Promise.all(promises);
+    const mentionedActors = objects.filter(isActor);
+    this.html = contentHtml;
+    this.text = unescape(textXss.process(contentHtml));
+    const existingMentions = this.mentions;
+    this.mentions = mentionedActors;
+    this.hashtags = hashtags;
+    const updated = Temporal.Now.instant();
+    this.updated = updated;
+    const newMessage = message.clone({
+      contents: this.language == null
+        ? [contentHtml]
+        : [new LanguageString(contentHtml, this.language), contentHtml],
+      tags,
+      tos: this.visibility === "public"
+        ? [PUBLIC_COLLECTION, ...mentionedActorIds]
+        : this.visibility === "unlisted" || this.visibility === "followers"
+        ? [
+          this.session.context.getFollowersUri(this.session.bot.identifier),
+          ...mentionedActorIds,
+        ]
+        : mentionedActorIds,
+      ccs: this.visibility === "public"
+        ? [this.session.context.getFollowersUri(this.session.bot.identifier)]
+        : this.visibility === "unlisted"
+        ? [PUBLIC_COLLECTION]
+        : [],
+      updated,
+    });
+    this.raw = newMessage as T;
+    create = create.clone({ object: newMessage, updated });
+    const to = create.toIds.map((url) => url.href);
+    for (const url of newMessage.toIds) {
+      if (!to.includes(url.href)) to.push(url.href);
+    }
+    const cc = create.ccIds.map((url) => url.href);
+    for (const url of newMessage.ccIds) {
+      if (!cc.includes(url.href)) cc.push(url.href);
+    }
+    const update = new Update({
+      id: new URL(
+        `#updated/${updated.toString()}`,
+        this.session.context.getObjectUri(Create, { id }),
+      ),
+      actors: newMessage.attributionIds,
+      tos: to.map((url) => new URL(url)),
+      ccs: cc.map((url) => new URL(url)),
+      object: newMessage,
+      updated,
+    });
+    await kv.set(
+      kvKey,
+      await create.toJsonLd({
+        format: "compact",
+        contextLoader: this.session.context.contextLoader,
+      }),
+    );
+    const preferSharedInbox = this.visibility === "public" ||
+      this.visibility === "unlisted" || this.visibility === "followers";
+    const excludeBaseUris = [new URL(this.session.context.origin)];
+    if (preferSharedInbox) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        "followers",
+        update,
+        { preferSharedInbox, excludeBaseUris },
+      );
+    }
+    await this.session.context.sendActivity(
+      this.session.bot,
+      [...existingMentions, ...mentionedActors],
+      update,
+      { preferSharedInbox, excludeBaseUris },
+    );
+  }
+
   async delete(): Promise<void> {
     const parsed = this.session.context.parseUri(this.id);
     if (
@@ -272,10 +395,10 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
       activity,
       { preferSharedInbox: true, excludeBaseUris },
     );
-    for (const actor of mentionedActors) {
+    if (mentionedActors.length > 0) {
       await this.session.context.sendActivity(
         this.session.bot,
-        actor,
+        mentionedActors,
         activity,
         { preferSharedInbox: true, excludeBaseUris },
       );
@@ -298,18 +421,21 @@ const textXss = new FilterXSS({
 export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
+  cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
   authorized?: true,
 ): Promise<AuthorizedMessage<T, TContextData>>;
 export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
+  cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
   authorized?: boolean,
 ): Promise<Message<T, TContextData>>;
 export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
+  cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
   authorized: boolean = false,
 ): Promise<Message<T, TContextData>> {
@@ -342,7 +468,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
     if (tag instanceof Mention && tag.href != null) {
       const obj = tag.href.href === session.actorId?.href
         ? await session.getActor()
-        : await session.context.lookupObject(tag.href, options);
+        : cachedObjects[tag.href.href] == null
+        ? await session.context.lookupObject(tag.href, options)
+        : cachedObjects[tag.href.href];
       if (isActor(obj)) mentions.push(obj);
       mentionedActorIds.add(tag.href.href);
     } else if (tag instanceof Hashtag) {
@@ -371,7 +499,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
       rt instanceof Article || rt instanceof ChatMessage ||
       rt instanceof Note || rt instanceof Question
     ) {
-      replyTarget = await createMessage(rt, session);
+      replyTarget = await createMessage(rt, session, cachedObjects);
     }
   }
   return new (authorized ? AuthorizedMessageImpl : MessageImpl)(session, {
