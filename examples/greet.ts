@@ -1,4 +1,4 @@
-import { createBot, Image, mention, text } from "@fedify/botkit";
+import { createBot, Image, link, mention, text } from "@fedify/botkit";
 import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
 
 const kv = await Deno.openKv();
@@ -12,9 +12,17 @@ const bot = createBot<void>({
   icon: new URL(
     "https://repository-images.githubusercontent.com/913141583/852a1091-14d5-46a0-b3bf-8d2f45ef6e7f",
   ),
+  properties: {
+    "Source code": link(
+      "examples/greet.ts",
+      "https://github.com/dahlia/botkit/blob/main/examples/greet.ts",
+    ),
+    "Powered by": link("BotKit", "https://botkit.fedify.dev/"),
+  },
   kv: new DenoKvStore(kv),
   queue: new DenoKvMessageQueue(kv),
   behindProxy: true,
+  pages: { color: "green" },
 });
 
 bot.onFollow = async (session, followRequest) => {

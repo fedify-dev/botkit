@@ -199,6 +199,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         ? [PUBLIC_COLLECTION]
         : [],
       published: published.toTemporalInstant(),
+      url: new URL(`/message/${id}`, this.context.origin),
     });
     const activity = new Create({
       id: this.context.getObjectUri(Create, { id }),

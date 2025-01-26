@@ -261,6 +261,50 @@ export interface CreateBotOptions<TContextData> {
    * @default `false`
    */
   readonly behindProxy?: boolean;
+
+  /**
+   * The options for the web pages of the bot.  If omitted, the default options
+   * will be used.
+   */
+  readonly pages?: PagesOptions;
+}
+
+/**
+ * Options for the web pages of the bot.
+ */
+export interface PagesOptions {
+  /**
+   * The color of the theme.  It will be used for the theme color of the web
+   * pages.  The default color is `"green"`.
+   * @default `"green"`
+   */
+  readonly color?:
+    | "amber"
+    | "azure"
+    | "blue"
+    | "cyan"
+    | "fuchsia"
+    | "green"
+    | "grey"
+    | "indigo"
+    | "jade"
+    | "lime"
+    | "orange"
+    | "pink"
+    | "pumpkin"
+    | "purple"
+    | "red"
+    | "sand"
+    | "slate"
+    | "violet"
+    | "yellow"
+    | "zinc";
+
+  /**
+   * The CSS code for the bot.  It will be used for the custom CSS of the web
+   * pages.
+   */
+  readonly css?: string;
 }
 
 /**

@@ -60,6 +60,20 @@ export function isMessageObject(value: unknown): value is MessageClass {
   return messageClasses.some((cls) => value instanceof cls);
 }
 
+export function getMessageClass(
+  value: MessageClass,
+): (typeof Article | typeof ChatMessage | typeof Note | typeof Question) & {
+  typeId: URL;
+} {
+  return value instanceof Article
+    ? Article
+    : value instanceof ChatMessage
+    ? ChatMessage
+    : value instanceof Note
+    ? Note
+    : Question;
+}
+
 export class MessageImpl<T extends MessageClass, TContextData>
   implements Message<T, TContextData> {
   readonly session: SessionImpl<TContextData>;

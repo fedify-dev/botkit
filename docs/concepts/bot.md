@@ -275,6 +275,44 @@ Turned off by default.
 [ngrok]: https://ngrok.com/
 [Tailscale Funnel]: https://tailscale.com/kb/1223/funnel
 
+### `~CreateBotOptions.pages`
+
+The options for the web pages of the bot.
+
+`~PageOptions.color`
+:   The color of the theme.  It will be used for the theme color of the web
+    pages.  The default color is `"green"`.
+
+    Here's the list of available colors:
+
+     -  `"amber"`
+     -  `"azure"`
+     -  `"blue"`
+     -  `"cyan"`
+     -  `"fuchsia"`
+     -  `"green"` (default)
+     -  `"grey"`
+     -  `"indigo"`
+     -  `"jade"`
+     -  `"lime"`
+     -  `"orange"`
+     -  `"pink"`
+     -  `"pumpkin"`
+     -  `"purple"`
+     -  `"red"`
+     -  `"sand"`
+     -  `"slate"`
+     -  `"violet"`
+     -  `"yellow"`
+     -  `"zinc"`
+
+    See also the [*Colors* section] of the Pico CSS docs.
+
+`~PageOptions.css`
+:   The custom CSS to be injected into the web pages.  It should be a string
+    of CSS code.
+
+[*Colors* section]: https://picocss.com/docs/colors
 
 Running the bot
 ---------------

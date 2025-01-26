@@ -67,6 +67,10 @@ Deno.test("createBot()", async () => {
         rel: "self",
         type: "application/activity+json",
       },
+      {
+        href: "https://example.com/",
+        rel: "http://webfinger.net/rel/profile-page",
+      },
     ],
     subject: "acct:bot@example.com",
   });

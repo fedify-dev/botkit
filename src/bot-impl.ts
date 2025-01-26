@@ -52,7 +52,7 @@ import {
 } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import metadata from "../deno.json" with { type: "json" };
-import type { Bot, CreateBotOptions } from "./bot.ts";
+import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -65,6 +65,7 @@ import type {
 import { FollowRequestImpl } from "./follow-impl.ts";
 import { createMessage, messageClasses } from "./message-impl.ts";
 import type { Message, MessageClass } from "./message.ts";
+import { app } from "./pages.tsx";
 import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -90,6 +91,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly repository: Repository;
   readonly software?: Software;
   readonly behindProxy: boolean;
+  readonly pages: Required<PagesOptions>;
   readonly collectionWindow: number;
   readonly federation: Federation<TContextData>;
 
@@ -115,6 +117,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.followerPolicy = options.followerPolicy ?? "accept";
     this.repository = options.repository ?? new KvRepository(options.kv);
     this.software = options.software;
+    this.pages = {
+      color: "green",
+      css: "",
+      ...(options.pages ?? {}),
+    };
     this.federation = createFederation<TContextData>({
       kv: options.kv,
       queue: options.queue,
@@ -280,6 +287,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       outbox: ctx.getOutboxUri(identifier),
       publicKey: keyPairs[0].cryptographicKey,
       assertionMethods: keyPairs.map((pair) => pair.multikey),
+      url: new URL("/", ctx.origin),
     });
   }
 
@@ -659,6 +667,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if (this.behindProxy) {
       request = await getXForwardedRequest(request);
     }
-    return await this.federation.fetch(request, { contextData });
+    const url = new URL(request.url);
+    if (
+      url.pathname.startsWith("/.well-known/") ||
+      url.pathname.startsWith("/ap/") ||
+      url.pathname.startsWith("/nodeinfo/")
+    ) {
+      return await this.federation.fetch(request, { contextData });
+    }
+    return await app.fetch(request, { bot: this, contextData });
   }
 }
