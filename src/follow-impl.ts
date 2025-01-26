@@ -13,7 +13,6 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { KvKey } from "@fedify/fedify/federation";
 import { Accept, type Actor, type Follow, Reject } from "@fedify/fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { SessionImpl } from "./session-impl.ts";
@@ -23,7 +22,6 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
   readonly id: URL;
   readonly raw: Follow;
   readonly follower: Actor;
-  readonly followerId: URL;
   #state: "pending" | "accepted" | "rejected";
 
   get state(): "pending" | "accepted" | "rejected" {
@@ -44,7 +42,6 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
     this.id = raw.id;
     this.raw = raw;
     this.follower = follower;
-    this.followerId = follower.id;
     this.#state = "pending";
   }
 
@@ -63,30 +60,7 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
       }),
       { excludeBaseUris: [new URL(this.session.context.origin)] },
     );
-    const { kv, kvPrefixes } = this.session.bot;
-    const followerKey: KvKey = [...kvPrefixes.followers, this.followerId.href];
-    await kv.set(
-      followerKey,
-      await this.follower.toJsonLd({
-        format: "compact",
-        contextLoader: this.session.context.contextLoader,
-      }),
-    );
-    const lockKey: KvKey = [...kvPrefixes.followers, "lock"];
-    const listKey: KvKey = kvPrefixes.followers;
-    do {
-      await kv.set(lockKey, this.followerId.href);
-      const list = await kv.get<string[]>(listKey) ?? [];
-      if (!list.includes(this.followerId.href)) list.push(this.followerId.href);
-      await kv.set(listKey, list);
-    } while (await kv.get(lockKey) !== this.followerId.href);
-    if (this.id != null) {
-      const followRequestKey: KvKey = [
-        ...kvPrefixes.followRequests,
-        this.id.href,
-      ];
-      await kv.set(followRequestKey, this.followerId.href);
-    }
+    await this.session.bot.repository.addFollower(this.id, this.follower);
     this.#state = "accepted";
   }
 

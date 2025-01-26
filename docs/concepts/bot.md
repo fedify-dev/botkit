@@ -81,6 +81,16 @@ Additional options
 
 There are other options to customize your `Bot` instance:
 
+### `~CreateBotOptions.repository`
+
+The [repository](./repository.md) (data access object) to be used by
+the bot.  It is used to store and retrieve data from the bot's database.
+
+By default, it uses the [`KvRepository`](./repository.md#kvrepository) with
+the key–value store specified in the [`kv`](#createbotoptions-kv) option.
+
+For more information, see the [*Repository* section](./repository.md).
+
 ### `~CreateBotOptions.identifier`
 
 The internal identifier of the bot actor.  It is used for the URI of the bot

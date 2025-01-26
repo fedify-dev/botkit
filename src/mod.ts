@@ -22,7 +22,6 @@ export {
 export {
   Application,
   type Bot,
-  type BotKvPrefixes,
   type BotWithVoidContextData,
   createBot,
   type CreateBotOptions,

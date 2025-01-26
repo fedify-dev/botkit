@@ -19,10 +19,12 @@ import { MemoryKvStore } from "@fedify/fedify/federation";
 import { Accept, Follow, Reject } from "@fedify/fedify/vocab";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
+import { assertFalse } from "@std/assert/false";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
 import { FollowRequestImpl } from "./follow-impl.ts";
+import { MemoryRepository } from "./repository.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
 
@@ -45,13 +47,16 @@ Deno.test("new FollowRequestImpl()", () => {
   assertEquals(followRequest.id, follow.id);
   assertEquals(followRequest.raw, follow);
   assertEquals(followRequest.follower, follower);
-  assertEquals(followRequest.followerId, follower.id);
   assertEquals(followRequest.state, "pending");
 });
 
 Deno.test("FollowRequestImpl.accept()", async () => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
 
@@ -67,25 +72,13 @@ Deno.test("FollowRequestImpl.accept()", async () => {
   const followRequest = new FollowRequestImpl(session, follow, follower);
   await followRequest.accept();
   assertEquals(followRequest.state, "accepted");
-  const followerJson = await kv.get([
-    ...bot.kvPrefixes.followers,
-    "https://example.com/ap/actor/john",
-  ]);
-  assert(followerJson != null);
-  const storedFollower = await Person.fromJsonLd(followerJson);
+  assert(
+    await repository.hasFollower(new URL("https://example.com/ap/actor/john")),
+  );
+  const [storedFollower] = await Array.fromAsync(repository.getFollowers());
+  assert(storedFollower != null);
   assertEquals(storedFollower.id, follower.id);
   assertEquals(storedFollower.preferredUsername, follower.preferredUsername);
-  assertEquals(
-    await kv.get(bot.kvPrefixes.followers),
-    ["https://example.com/ap/actor/john"],
-  );
-  assertEquals(
-    await kv.get([
-      ...bot.kvPrefixes.followRequests,
-      "https://example.com/ap/follow/1",
-    ]),
-    "https://example.com/ap/actor/john",
-  );
   assertEquals(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];
   assertEquals(recipients, [follower]);
@@ -107,8 +100,12 @@ Deno.test("FollowRequestImpl.accept()", async () => {
 });
 
 Deno.test("FollowRequestImpl.reject()", async () => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
 
@@ -124,18 +121,8 @@ Deno.test("FollowRequestImpl.reject()", async () => {
   const followRequest = new FollowRequestImpl(session, follow, follower);
   await followRequest.reject();
   assertEquals(followRequest.state, "rejected");
-  const followerJson = await kv.get([
-    ...bot.kvPrefixes.followers,
-    "https://example.com/ap/actor/john",
-  ]);
-  assertEquals(followerJson, undefined);
-  assertEquals(await kv.get(bot.kvPrefixes.followers), undefined);
-  assertEquals(
-    await kv.get([
-      ...bot.kvPrefixes.followRequests,
-      "https://example.com/ap/follow/1",
-    ]),
-    undefined,
+  assertFalse(
+    await repository.hasFollower(new URL("https://example.com/ap/actor/john")),
   );
   assertEquals(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];

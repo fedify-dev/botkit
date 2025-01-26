@@ -33,6 +33,7 @@ import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
 import { createMessage } from "./message-impl.ts";
+import { MemoryRepository } from "./repository.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
 import { text } from "./text.ts";
@@ -148,8 +149,12 @@ Deno.test("createMessage()", async () => {
 });
 
 Deno.test("AuthorizedMessageImpl.delete()", async () => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
   const note = new Note({
@@ -168,32 +173,20 @@ Deno.test("AuthorizedMessageImpl.delete()", async () => {
     undefined,
     true,
   );
-  await kv.set(
-    bot.kvPrefixes.messages,
-    ["c1c792ce-a0be-4685-b396-e59e5ef8c788"],
-  );
-  await kv.set(
-    [...bot.kvPrefixes.messages, "c1c792ce-a0be-4685-b396-e59e5ef8c788"],
-    {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      "type": "Create",
-      "id":
+  await repository.addMessage(
+    "c1c792ce-a0be-4685-b396-e59e5ef8c788",
+    new Create({
+      id: new URL(
         "https://example.com/ap/create/c1c792ce-a0be-4685-b396-e59e5ef8c788",
-      "actor": "https://example.com/ap/actor/bot",
-      "to": "https://www.w3.org/ns/activitystreams#Public",
-      "cc": "https://example.com/ap/actor/bot/followers",
-      object: await note.toJsonLd(),
-    },
+      ),
+      actor: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      object: note,
+    }),
   );
   await msg.delete();
-  assertEquals(await kv.get(bot.kvPrefixes.messages), []);
-  assertEquals(
-    await kv.get([
-      ...bot.kvPrefixes.messages,
-      "c1c792ce-a0be-4685-b396-e59e5ef8c788",
-    ]),
-    undefined,
-  );
+  assertEquals(await repository.countMessages(), 0);
   assertEquals(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];
   assertEquals(recipients, "followers");
@@ -207,8 +200,12 @@ Deno.test("AuthorizedMessageImpl.delete()", async () => {
 });
 
 Deno.test("MessageImpl.reply()", async () => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
   const originalPost = new Note({
@@ -229,13 +226,9 @@ Deno.test("MessageImpl.reply()", async () => {
     {},
   );
   const reply = await originalMsg.reply(text`Hello, John!`);
-  const msgIds = await kv.get<string[]>(bot.kvPrefixes.messages);
-  assert(msgIds != null);
-  assertEquals(msgIds.length, 1);
-  const [msgId] = msgIds;
-  const activityJson = await kv.get([...bot.kvPrefixes.messages, msgId]);
-  assert(activityJson != null);
-  const create = await Create.fromJsonLd(activityJson);
+  assertEquals(await repository.countMessages(), 1);
+  const [create] = await Array.fromAsync(repository.getMessages());
+  assert(create != null);
   assertEquals(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];
   assertEquals(recipients, "followers");
@@ -254,8 +247,12 @@ Deno.test("MessageImpl.reply()", async () => {
 });
 
 Deno.test("MessageImpl.share()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
   const originalPost = new Note({
@@ -276,16 +273,11 @@ Deno.test("MessageImpl.share()", async (t) => {
     {},
   );
   const sharedMsg = await originalMsg.share();
-  let msgId: string;
 
   await t.step("share()", async () => {
-    const msgIds = await kv.get<string[]>(bot.kvPrefixes.messages);
-    assert(msgIds != null);
-    assertEquals(msgIds.length, 1);
-    [msgId] = msgIds;
-    const activityJson = await kv.get([...bot.kvPrefixes.messages, msgId]);
-    assert(activityJson != null);
-    const announce = await Announce.fromJsonLd(activityJson);
+    assertEquals(await repository.countMessages(), 1);
+    const [announce] = await Array.fromAsync(repository.getMessages());
+    assert(announce != null);
     assertEquals(ctx.sentActivities.length, 1);
     const { recipients, activity } = ctx.sentActivities[0];
     assertEquals(recipients, "followers");
@@ -312,11 +304,7 @@ Deno.test("MessageImpl.share()", async (t) => {
 
   await t.step("unshare()", async () => {
     await sharedMsg.unshare();
-    assertEquals(await kv.get(bot.kvPrefixes.messages), []);
-    assertEquals(
-      await kv.get([...bot.kvPrefixes.messages, msgId]),
-      undefined,
-    );
+    assertEquals(await repository.countMessages(), 0);
     assertEquals(ctx.sentActivities.length, 1);
     const { recipients, activity } = ctx.sentActivities[0];
     assertEquals(recipients, "followers");
@@ -332,10 +320,6 @@ Deno.test("MessageImpl.share()", async (t) => {
 });
 
 Deno.test("AuthorizedMessage.update()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
-  const ctx = createMockContext(bot, "https://example.com");
-  const session = new SessionImpl(bot, ctx);
   const actorA = new Person({
     id: new URL("https://example.com/ap/actor/john"),
     preferredUsername: "john",
@@ -348,9 +332,18 @@ Deno.test("AuthorizedMessage.update()", async (t) => {
   for (
     const visibility of ["public", "unlisted", "followers", "direct"] as const
   ) {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+
     await t.step(visibility, async () => {
       const msg = await session.publish(text`Hello, ${actorA}`, { visibility });
-      const [id] = await kv.get<string[]>(bot.kvPrefixes.messages) ?? [];
+      assertEquals(await repository.countMessages(), 1);
       const originalRaw = msg.raw;
       ctx.sentActivities = [];
       const before = Temporal.Now.instant();
@@ -396,9 +389,7 @@ Deno.test("AuthorizedMessage.update()", async (t) => {
       assertEquals(tags[0].href, actorB.id);
       assertEquals(msg.raw.published, originalRaw.published);
       assertEquals(msg.raw.updated, msg.updated);
-      const createJson = await kv.get([...bot.kvPrefixes.messages, id]);
-      assert(createJson != null);
-      const create = await Create.fromJsonLd(createJson);
+      const [create] = await Array.fromAsync(repository.getMessages());
       assertEquals(
         await (await create.getObject())?.toJsonLd({ format: "compact" }),
         await msg.raw.toJsonLd({ format: "compact" }),
@@ -443,7 +434,5 @@ Deno.test("AuthorizedMessage.update()", async (t) => {
         assertEquals(activity.updated, msg.updated);
       }
     });
-
-    await kv.delete(bot.kvPrefixes.messages);
   }
 });

@@ -28,12 +28,17 @@ import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { BotImpl } from "./bot-impl.ts";
+import { MemoryRepository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import { mention, text } from "./text.ts";
 
 Deno.test("SessionImpl.follow()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
 
@@ -54,12 +59,8 @@ Deno.test("SessionImpl.follow()", async (t) => {
     assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
     assertEquals(activity.objectId, actor.id);
     assertEquals(activity.toIds, [actor.id]);
-    const followJson = await kv.get([
-      ...bot.kvPrefixes.follows,
-      parsed.values.id,
-    ]);
-    assert(followJson != null);
-    const follow = await Follow.fromJsonLd(followJson);
+    const follow = await repository.getSentFollow(parsed.values.id as Uuid);
+    assert(follow != null);
     assertEquals(
       await follow.toJsonLd({ format: "compact" }),
       await activity.toJsonLd({ format: "compact" }),
@@ -69,9 +70,15 @@ Deno.test("SessionImpl.follow()", async (t) => {
   ctx.sentActivities = [];
 
   await t.step("follow again", async () => {
-    await kv.set(
-      [...bot.kvPrefixes.followees, "https://example.com/ap/actor/alice"],
-      {},
+    await repository.addFollowee(
+      new URL("https://example.com/ap/actor/alice"),
+      new Follow({
+        id: new URL(
+          "https://example.com/ap/follow/4114eadb-2596-408f-ad99-06f467c9ace0",
+        ),
+        actor: new URL("https://example.com/ap/actor/bot"),
+        object: new URL("https://example.com/ap/actor/alice"),
+      }),
     );
     const actor = new Person({
       id: new URL("https://example.com/ap/actor/alice"),
@@ -83,22 +90,25 @@ Deno.test("SessionImpl.follow()", async (t) => {
 });
 
 Deno.test("SessionImpl.unfollow()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
 
   await t.step("unfollow", async () => {
-    await kv.set(
-      [...bot.kvPrefixes.followees, "https://example.com/ap/actor/alice"],
-      {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        type: "Follow",
-        id:
+    await repository.addFollowee(
+      new URL("https://example.com/ap/actor/alice"),
+      new Follow({
+        id: new URL(
           "https://example.com/ap/follow/4114eadb-2596-408f-ad99-06f467c9ace0",
-        actor: "https://example.com/ap/actor/bot",
-        object: "https://example.com/ap/actor/alice",
-      },
+        ),
+        actor: new URL("https://example.com/ap/actor/bot"),
+        object: new URL("https://example.com/ap/actor/alice"),
+      }),
     );
     const actor = new Person({
       id: new URL("https://example.com/ap/actor/alice"),
@@ -119,10 +129,9 @@ Deno.test("SessionImpl.unfollow()", async (t) => {
     );
     assertEquals(object.actorId, ctx.getActorUri(bot.identifier));
     assertEquals(
-      await kv.get([
-        ...bot.kvPrefixes.followees,
-        "https://example.com/ap/actor/alice",
-      ]),
+      await repository.getFollowee(
+        new URL("https://example.com/ap/actor/alice"),
+      ),
       undefined,
     );
   });
@@ -262,104 +271,95 @@ Deno.test("SessionImpl.publish()", async (t) => {
 });
 
 Deno.test("SessionImpl.getOutbox()", async (t) => {
-  const kv = new MemoryKvStore();
-  const bot = new BotImpl<void>({ kv, username: "bot" });
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
 
-  await kv.set(
-    [...bot.kvPrefixes.messages, "01941f29-7c00-7fe8-ab0a-7b593990a3c0"],
-    {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      type: "Create",
-      id: "https://example.com/ap/create/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
-      actor: "https://example.com/ap/actor/bot",
-      to: ["https://example.com/ap/actor/bot/followers"],
-      cc: ["https://www.w3.org/ns/activitystreams#Public"],
-      object: {
-        type: "Note",
-        id: "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
-        attributedTo: "https://example.com/ap/actor/bot",
-        to: ["https://example.com/ap/actor/bot/followers"],
-        cc: ["https://www.w3.org/ns/activitystreams#Public"],
-        content: "Hello, world!",
-        published: "2025-01-01T00:00:00Z",
-      },
-      published: "2025-01-01T00:00:00Z",
-    },
-  );
-  await kv.set(
-    [...bot.kvPrefixes.messages, "0194244f-d800-7873-8993-ef71ccd47306"],
-    {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      type: "Create",
-      id: "https://example.com/ap/create/0194244f-d800-7873-8993-ef71ccd47306",
-      actor: "https://example.com/ap/actor/bot",
-      to: ["https://example.com/ap/actor/bot/followers"],
-      cc: ["https://www.w3.org/ns/activitystreams#Public"],
-      object: {
-        type: "Note",
-        id: "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
-        attributedTo: "https://example.com/ap/actor/bot",
-        to: ["https://example.com/ap/actor/bot/followers"],
-        cc: ["https://www.w3.org/ns/activitystreams#Public"],
-        content: "Hello, world!",
-        published: "2025-01-02T00:00:00Z",
-      },
-      published: "2025-01-02T00:00:00Z",
-    },
-  );
-  await kv.set(
-    [...bot.kvPrefixes.messages, "01942976-3400-7f34-872e-2cbf0f9eeac4"],
-    {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      type: "Create",
-      id: "https://example.com/ap/create/01942976-3400-7f34-872e-2cbf0f9eeac4",
-      actor: "https://example.com/ap/actor/bot",
-      to: ["https://example.com/ap/actor/bot/followers"],
-      cc: ["https://www.w3.org/ns/activitystreams#Public"],
-      object: {
-        type: "Note",
-        id: "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
-        attributedTo: "https://example.com/ap/actor/bot",
-        to: ["https://example.com/ap/actor/bot/followers"],
-        cc: ["https://www.w3.org/ns/activitystreams#Public"],
-        content: "Hello, world!",
-        published: "2025-01-03T00:00:00Z",
-      },
-      published: "2025-01-03T00:00:00Z",
-    },
-  );
-  await kv.set(
-    [...bot.kvPrefixes.messages, "01942e9c-9000-7480-a553-7a6ce737ce14"],
-    {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      type: "Create",
-      id: "https://example.com/ap/create/01942e9c-9000-7480-a553-7a6ce737ce14",
-      actor: "https://example.com/ap/actor/bot",
-      to: ["https://example.com/ap/actor/bot/followers"],
-      cc: ["https://www.w3.org/ns/activitystreams#Public"],
-      object: {
-        type: "Note",
-        id: "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
-        attributedTo: "https://example.com/ap/actor/bot",
-        to: ["https://example.com/ap/actor/bot/followers"],
-        cc: ["https://www.w3.org/ns/activitystreams#Public"],
-        content: "Hello, world!",
-        published: "2025-01-04T00:00:00Z",
-      },
-      published: "2025-01-04T00:00:00Z",
-    },
-  );
-  await kv.set(
-    bot.kvPrefixes.messages,
-    [
-      "01941f29-7c00-7fe8-ab0a-7b593990a3c0",
-      "0194244f-d800-7873-8993-ef71ccd47306",
-      "01942976-3400-7f34-872e-2cbf0f9eeac4",
-      "01942e9c-9000-7480-a553-7a6ce737ce14",
-    ],
-  );
+  const messageA = new Create({
+    id: new URL(
+      "https://example.com/ap/create/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+    ),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    to: new URL("https://example.com/ap/actor/bot/followers"),
+    cc: PUBLIC_COLLECTION,
+    object: new Note({
+      id: new URL(
+        "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
+      ),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: new URL("https://example.com/ap/actor/bot/followers"),
+      cc: PUBLIC_COLLECTION,
+      content: "Hello, world!",
+      published: Temporal.Instant.from("2025-01-01T00:00:00Z"),
+    }),
+    published: Temporal.Instant.from("2025-01-01T00:00:00Z"),
+  });
+  const messageB = new Create({
+    id: new URL(
+      "https://example.com/ap/create/0194244f-d800-7873-8993-ef71ccd47306",
+    ),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    to: new URL("https://example.com/ap/actor/bot/followers"),
+    cc: PUBLIC_COLLECTION,
+    object: new Note({
+      id: new URL(
+        "https://example.com/ap/note/0194244f-d800-7873-8993-ef71ccd47306",
+      ),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: new URL("https://example.com/ap/actor/bot/followers"),
+      cc: PUBLIC_COLLECTION,
+      content: "Hello, world!",
+      published: Temporal.Instant.from("2025-01-02T00:00:00Z"),
+    }),
+    published: Temporal.Instant.from("2025-01-02T00:00:00Z"),
+  });
+  const messageC = new Create({
+    id: new URL(
+      "https://example.com/ap/create/01942976-3400-7f34-872e-2cbf0f9eeac4",
+    ),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    to: new URL("https://example.com/ap/actor/bot/followers"),
+    cc: PUBLIC_COLLECTION,
+    object: new Note({
+      id: new URL(
+        "https://example.com/ap/note/01942976-3400-7f34-872e-2cbf0f9eeac4",
+      ),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: new URL("https://example.com/ap/actor/bot/followers"),
+      cc: PUBLIC_COLLECTION,
+      content: "Hello, world!",
+      published: Temporal.Instant.from("2025-01-03T00:00:00Z"),
+    }),
+    published: Temporal.Instant.from("2025-01-03T00:00:00Z"),
+  });
+  const messageD = new Create({
+    id: new URL(
+      "https://example.com/ap/create/01942e9c-9000-7480-a553-7a6ce737ce14",
+    ),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    to: new URL("https://example.com/ap/actor/bot/followers"),
+    cc: PUBLIC_COLLECTION,
+    object: new Note({
+      id: new URL(
+        "https://example.com/ap/note/01942e9c-9000-7480-a553-7a6ce737ce14",
+      ),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: new URL("https://example.com/ap/actor/bot/followers"),
+      cc: PUBLIC_COLLECTION,
+      content: "Hello, world!",
+      published: Temporal.Instant.from("2025-01-04T00:00:00Z"),
+    }),
+    published: Temporal.Instant.from("2025-01-04T00:00:00Z"),
+  });
+  await repository.addMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0", messageA);
+  await repository.addMessage("0194244f-d800-7873-8993-ef71ccd47306", messageB);
+  await repository.addMessage("01942976-3400-7f34-872e-2cbf0f9eeac4", messageC);
+  await repository.addMessage("01942e9c-9000-7480-a553-7a6ce737ce14", messageD);
 
   await t.step("default", async () => {
     const outbox = session.getOutbox({ order: "oldest" });

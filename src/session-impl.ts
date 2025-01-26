@@ -18,7 +18,6 @@ import {
   type Context,
   Create,
   isActor,
-  type KvKey,
   LanguageString,
   Mention,
   Note,
@@ -27,10 +26,11 @@ import {
 } from "@fedify/fedify";
 import { Follow, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
-import { extractTimestamp, generate as uuidv7 } from "@std/uuid/unstable-v7";
+import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
 import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
+import type { Uuid } from "./repository.ts";
 import type {
   Session,
   SessionGetOutboxOptions,
@@ -87,10 +87,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     if (actor.id == null) {
       throw new TypeError("The actor does not have an ID.");
     }
-    const followee = await this.bot.kv.get([
-      ...this.bot.kvPrefixes.followees,
-      actor.id.href,
-    ]);
+    const followee = await this.bot.repository.getFollowee(actor.id);
     if (followee != null) {
       logger.warn(
         "The bot is already following the actor {actor}.",
@@ -98,20 +95,14 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       );
       return;
     }
-    const id = uuidv7();
+    const id = uuidv7() as Uuid;
     const follow = new Follow({
       id: this.context.getObjectUri(Follow, { id }),
       actor: this.context.getActorUri(this.bot.identifier),
       object: actor.id,
       to: actor.id,
     });
-    await this.bot.kv.set(
-      [...this.bot.kvPrefixes.follows, id],
-      await follow.toJsonLd({
-        format: "compact",
-        contextLoader: this.context.contextLoader,
-      }),
-    );
+    await this.bot.repository.addSentFollow(id, follow);
     await this.context.sendActivity(
       this.bot,
       actor,
@@ -132,30 +123,15 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     if (actor.id == null) {
       throw new TypeError("The actor does not have an ID.");
     }
-    const followJson = await this.bot.kv.get(
-      [...this.bot.kvPrefixes.followees, actor.id.href],
-    );
-    if (followJson == null) {
+    const follow = await this.bot.repository.getFollowee(actor.id);
+    if (follow == null) {
       logger.warn(
         "The bot is not following the actor {actor}.",
         { actor: actor.id.href },
       );
       return;
     }
-    let follow: Follow;
-    try {
-      follow = await Follow.fromJsonLd(followJson, {
-        contextLoader: this.context.contextLoader,
-        documentLoader,
-      });
-    } catch {
-      return;
-    } finally {
-      await this.bot.kv.delete([
-        ...this.bot.kvPrefixes.followees,
-        actor.id.href,
-      ]);
-    }
+    await this.bot.repository.removeFollowee(actor.id);
     if (follow.id != null && follow.objectId?.href === actor.id.href) {
       await this.context.sendActivity(
         this.bot,
@@ -186,7 +162,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},
   ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     const published = new Date();
-    const id = uuidv7(+published);
+    const id = uuidv7(+published) as Uuid;
     const cls = "class" in options ? options.class : Note;
     const visibility = options.visibility ?? "public";
     let contentHtml = "";
@@ -232,25 +208,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       object: msg,
       published: published.toTemporalInstant(),
     });
-    const kv = this.bot.kv;
-    const messageKey: KvKey = [...this.bot.kvPrefixes.messages, id];
-    await kv.set(
-      messageKey,
-      await activity.toJsonLd({
-        format: "compact",
-        contextLoader: this.context.contextLoader,
-      }),
-    );
-    const lockKey: KvKey = [...this.bot.kvPrefixes.messages, "lock"];
-    const listKey: KvKey = this.bot.kvPrefixes.messages;
-    do {
-      await kv.set(lockKey, id);
-      const set = new Set(await kv.get<string[]>(listKey) ?? []);
-      set.add(id);
-      const list = [...set];
-      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-      await kv.set(listKey, list);
-    } while (await kv.get(lockKey) !== id);
+    await this.bot.repository.addMessage(id, activity);
     const preferSharedInbox = visibility === "public" ||
       visibility === "unlisted" || visibility === "followers";
     const excludeBaseUris = [new URL(this.context.origin)];
@@ -301,32 +259,9 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
   async *getOutbox(
     options: SessionGetOutboxOptions = {},
   ): AsyncIterable<AuthorizedMessage<MessageClass, TContextData>> {
-    const { order, until, since } = options;
-    const { kv, kvPrefixes } = this.bot;
-    const untilTs = until == null ? null : until.epochMilliseconds;
-    const sinceTs = since == null ? null : since.epochMilliseconds;
-    let messageIds = await kv.get<string[]>(kvPrefixes.messages) ?? [];
-    if (sinceTs != null) {
-      const offset = messageIds.findIndex((id) =>
-        extractTimestamp(id) >= sinceTs
-      );
-      messageIds = messageIds.slice(offset);
-    }
-    if (untilTs != null) {
-      const offset = messageIds.findLastIndex((id) =>
-        extractTimestamp(id) <= untilTs
-      );
-      messageIds = messageIds.slice(0, offset + 1);
-    }
-    if (order == null || order === "newest") {
-      messageIds = messageIds.toReversed();
-    }
-    for (const id of messageIds) {
-      const messageJson = await kv.get([...kvPrefixes.messages, id]);
-      if (messageJson == null) continue;
+    for await (const activity of this.bot.repository.getMessages(options)) {
       let object: Object | null;
       try {
-        const activity = await Create.fromJsonLd(messageJson, this.context);
         object = await activity.getObject(this.context);
       } catch {
         continue;

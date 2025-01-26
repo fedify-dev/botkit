@@ -29,6 +29,7 @@ import type {
   MessageClass,
   MessageVisibility,
 } from "./message.ts";
+import type { RepositoryGetMessagesOptions } from "./repository.ts";
 import type { Text } from "./text.ts";
 
 /**
@@ -164,22 +165,5 @@ export interface SessionPublishOptionsWithClass<T extends MessageClass>
 /**
  * Options for getting messages from the bot's outbox.
  */
-export interface SessionGetOutboxOptions {
-  /**
-   * The order of the messages.  If omitted, `"newest"` will be used.
-   * @default `"newest"`
-   */
-  readonly order?: "oldest" | "newest";
-
-  /**
-   * The timestamp to get messages created at or before this time.
-   * If omitted, no limit will be applied.
-   */
-  readonly until?: Temporal.Instant;
-
-  /**
-   * The timestamp to get messages created at or after this time.
-   * If omitted, no limit will be applied.
-   */
-  readonly since?: Temporal.Instant;
+export interface SessionGetOutboxOptions extends RepositoryGetMessagesOptions {
 }

@@ -36,6 +36,7 @@ const concepts = {
     { text: "Events", link: "/concepts/events.md" },
     { text: "Message", link: "/concepts/message.md" },
     { text: "Text", link: "/concepts/text.md" },
+    { text: "Repository", link: "/concepts/repository.md" },
   ],
 };
 

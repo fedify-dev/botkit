@@ -16,7 +16,6 @@
 import type {
   Context,
   Federation,
-  KvKey,
   KvStore,
   MessageQueue,
 } from "@fedify/fedify/federation";
@@ -32,6 +31,7 @@ import type {
   ReplyEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
+import type { Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
 export {
@@ -235,11 +235,10 @@ export interface CreateBotOptions<TContextData> {
   readonly kv: KvStore;
 
   /**
-   * The prefixes for key-value store keys used by the bot.
-   *
-   * @default `{ message: ["_botkit", "message"] }`
+   * The underlying repository to use for storing data.  If omitted,
+   * {@link KvRepository} will be used.
    */
-  readonly kvPrefixes?: BotKvPrefixes;
+  readonly repository?: Repository;
 
   /**
    * The underlying message queue to use for handling incoming and outgoing
@@ -262,41 +261,6 @@ export interface CreateBotOptions<TContextData> {
    * @default `false`
    */
   readonly behindProxy?: boolean;
-}
-
-/**
- * The prefixes for key-value store keys used by the bot.
- */
-export interface BotKvPrefixes {
-  /**
-   * The key prefix used for storing the key pairs of the bot actor.
-   */
-  readonly keyPairs: KvKey;
-
-  /**
-   * The key prefix used for storing published messages.
-   */
-  readonly messages: KvKey;
-
-  /**
-   * The key prefix used for storing followers.
-   */
-  readonly followers: KvKey;
-
-  /**
-   * The key prefix used for storing incoming follow requests.
-   */
-  readonly followRequests: KvKey;
-
-  /**
-   * The key prefix used for storing followees.
-   */
-  readonly followees: KvKey;
-
-  /**
-   * The key prefix used for storing outgoing follow requests.
-   */
-  readonly follows: KvKey;
 }
 
 /**

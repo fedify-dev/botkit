@@ -13,7 +13,6 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { KvKey } from "@fedify/fedify/federation";
 import { LanguageString } from "@fedify/fedify/runtime";
 import {
   type Actor,
@@ -47,6 +46,7 @@ import type {
   MessageVisibility,
   SharedMessage,
 } from "./message.ts";
+import type { Uuid } from "./repository.ts";
 import type { SessionImpl } from "./session-impl.ts";
 import type {
   SessionPublishOptions,
@@ -122,7 +122,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     options: MessageShareOptions = {},
   ): Promise<SharedMessage<TContextData>> {
     const published = new Date();
-    const id = uuidv7(+published);
+    const id = uuidv7(+published) as Uuid;
     const visibility = options.visibility ?? this.visibility;
     const originalActor = this.actor.id == null ? [] : [this.actor.id];
     const uri = this.session.context.getObjectUri(Announce, { id });
@@ -147,19 +147,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
         ? [PUBLIC_COLLECTION, ...originalActor]
         : originalActor,
     });
-    const kv = this.session.bot.kv;
-    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
-    const messageKey: KvKey = [...listKey, id];
-    await kv.set(messageKey, await announce.toJsonLd(this.session.context));
-    const lockKey: KvKey = [...listKey, "lock"];
-    do {
-      await kv.set(lockKey, id);
-      const set = new Set(await kv.get<string[]>(listKey) ?? []);
-      set.add(id);
-      const list = [...set];
-      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-      await kv.set(listKey, list);
-    } while (await kv.get(lockKey) !== id);
+    await this.session.bot.repository.addMessage(id, announce);
     await this.session.context.sendActivity(
       this.session.bot,
       "followers",
@@ -180,16 +168,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
       visibility,
       original: this,
       unshare: async () => {
-        const lockId = `${id}:delete`;
-        do {
-          await kv.set(lockKey, lockId);
-          const set = new Set(await kv.get<string[]>(listKey) ?? []);
-          set.delete(id);
-          const list = [...set];
-          list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-          await kv.set(listKey, list);
-        } while (await kv.get(lockKey) !== lockId);
-        await kv.delete(messageKey);
+        await this.session.bot.repository.removeMessage(id);
         await this.session.context.sendActivity(
           this.session.bot,
           "followers",
@@ -224,100 +203,101 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
       return;
     }
     const { id } = parsed.values;
-    const kv = this.session.bot.kv;
-    const kvKey: KvKey = [...this.session.bot.kvPrefixes.messages, id];
-    const createJson = await kv.get(kvKey);
-    if (createJson == null) return;
-    let create = await Create.fromJsonLd(createJson, this.session.context);
-    const message = await create.getObject(this.session.context);
-    if (message == null || !isMessageObject(message)) return;
-    let contentHtml = "";
-    for await (const chunk of text.getHtml(this.session)) {
-      contentHtml += chunk;
-    }
-    const tags = await Array.fromAsync(text.getTags(this.session));
-    const mentionedActorIds: URL[] = [];
-    const hashtags: Hashtag[] = [];
-    for (const tag of tags) {
-      if (tag instanceof Mention && tag.href != null) {
-        mentionedActorIds.push(tag.href);
-      } else if (tag instanceof Hashtag) {
-        hashtags.push(tag);
-      }
-    }
-    const cachedObjects: Record<string, Object> = {};
-    for (const cachedObject of text.getCachedObjects()) {
-      if (cachedObject.id == null) continue;
-      cachedObjects[cachedObject.id.href] = cachedObject;
-    }
-    const documentLoader = await this.session.context.getDocumentLoader(
-      this.session.bot,
+    let existingMentions: readonly Actor[] = [];
+    let mentionedActors: Actor[] = [];
+    let update: Update | undefined;
+    const updated = await this.session.bot.repository.updateMessage(
+      id as Uuid,
+      async (create) => {
+        if (create instanceof Announce) return;
+        const message = await create.getObject(this.session.context);
+        if (message == null || !isMessageObject(message)) return;
+        let contentHtml = "";
+        for await (const chunk of text.getHtml(this.session)) {
+          contentHtml += chunk;
+        }
+        const tags = await Array.fromAsync(text.getTags(this.session));
+        const mentionedActorIds: URL[] = [];
+        const hashtags: Hashtag[] = [];
+        for (const tag of tags) {
+          if (tag instanceof Mention && tag.href != null) {
+            mentionedActorIds.push(tag.href);
+          } else if (tag instanceof Hashtag) {
+            hashtags.push(tag);
+          }
+        }
+        const cachedObjects: Record<string, Object> = {};
+        for (const cachedObject of text.getCachedObjects()) {
+          if (cachedObject.id == null) continue;
+          cachedObjects[cachedObject.id.href] = cachedObject;
+        }
+        const documentLoader = await this.session.context.getDocumentLoader(
+          this.session.bot,
+        );
+        const promises: Promise<Object | null>[] = [];
+        for (const uri of mentionedActorIds) {
+          const cachedObject = cachedObjects[uri.href];
+          const promise = cachedObject == null
+            ? this.session.context.lookupObject(uri, { documentLoader })
+            : Promise.resolve(cachedObject);
+          promises.push(promise);
+        }
+        const objects = await Promise.all(promises);
+        mentionedActors = objects.filter(isActor);
+        this.html = contentHtml;
+        this.text = unescape(textXss.process(contentHtml));
+        existingMentions = this.mentions;
+        this.mentions = mentionedActors;
+        this.hashtags = hashtags;
+        const updated = Temporal.Now.instant();
+        this.updated = updated;
+        const newMessage = message.clone({
+          contents: this.language == null
+            ? [contentHtml]
+            : [new LanguageString(contentHtml, this.language), contentHtml],
+          tags,
+          tos: this.visibility === "public"
+            ? [PUBLIC_COLLECTION, ...mentionedActorIds]
+            : this.visibility === "unlisted" || this.visibility === "followers"
+            ? [
+              this.session.context.getFollowersUri(this.session.bot.identifier),
+              ...mentionedActorIds,
+            ]
+            : mentionedActorIds,
+          ccs: this.visibility === "public"
+            ? [
+              this.session.context.getFollowersUri(this.session.bot.identifier),
+            ]
+            : this.visibility === "unlisted"
+            ? [PUBLIC_COLLECTION]
+            : [],
+          updated,
+        });
+        this.raw = newMessage as T;
+        create = create.clone({ object: newMessage, updated });
+        const to = create.toIds.map((url) => url.href);
+        for (const url of newMessage.toIds) {
+          if (!to.includes(url.href)) to.push(url.href);
+        }
+        const cc = create.ccIds.map((url) => url.href);
+        for (const url of newMessage.ccIds) {
+          if (!cc.includes(url.href)) cc.push(url.href);
+        }
+        update = new Update({
+          id: new URL(
+            `#updated/${updated.toString()}`,
+            this.session.context.getObjectUri(Create, { id }),
+          ),
+          actors: newMessage.attributionIds,
+          tos: to.map((url) => new URL(url)),
+          ccs: cc.map((url) => new URL(url)),
+          object: newMessage,
+          updated,
+        });
+        return create;
+      },
     );
-    const promises: Promise<Object | null>[] = [];
-    for (const uri of mentionedActorIds) {
-      const cachedObject = cachedObjects[uri.href];
-      const promise = cachedObject == null
-        ? this.session.context.lookupObject(uri, { documentLoader })
-        : Promise.resolve(cachedObject);
-      promises.push(promise);
-    }
-    const objects = await Promise.all(promises);
-    const mentionedActors = objects.filter(isActor);
-    this.html = contentHtml;
-    this.text = unescape(textXss.process(contentHtml));
-    const existingMentions = this.mentions;
-    this.mentions = mentionedActors;
-    this.hashtags = hashtags;
-    const updated = Temporal.Now.instant();
-    this.updated = updated;
-    const newMessage = message.clone({
-      contents: this.language == null
-        ? [contentHtml]
-        : [new LanguageString(contentHtml, this.language), contentHtml],
-      tags,
-      tos: this.visibility === "public"
-        ? [PUBLIC_COLLECTION, ...mentionedActorIds]
-        : this.visibility === "unlisted" || this.visibility === "followers"
-        ? [
-          this.session.context.getFollowersUri(this.session.bot.identifier),
-          ...mentionedActorIds,
-        ]
-        : mentionedActorIds,
-      ccs: this.visibility === "public"
-        ? [this.session.context.getFollowersUri(this.session.bot.identifier)]
-        : this.visibility === "unlisted"
-        ? [PUBLIC_COLLECTION]
-        : [],
-      updated,
-    });
-    this.raw = newMessage as T;
-    create = create.clone({ object: newMessage, updated });
-    const to = create.toIds.map((url) => url.href);
-    for (const url of newMessage.toIds) {
-      if (!to.includes(url.href)) to.push(url.href);
-    }
-    const cc = create.ccIds.map((url) => url.href);
-    for (const url of newMessage.ccIds) {
-      if (!cc.includes(url.href)) cc.push(url.href);
-    }
-    const update = new Update({
-      id: new URL(
-        `#updated/${updated.toString()}`,
-        this.session.context.getObjectUri(Create, { id }),
-      ),
-      actors: newMessage.attributionIds,
-      tos: to.map((url) => new URL(url)),
-      ccs: cc.map((url) => new URL(url)),
-      object: newMessage,
-      updated,
-    });
-    await kv.set(
-      kvKey,
-      await create.toJsonLd({
-        format: "compact",
-        contextLoader: this.session.context.contextLoader,
-      }),
-    );
+    if (!updated || update == null) return;
     const preferSharedInbox = this.visibility === "public" ||
       this.visibility === "unlisted" || this.visibility === "followers";
     const excludeBaseUris = [new URL(this.session.context.origin)];
@@ -346,23 +326,8 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
       return;
     }
     const { id } = parsed.values;
-    const kv = this.session.bot.kv;
-    const listKey: KvKey = this.session.bot.kvPrefixes.messages;
-    const lockKey: KvKey = [...listKey, "lock"];
-    const lockId = `${id}:delete`;
-    do {
-      await kv.set(lockKey, lockId);
-      const set = new Set(await kv.get<string[]>(listKey) ?? []);
-      set.delete(id);
-      const list = [...set];
-      list.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
-      await kv.set(listKey, list);
-    } while (await kv.get(lockKey) !== lockId);
-    const messageKey: KvKey = [...listKey, id];
-    const createJson = await kv.get(messageKey);
-    if (createJson == null) return;
-    await kv.delete(messageKey);
-    const create = await Create.fromJsonLd(createJson, this.session.context);
+    const create = await this.session.bot.repository.removeMessage(id as Uuid);
+    if (create == null) return;
     const message = await create.getObject(this.session.context);
     if (message == null) return;
     const mentionedActorIds: Set<string> = new Set();

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   Accept,
-  Activity,
+  type Activity,
   type Actor,
   Announce,
   type Application,
@@ -25,21 +25,17 @@ import {
   Create,
   createFederation,
   Endpoints,
-  exportJwk,
   type Federation,
   Follow,
   generateCryptoKeyPair,
   Image,
-  importJwk,
   type InboxContext,
   isActor,
-  type KvKey,
-  type KvStore,
   type Link,
   Mention,
   type NodeInfo,
   Note,
-  Object,
+  type Object,
   type PageItems,
   PropertyValue,
   Question,
@@ -56,7 +52,7 @@ import {
 } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import metadata from "../deno.json" with { type: "json" };
-import type { Bot, BotKvPrefixes, CreateBotOptions } from "./bot.ts";
+import type { Bot, CreateBotOptions } from "./bot.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -69,6 +65,7 @@ import type {
 import { FollowRequestImpl } from "./follow-impl.ts";
 import { createMessage, messageClasses } from "./message-impl.ts";
 import type { Message, MessageClass } from "./message.ts";
+import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
@@ -90,8 +87,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
   #properties: { pairs: PropertyValue[]; tags: Link[] } | null;
   readonly followerPolicy: "accept" | "reject" | "manual";
-  readonly kv: KvStore;
-  readonly kvPrefixes: BotKvPrefixes;
+  readonly repository: Repository;
   readonly software?: Software;
   readonly behindProxy: boolean;
   readonly collectionWindow: number;
@@ -117,16 +113,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.properties = options.properties ?? {};
     this.#properties = null;
     this.followerPolicy = options.followerPolicy ?? "accept";
-    this.kv = options.kv;
-    this.kvPrefixes = {
-      keyPairs: ["_botkit", "keyPairs"],
-      messages: ["_botkit", "messages"],
-      followers: ["_botkit", "followers"],
-      followRequests: ["_botkit", "followRequests"],
-      followees: ["_botkit", "followees"],
-      follows: ["_botkit", "follows"],
-      ...options.kvPrefixes ?? {},
-    };
+    this.repository = options.repository ?? new KvRepository(options.kv);
     this.software = options.software;
     this.federation = createFederation<TContextData>({
       kv: options.kv,
@@ -305,59 +292,43 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     identifier: string,
   ): Promise<CryptoKeyPair[]> {
     if (identifier !== this.identifier) return [];
-    interface KeyPair {
-      private: JsonWebKey;
-      public: JsonWebKey;
-    }
-    const keyPairs = await this.kv.get<KeyPair[]>(this.kvPrefixes.keyPairs);
+    let keyPairs = await this.repository.getKeyPairs();
     if (keyPairs == null) {
       const rsa = await generateCryptoKeyPair("RSASSA-PKCS1-v1_5");
       const ed25519 = await generateCryptoKeyPair("Ed25519");
-      const rsaPair: KeyPair = {
-        private: await exportJwk(rsa.privateKey),
-        public: await exportJwk(rsa.publicKey),
-      };
-      const ed25519Pair: KeyPair = {
-        private: await exportJwk(ed25519.privateKey),
-        public: await exportJwk(ed25519.publicKey),
-      };
-      const keyPairs = [rsaPair, ed25519Pair];
-      await this.kv.set(this.kvPrefixes.keyPairs, keyPairs);
-      return [rsa, ed25519];
+      keyPairs = [rsa, ed25519];
+      await this.repository.setKeyPairs(keyPairs);
     }
-    const promises = keyPairs.map(async (pair) => ({
-      privateKey: await importJwk(pair.private, "private"),
-      publicKey: await importJwk(pair.public, "public"),
-    }));
-    return await Promise.all(promises);
+    return keyPairs;
   }
 
   async dispatchFollowers(
-    ctx: Context<TContextData>,
+    _ctx: Context<TContextData>,
     identifier: string,
     cursor: string | null,
   ): Promise<PageItems<Recipient> | null> {
     if (identifier !== this.identifier) return null;
-    let followerIds = await this.kv.get<string[]>(this.kvPrefixes.followers) ??
-      [];
-    let nextCursor: string | null = null;
-    if (cursor != null) {
-      const index = cursor === "" ? 0 : followerIds.indexOf(cursor);
-      if (index < 0) return { items: [] };
-      nextCursor = followerIds[index + this.collectionWindow] ?? null;
-      followerIds = followerIds.slice(index, index + this.collectionWindow);
+    let followers: AsyncIterable<Actor>;
+    let nextCursor: string | null;
+    if (cursor == null) {
+      followers = this.repository.getFollowers();
+      nextCursor = null;
+    } else {
+      const offset = cursor.match(/^\d+$/) ? parseInt(cursor) : 0;
+      followers = this.repository.getFollowers({
+        offset,
+        limit: this.collectionWindow,
+      });
+      nextCursor = (offset + this.collectionWindow).toString();
     }
-    const followers = (await Promise.all(
-      followerIds.map(async (id) => {
-        const json = await this.kv.get([...this.kvPrefixes.followers, id]);
-        try {
-          return await Object.fromJsonLd(json, ctx);
-        } catch {
-          return null;
-        }
-      }),
-    )).filter(isActor);
-    return { items: followers, nextCursor };
+    const items: Recipient[] = [];
+    let i = 0;
+    for await (const follower of followers) {
+      items.push(follower);
+      i++;
+    }
+    if (i < this.collectionWindow) nextCursor = null;
+    return { items, nextCursor };
   }
 
   getFollowersFirstCursor(
@@ -365,7 +336,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     identifier: string,
   ): string | null {
     if (identifier !== this.identifier) return null;
-    return "";
+    return "0";
   }
 
   async countFollowers(
@@ -373,10 +344,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     identifier: string,
   ): Promise<number | null> {
     if (identifier !== this.identifier) return null;
-    const followerIds =
-      await this.kv.get<string[]>(this.kvPrefixes.followers) ??
-        [];
-    return followerIds.length;
+    return await this.repository.countFollowers();
   }
 
   async getPermissionChecker(
@@ -391,11 +359,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     let follower = false;
     const ownerUri = owner?.id;
     if (ownerUri != null) {
-      const f = await this.kv.get<unknown>([
-        ...this.kvPrefixes.followers,
-        ownerUri.href,
-      ]);
-      follower = f != null;
+      follower = await this.repository.hasFollower(ownerUri);
     }
     const followersUri = ctx.getFollowersUri(this.identifier);
     return (object: Object): boolean => {
@@ -412,31 +376,27 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     cursor: string | null,
   ): Promise<PageItems<Activity> | null> {
     if (identifier !== this.identifier) return null;
-    let messageIds = await this.kv.get<string[]>(this.kvPrefixes.messages) ??
-      [];
-    let nextCursor: string | null = null;
-    messageIds = messageIds.toReversed();
-    if (cursor != null) {
-      const index = cursor === "" ? 0 : messageIds.indexOf(cursor);
-      if (index < 0) return { items: [] };
-      nextCursor = messageIds[index + this.collectionWindow] ?? null;
-      messageIds = messageIds.slice(index, index + this.collectionWindow);
-    }
+    const activities = this.repository.getMessages({
+      order: "newest",
+      until: cursor == null || cursor === ""
+        ? undefined
+        : Temporal.Instant.from(cursor),
+      limit: cursor == null ? undefined : this.collectionWindow + 1,
+    });
+    const items: Activity[] = [];
     const isVisible = await this.getPermissionChecker(ctx);
-    const messages = (await Promise.all(
-      messageIds.map(async (id) => {
-        const json = await this.kv.get([...this.kvPrefixes.messages, id]);
-        let activity: Activity;
-        try {
-          activity = await Activity.fromJsonLd(json, ctx);
-        } catch {
-          return null;
-        }
-        if (isVisible(activity)) return activity;
-        return null;
-      }),
-    )).filter((message): message is Activity => message != null);
-    return { items: messages, nextCursor };
+    let i = 0;
+    let nextPublished: Temporal.Instant | null = null;
+    for await (const activity of activities) {
+      if (cursor != null && i >= this.collectionWindow) {
+        nextPublished = activity.published ??
+          (await activity.getObject())?.published ?? null;
+        break;
+      }
+      if (isVisible(activity)) items.push(activity);
+      i++;
+    }
+    return { items, nextCursor: nextPublished?.toString() ?? null };
   }
 
   getOutboxFirstCursor(
@@ -452,39 +412,28 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     identifier: string,
   ): Promise<number | null> {
     if (identifier !== this.identifier) return null;
-    const messageIds = await this.kv.get<string[]>(this.kvPrefixes.messages) ??
-      [];
-    return messageIds.length;
+    return await this.repository.countMessages();
   }
 
   async dispatchFollow(
-    ctx: RequestContext<TContextData>,
-    { id }: { id: string },
+    _ctx: RequestContext<TContextData>,
+    values: { id: string },
   ): Promise<Follow | null> {
-    const result = await this.kv.get([...this.kvPrefixes.follows, id]);
-    if (result == null) return null;
-    try {
-      return await Follow.fromJsonLd(result, ctx);
-    } catch {
-      return null;
-    }
+    const id = values.id as Uuid;
+    const follow = await this.repository.getSentFollow(id);
+    return follow ?? null;
   }
 
   async authorizeFollow(
-    ctx: RequestContext<TContextData>,
-    { id }: { id: string },
+    _ctx: RequestContext<TContextData>,
+    values: { id: string },
     _signedKey: CryptographicKey | null,
     signedKeyOwner: Actor | null,
   ): Promise<boolean> {
     if (signedKeyOwner == null || signedKeyOwner.id == null) return false;
-    const result = await this.kv.get([...this.kvPrefixes.follows, id]);
-    if (result == null) return false;
-    let follow: Follow;
-    try {
-      follow = await Follow.fromJsonLd(result, ctx);
-    } catch {
-      return false;
-    }
+    const id = values.id as Uuid;
+    const follow = await this.repository.getSentFollow(id);
+    if (follow == null) return false;
     return signedKeyOwner.id.href === follow.objectId?.href ||
       signedKeyOwner.id.href === follow.actorId?.href;
   }
@@ -493,18 +442,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ctx: RequestContext<TContextData>,
     values: { id: string },
   ): Promise<Create | null> {
-    const json = await this.kv.get([...this.kvPrefixes.messages, values.id]);
-    if (json == null) return null;
-    let create: Create;
-    try {
-      create = await Create.fromJsonLd(json, ctx);
-    } catch (e) {
-      if (e instanceof TypeError) return null;
-      throw e;
-    }
+    const activity = await this.repository.getMessage(values.id as Uuid);
+    if (!(activity instanceof Create)) return null;
     const isVisible = await this.getPermissionChecker(ctx);
-    if (isVisible(create)) return create;
-    return null;
+    return isVisible(activity) ? activity : null;
   }
 
   async dispatchMessage<T extends MessageClass>(
@@ -513,21 +454,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ctx: Context<TContextData> | RequestContext<TContextData>,
     id: string,
   ): Promise<T | null> {
-    const json = await this.kv.get([...this.kvPrefixes.messages, id]);
-    if (json == null) return null;
-    let create: Create;
-    try {
-      create = await Create.fromJsonLd(json, ctx);
-    } catch (e) {
-      if (e instanceof TypeError) return null;
-      throw e;
-    }
+    const activity = await this.repository.getMessage(id as Uuid);
+    if (!(activity instanceof Create)) return null;
     if ("request" in ctx) {
       // TODO: Split this method into two
       const isVisible = await this.getPermissionChecker(ctx);
-      if (!isVisible(create)) return null;
+      if (!isVisible(activity)) return null;
     }
-    const object = await create.getObject(ctx);
+    const object = await activity.getObject(ctx);
     if (object == null || !(object instanceof cls)) return null;
     return object;
   }
@@ -536,17 +470,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ctx: RequestContext<TContextData>,
     values: { id: string },
   ): Promise<Announce | null> {
-    const json = await this.kv.get([...this.kvPrefixes.messages, values.id]);
-    if (json == null) return null;
-    let announce: Announce;
-    try {
-      announce = await Announce.fromJsonLd(json, ctx);
-    } catch (e) {
-      if (e instanceof TypeError) return null;
-      throw e;
-    }
+    const activity = await this.repository.getMessage(values.id as Uuid);
+    if (!(activity instanceof Announce)) return null;
     const isVisible = await this.getPermissionChecker(ctx);
-    return isVisible(announce) ? announce : null;
+    return isVisible(activity) ? activity : null;
   }
 
   dispatchSharedKey(_ctx: Context<TContextData>): { identifier: string } {
@@ -588,34 +515,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     undo: Undo,
   ): Promise<void> {
     const followId = undo.objectId;
-    if (followId == null) return;
-    const followRequestKey: KvKey = [
-      ...this.kvPrefixes.followRequests,
-      followId.href,
-    ];
-    const followerId = await this.kv.get<string>(followRequestKey);
-    if (followerId == null) return;
-    const followerKey: KvKey = [...this.kvPrefixes.followers, followerId];
-    const followerJson = await this.kv.get(followerKey);
-    if (followerJson == null) return;
-    const follower = await Object.fromJsonLd(followerJson, ctx);
-    if (follower.id?.href !== undo.actorId?.href) return;
-    const lockKey: KvKey = [...this.kvPrefixes.followers, "lock"];
-    const listKey: KvKey = this.kvPrefixes.followers;
-    do {
-      await this.kv.set(lockKey, followerId);
-      let list = await this.kv.get<string[]>(listKey) ?? [];
-      list = list.filter((id) => id !== followerId);
-      await this.kv.set(listKey, list);
-    } while (await this.kv.get(lockKey) !== followerId);
-    await this.kv.delete(followerKey);
-    await this.kv.delete(followRequestKey);
-    if (this.onUnfollow != null) {
+    if (followId == null || undo.actorId == null) return;
+    const follower = await this.repository.removeFollower(
+      followId,
+      undo.actorId,
+    );
+    if (this.onUnfollow != null && follower != null) {
       const session = this.getSession(ctx);
-      const follower = await undo.getActor(ctx);
-      if (follower != null) {
-        await this.onUnfollow(session, follower);
-      }
+      await this.onUnfollow(session, follower);
     }
   }
 
@@ -625,12 +532,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<void> {
     const parsedObj = ctx.parseUri(accept.objectId);
     if (parsedObj?.type !== "object" || parsedObj.class !== Follow) return;
-    const followJson = await this.kv.get([
-      ...this.kvPrefixes.follows,
-      parsedObj.values.id,
-    ]);
-    if (followJson == null) return;
-    const follow = await Follow.fromJsonLd(followJson, ctx);
+    const follow = await this.repository.getSentFollow(
+      parsedObj.values.id as Uuid,
+    );
+    if (follow == null) return;
     const followee = await follow.getObject(ctx);
     if (
       !isActor(followee) || followee.id == null ||
@@ -638,10 +543,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ) {
       return;
     }
-    await this.kv.set(
-      [...this.kvPrefixes.followees, followee.id.href],
-      followJson,
-    );
+    await this.repository.addFollowee(followee.id, follow);
     if (this.onAcceptFollow != null) {
       const session = this.getSession(ctx);
       await this.onAcceptFollow(session, followee);
@@ -654,12 +556,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   ): Promise<void> {
     const parsedObj = ctx.parseUri(reject.objectId);
     if (parsedObj?.type !== "object" || parsedObj.class !== Follow) return;
-    const followJson = await this.kv.get([
-      ...this.kvPrefixes.follows,
-      parsedObj.values.id,
-    ]);
-    if (followJson == null) return;
-    const follow = await Follow.fromJsonLd(followJson, ctx);
+    const id = parsedObj.values.id as Uuid;
+    const follow = await this.repository.getSentFollow(id);
+    if (follow == null) return;
     const followee = await follow.getObject(ctx);
     if (
       !isActor(followee) || followee.id == null ||
@@ -667,10 +566,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ) {
       return;
     }
-    await this.kv.delete([
-      ...this.kvPrefixes.follows,
-      parsedObj.values.id,
-    ]);
+    await this.repository.removeSentFollow(id);
     if (this.onRejectFollow != null) {
       const session = this.getSession(ctx);
       await this.onRejectFollow(session, followee);
