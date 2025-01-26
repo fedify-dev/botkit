@@ -56,6 +56,13 @@ export type {
   MessageVisibility,
   SharedMessage,
 } from "./message.ts";
+export {
+  Announce,
+  Create,
+  KvRepository,
+  MemoryRepository,
+  type Repository,
+} from "./repository.ts";
 export type {
   Session,
   SessionPublishOptions,
