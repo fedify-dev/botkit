@@ -24,13 +24,13 @@ import {
   PUBLIC_COLLECTION,
 } from "@fedify/fedify/vocab";
 import { Hono } from "@hono/hono";
-import { join } from "@std/path/join";
 import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
 import { getMessageClass, isMessageObject } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
+import staticFiles from "./static/mod.ts";
 
 export interface Bindings {
   readonly bot: BotImpl<unknown>;
@@ -44,16 +44,10 @@ export interface Env {
 export const app = new Hono<Env>();
 
 app.get("/css/:filename", async (c) => {
-  let data: string;
-  try {
-    data = await Deno.readTextFile(
-      join(import.meta.dirname ?? ".", "css", c.req.param("filename")),
-    );
-  } catch (e) {
-    console.error(e);
-    return c.notFound();
-  }
-  return c.body(data, 200, { "Content-Type": "text/css" });
+  const file = await staticFiles.get(c.req.param("filename"));
+  if (file == null) return c.notFound();
+  const bytes = await file.bytes();
+  return c.body(bytes, 200, { "Content-Type": "text/css" });
 });
 
 const WINDOW = 15;

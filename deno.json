@@ -24,7 +24,6 @@
     "@phensley/language-tag": "npm:@phensley/language-tag@^1.9.2",
     "@std/assert": "jsr:@std/assert@^1.0.10",
     "@std/html": "jsr:@std/html@^1.0.3",
-    "@std/path": "jsr:@std/path@^1.0.8",
     "@std/uuid": "jsr:@std/uuid@^1.0.4",
     "markdown-it": "npm:markdown-it@^14.1.0",
     "xss": "npm:xss@^1.0.15"
@@ -33,15 +32,17 @@
   "exclude": [
     ".github",
     ".vscode",
-    "docs"
+    "docs",
+    "src/css"
   ],
   "fmt": {
     "exclude": [
-      "src/css/*.css",
-      "*.md"
+      "*.md",
+      "src/static/*.ts"
     ]
   },
   "tasks": {
+    "embed-css": "deno run -A jsr:@smallweb/embed src/css src/static",
     "check": "deno check src/ && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty",
     "test": "deno test --allow-net=hollo.social",
     "test-all": "deno task check && deno task test",
