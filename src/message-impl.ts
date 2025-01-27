@@ -392,7 +392,7 @@ const htmlXss = new FilterXSS({
     a: [...allowList.a ?? [], "class", "translate"],
   },
 });
-const textXss = new FilterXSS({
+export const textXss = new FilterXSS({
   allowList: {},
   stripIgnoreTag: true,
 });

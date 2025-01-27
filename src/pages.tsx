@@ -15,19 +15,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
 /** @jsxImportSource @hono/hono/jsx */
+import type { Context } from "@fedify/fedify/federation";
 import {
   type Announce,
   type Create,
+  getActorHandle,
   Image,
   Link,
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify/vocab";
 import { Hono } from "@hono/hono";
+import { unescape } from "@std/html/entities";
 import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
-import { getMessageClass, isMessageObject } from "./message-impl.ts";
+import { getMessageClass, isMessageObject, textXss } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
 
@@ -41,8 +44,6 @@ export interface Env {
 }
 
 export const app = new Hono<Env>();
-
-const WINDOW = 15;
 
 app.get("/", async (c) => {
   const { bot } = c.env;
@@ -73,38 +74,24 @@ app.get("/", async (c) => {
     properties[name] = valueHtml;
   }
   const offset = c.req.query("offset");
-  let posts = await Array.fromAsync(
-    bot.repository.getMessages({
-      order: "newest",
-      until: offset ? Temporal.Instant.from(offset) : undefined,
-      limit: WINDOW * 2,
-    }),
+  const { posts: messages, nextPost } = await getPosts(
+    bot,
+    ctx,
+    offset ? Temporal.Instant.from(offset) : undefined,
   );
-  let lastPost: Announce | Create | undefined = posts[posts.length - 1];
-  posts = posts.filter(isPublic);
-  while (lastPost != null && posts.length < WINDOW + 1) {
-    const limit = (WINDOW - posts.length) * 2;
-    const nextPosts = bot.repository.getMessages({
-      order: "newest",
-      until: lastPost.published ?? (await lastPost.getObject(ctx))?.published ??
-        undefined,
-      limit,
-    });
-    lastPost = undefined;
-    for await (const post of nextPosts) {
-      if (isPublic(post) && posts.length < WINDOW + 1) posts.push(post);
-      lastPost = post;
-    }
+  const activityLink = ctx.getActorUri(bot.identifier);
+  const feedLink = new URL("/feed.xml", url);
+  let nextLink: URL | undefined;
+  if (nextPost?.published != null) {
+    nextLink = new URL("/", url);
+    nextLink.searchParams.set("offset", nextPost.published.toString());
   }
-  const nextPost: Object | null = await posts[WINDOW]?.getObject(ctx);
-  posts = posts.slice(0, WINDOW);
-  const messages = (await Promise.all(posts.map((p) => p.getObject(ctx))))
-    .filter(isMessageObject);
   return c.html(
     <Layout
       bot={bot}
       host={url.host}
-      activityLink={ctx.getActorUri(bot.identifier)}
+      activityLink={activityLink}
+      feedLink={feedLink}
     >
       <header class="container">
         {image && (
@@ -132,6 +119,27 @@ app.get("/", async (c) => {
           </h1>
           <p>
             <span style="user-select: all;">{handle}</span> &middot;{" "}
+            <a
+              href="/feed.xml"
+              rel="alternate"
+              type="application/atom+xml"
+              title="Atom feed"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={18}
+                height={18}
+                viewBox="0 0 16 16"
+                aria-label="Atom feed"
+              >
+                <path
+                  fill="currentColor"
+                  d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm1.5 2.5c5.523 0 10 4.477 10 10a1 1 0 1 1-2 0a8 8 0 0 0-8-8a1 1 0 0 1 0-2m0 4a6 6 0 0 1 6 6a1 1 0 1 1-2 0a4 4 0 0 0-4-4a1 1 0 0 1 0-2m.5 7a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3"
+                >
+                </path>
+              </svg>
+            </a>{" "}
+            &middot;{" "}
             <span>
               {followersCount === 1
                 ? `1 follower`
@@ -143,6 +151,7 @@ app.get("/", async (c) => {
                 ? `1 post`
                 : `${postsCount.toLocaleString("en")} posts`}
             </span>
+            {" "}
           </p>
         </hgroup>
         {summary &&
@@ -175,13 +184,9 @@ app.get("/", async (c) => {
       </main>
       <footer class="container">
         <nav style="display: block; text-align: end;">
-          {nextPost?.published && (
-            <a
-              href={`/?offset=${
-                encodeURIComponent(nextPost.published.toString())
-              }`}
-            >
-              Older posts
+          {nextLink && (
+            <a rel="next" href={nextLink.href}>
+              Older posts &rarr;
             </a>
           )}
         </nav>
@@ -189,9 +194,12 @@ app.get("/", async (c) => {
     </Layout>,
     {
       headers: {
-        Link: `<${
-          ctx.getActorUri(bot.identifier).href
-        }>; rel="alternate"; type="application/activity+json"`,
+        Link:
+          `<${activityLink.href}>; rel="alternate"; type="application/activity+json", ` +
+          `<${feedLink.href}>; rel="alternate"; type="application/atom+xml"` +
+          (nextLink
+            ? `, <${nextLink.href}>; rel="next"; type="text/html"`
+            : ""),
       },
     },
   );
@@ -211,8 +219,14 @@ app.get("/message/:id", async (c) => {
     getMessageClass(message),
     { id },
   );
+  const feedLink = new URL("/feed.xml", url);
   return c.html(
-    <Layout bot={bot} host={url.host} activityLink={activityLink}>
+    <Layout
+      bot={bot}
+      host={url.host}
+      activityLink={activityLink}
+      feedLink={feedLink}
+    >
       <main class="container">
         <Message message={message} session={session} />
       </main>
@@ -220,11 +234,153 @@ app.get("/message/:id", async (c) => {
     {
       headers: {
         Link:
-          `<${activityLink.href}>; rel="alternate"; type="application/activity+json"`,
+          `<${activityLink.href}>; rel="alternate"; type="application/activity+json", ` +
+          `<${feedLink.href}>; rel="alternate"; type="application/atom+xml"`,
       },
     },
   );
 });
+
+app.get("/feed.xml", async (c) => {
+  const { bot } = c.env;
+  const url = new URL(c.req.url);
+  const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const session = bot.getSession(ctx);
+  const { posts } = await getPosts(bot, ctx, undefined, 30);
+  const botName = bot.name ?? bot.username;
+  const canonicalUrl = new URL("/feed.xml", url);
+  const profileUrl = new URL("/", url);
+  const actorUrl = ctx.getActorUri(bot.identifier);
+  c.header(
+    "Link",
+    `<${actorUrl.href}>; rel="alternate"; type="application/activity+json", ` +
+      `<${profileUrl.href}>; rel="alternate"; type="text/html"`,
+  );
+  const response = await c.render(
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <id>{canonicalUrl.href}</id>
+      <link rel="self" type="application/atom+xml" href={canonicalUrl.href} />
+      <link rel="alternate" type="text/html" href={profileUrl.href} />
+      <link
+        rel="alternate"
+        type="application/activity+json"
+        href={actorUrl.href}
+      />
+      <title>{botName} (@{bot.username}@{url.host})</title>
+      <author>
+        <name>{botName}</name>
+        <uri>{profileUrl.href}</uri>
+      </author>
+      {posts.length > 0 && (
+        <updated>
+          {(posts[0].updated ?? posts[0].published)?.toString()}
+        </updated>
+      )}
+      {posts.map(async (post) => {
+        const activityUrl = post.id;
+        if (activityUrl == null) return undefined;
+        const permalink =
+          (post.url instanceof Link ? post.url.href : post.url) ?? activityUrl;
+        const author = post.attributionId?.href === session.actorId?.href
+          ? await session.getActor()
+          : await post.getAttribution({
+            documentLoader: ctx.documentLoader,
+            contextLoader: ctx.contextLoader,
+            suppressError: true,
+          });
+        const authorName = author?.name ?? author?.preferredUsername ??
+          (author == null ? undefined : await getActorHandle(author));
+        const authorUrl =
+          (author?.url instanceof Link ? author.url.href : author?.url) ??
+            author?.id;
+        const updated = post.updated ?? post.published;
+        let title = post.name;
+        if (title == null) {
+          title = post.summary ?? post.content;
+          if (title != null) {
+            title = unescape(textXss.process(title.toString()));
+          }
+        }
+        return (
+          <entry>
+            <id>{permalink.href}</id>
+            <link rel="alternate" type="text/html" href={permalink.href} />
+            <link
+              rel="alternate"
+              type="application/activity+json"
+              href={activityUrl.href}
+            />
+            {authorName &&
+              (
+                <author>
+                  <name>{authorName}</name>
+                  {authorUrl &&
+                    <uri>{authorUrl.href}</uri>}
+                </author>
+              )}
+            {post.published && (
+              <published>{post.published.toString()}</published>
+            )}
+            {updated && <updated>{updated.toString()}</updated>}
+            {title && <title>{title}</title>}
+            {post.summary && (
+              <summary type="html">{post.summary.toString()}</summary>
+            )}
+            {post.content && (
+              <content type="html">{post.content.toString()}</content>
+            )}
+          </entry>
+        );
+      })}
+    </feed>,
+  );
+  response.headers.set("Content-Type", "application/atom+xml; charset=utf-8");
+  return response;
+});
+
+async function getPosts(
+  bot: BotImpl<unknown>,
+  ctx: Context<unknown>,
+  offset?: Temporal.Instant,
+  window = 15,
+): Promise<{ posts: MessageClass[]; nextPost?: Object }> {
+  let posts = await Array.fromAsync(
+    bot.repository.getMessages({
+      order: "newest",
+      until: offset,
+      limit: window * 2,
+    }),
+  );
+  let lastPost: Announce | Create | undefined = posts[posts.length - 1];
+  posts = posts.slice(0, posts.length - 1);
+  posts = posts.filter(isPublic);
+  while (lastPost != null && posts.length < window) {
+    const limit = (window - posts.length) * 2;
+    const until = lastPost.published ??
+      (await lastPost.getObject(ctx))?.published ??
+      undefined;
+    if (until == null) break;
+    const nextPosts = bot.repository.getMessages({
+      order: "newest",
+      until,
+      limit,
+    });
+    let i = 0;
+    lastPost = undefined;
+    for await (const post of nextPosts) {
+      if (isPublic(post) && posts.length < window + 1) posts.push(post);
+      lastPost = post;
+      i++;
+    }
+    if (i < limit) break;
+  }
+  const nextPost: Object | undefined = await posts[window]?.getObject(ctx) ??
+    undefined;
+  posts = posts.slice(0, window);
+  const messages = (await Promise.all(posts.map((p) => p.getObject(ctx))))
+    .filter(isMessageObject);
+  return { posts: messages, nextPost };
+}
 
 function isPublic(post: Create | Announce): boolean {
   return post.toIds.some((url) => url.href === PUBLIC_COLLECTION.href) ||

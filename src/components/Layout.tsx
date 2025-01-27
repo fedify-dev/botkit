@@ -23,10 +23,11 @@ export interface LayoutProps extends JSX.ElementChildrenAttribute {
   readonly host: string;
   readonly title?: string;
   readonly activityLink?: string | URL;
+  readonly feedLink?: string | URL;
 }
 
 export function Layout(
-  { bot, host, title, activityLink, children }: LayoutProps,
+  { bot, host, title, activityLink, feedLink, children }: LayoutProps,
 ) {
   const handle = `@${bot.username}@${host}`;
   const cssFilename = bot.pages.color === "azure"
@@ -47,8 +48,17 @@ export function Layout(
               rel="alternate"
               type="application/activity+json"
               href={activityLink.toString()}
+              title="ActivityPub"
             />
           )}
+        {feedLink && (
+          <link
+            rel="alternate"
+            type="application/atom+xml"
+            href={feedLink.toString()}
+            title="Atom feed"
+          />
+        )}
         <link
           rel="stylesheet"
           href={`https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${cssFilename}`}
