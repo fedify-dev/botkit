@@ -29,6 +29,9 @@ export function Layout(
   { bot, host, title, activityLink, children }: LayoutProps,
 ) {
   const handle = `@${bot.username}@${host}`;
+  const cssFilename = bot.pages.color === "azure"
+    ? `pico.min.css`
+    : `pico.${bot.pages.color}.min.css`;
   return (
     <html>
       <head>
@@ -46,7 +49,10 @@ export function Layout(
               href={activityLink.toString()}
             />
           )}
-        <link rel="stylesheet" href={`/css/pico.${bot.pages.color}.min.css`} />
+        <link
+          rel="stylesheet"
+          href={`https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/${cssFilename}`}
+        />
         <style>{bot.pages.css}</style>
       </head>
       <body>
