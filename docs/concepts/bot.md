@@ -279,7 +279,7 @@ Turned off by default.
 
 The options for the web pages of the bot.
 
-`~PageOptions.color`
+`~PagesOptions.color`
 :   The color of the theme.  It will be used for the theme color of the web
     pages.  The default color is `"green"`.
 
@@ -308,7 +308,7 @@ The options for the web pages of the bot.
 
     See also the [*Colors* section] of the Pico CSS docs.
 
-`~PageOptions.css`
+`~PagesOptions.css`
 :   The custom CSS to be injected into the web pages.  It should be a string
     of CSS code.
 
