@@ -15,22 +15,25 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
 /** @jsxImportSource @hono/hono/jsx */
-import type { Context } from "@fedify/fedify/federation";
 import { LanguageString } from "@fedify/fedify/runtime";
 import { getActorHandle, Link } from "@fedify/fedify/vocab";
 import type { MessageClass } from "../message.ts";
+import type { Session } from "../session.ts";
 
 export interface MessageProps {
   readonly message: MessageClass;
-  readonly context: Context<unknown>;
+  readonly session: Session<unknown>;
 }
 
-export async function Message({ context, message }: MessageProps) {
-  const author = await message.getAttribution({
-    documentLoader: context.documentLoader,
-    contextLoader: context.contextLoader,
-    suppressError: true,
-  });
+export async function Message({ session, message }: MessageProps) {
+  const { context } = session;
+  const author = message.attributionId?.href === session.actorId?.href
+    ? await session.getActor()
+    : await message.getAttribution({
+      documentLoader: context.documentLoader,
+      contextLoader: context.contextLoader,
+      suppressError: true,
+    });
   const authorIcon = await author?.getIcon({
     documentLoader: context.documentLoader,
     contextLoader: context.contextLoader,

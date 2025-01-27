@@ -169,7 +169,9 @@ app.get("/", async (c) => {
         )}
       </header>
       <main class="container">
-        {messages.map((message) => <Message message={message} context={ctx} />)}
+        {messages.map((message) => (
+          <Message message={message} session={session} />
+        ))}
       </main>
       <footer class="container">
         <nav style="display: block; text-align: end;">
@@ -200,6 +202,7 @@ app.get("/message/:id", async (c) => {
   const { bot } = c.env;
   const url = new URL(c.req.url);
   const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const session = bot.getSession(ctx);
   const post = await bot.repository.getMessage(id as Uuid);
   if (post == null || !isPublic(post)) return c.notFound();
   const message = await post.getObject(ctx);
@@ -211,7 +214,7 @@ app.get("/message/:id", async (c) => {
   return c.html(
     <Layout bot={bot} host={url.host} activityLink={activityLink}>
       <main class="container">
-        <Message message={message} context={ctx} />
+        <Message message={message} session={session} />
       </main>
     </Layout>,
     {
