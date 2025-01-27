@@ -26,6 +26,7 @@ export {
   createBot,
   type CreateBotOptions,
   Image,
+  type PagesOptions,
   parseSemVer,
   type SemVer,
   Service,
