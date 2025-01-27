@@ -162,7 +162,7 @@ const bot = createBot<void>({
   // Omitted other options for brevity
   properties: {
     Website: link("https://botkit.fedify.dev/"),
-    Repository: link("https://github.com/dahlia/botkit"),
+    Repository: link("https://github.com/fedify-dev/botkit"),
     Creator: mention("@hongminhee@hollo.social"),
   },
 });

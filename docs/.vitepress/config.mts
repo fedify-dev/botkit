@@ -84,7 +84,7 @@ export default defineConfig({
         link: "https://hollo.social/@botkit",
         ariaLabel: "Hollo (ActivityPub)",
       },
-      { icon: "github", link: "https://github.com/dahlia/botkit" },
+      { icon: "github", link: "https://github.com/fedify-dev/botkit" },
     ],
 
     search: {

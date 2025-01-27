@@ -15,7 +15,7 @@ const bot = createBot<void>({
   properties: {
     "Source code": link(
       "examples/greet.ts",
-      "https://github.com/dahlia/botkit/blob/main/examples/greet.ts",
+      "https://github.com/fedify-dev/botkit/blob/main/examples/greet.ts",
     ),
     "Powered by": link("BotKit", "https://botkit.fedify.dev/"),
   },

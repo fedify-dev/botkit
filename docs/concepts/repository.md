@@ -71,9 +71,9 @@ There are several [`KvStore`] implementations available in the Fedify:
 
 [`KvStore`]: https://fedify.dev/manual/kv
 [`RedisKvStore`]: https://fedify.dev/manual/kv#rediskvstore
-[@fedify/redis]: https://github.com/dahlia/fedify-redis
+[@fedify/redis]: https://github.com/fedify-dev/redis
 [`PostgresKvStore`]: https://fedify.dev/manual/kv#postgreskvstore
-[@fedify/postgres]: https://github.com/dahlia/fedify-postgres
+[@fedify/postgres]: https://github.com/fedify-dev/postgres
 [`DenoKvStore`]: https://fedify.dev/manual/kv#denokvstore-deno-only
 [Deno]: https://deno.com/
 [`Deno.openKv()`]: https://docs.deno.com/api/deno/~/Deno.openKv
