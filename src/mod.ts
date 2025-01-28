@@ -70,6 +70,7 @@ export type {
 } from "./session.ts";
 export {
   em,
+  hashtag,
   link,
   mention,
   plainText,

@@ -21,6 +21,7 @@ import {
   Mention,
   type Object,
 } from "@fedify/fedify";
+import { Hashtag } from "@fedify/fedify/vocab";
 import {
   mention as mentionPlugin,
   toFullHandle,
@@ -444,6 +445,60 @@ export function mention<TContextData>(
       return await session.context.lookupObject(a, { documentLoader });
     },
   );
+}
+
+/**
+ * A text tree that renders a hashtag.  You normally don't need to
+ * instantiate this directly; use the {@link hashtag} function instead.
+ * @typeParam TContextData The type of the context data.
+ */
+export class HashtagText<TContextData> implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  #tag: string;
+
+  /**
+   * Creates a {@link HashtagText} tree with a tag.
+   * @param tag The hashtag.  It does not matter whether it starts with `"#"`.
+   */
+  constructor(tag: string) {
+    this.#tag = tag.trimStart().replace(/^#/, "").trim().replace(/\s+/g, " ");
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    yield '<a href="';
+    yield escape(session.context.origin);
+    yield "/tags/";
+    yield escape(encodeURIComponent(this.#tag.toLowerCase()));
+    yield '" class="mention hashtag" rel="tag" target="_blank">#<span>';
+    yield this.#tag;
+    yield "</span></a>";
+  }
+
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+    yield new Hashtag({
+      href: new URL(
+        `/tags/${encodeURIComponent(this.#tag.toLowerCase())}`,
+        session.context.origin,
+      ),
+      name: `#${this.#tag.toLowerCase()}`,
+    });
+  }
+
+  getCachedObjects(): Object[] {
+    return [];
+  }
+}
+
+/**
+ * Creates a hashtag.  You can use this function to create a {@link HashtagText}
+ * tree.
+ * @param tag The hashtag.  It does not matter whether it starts with `"#"`.
+ * @returns A {@link HashtagText} tree.
+ */
+export function hashtag<TContextData>(
+  tag: string,
+): Text<"inline", TContextData> {
+  return new HashtagText(tag);
 }
 
 /**

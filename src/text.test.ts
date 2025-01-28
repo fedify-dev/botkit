@@ -16,12 +16,11 @@
 import {
   type Context,
   createFederation,
-  getDocumentLoader,
-  importJwk,
   MemoryKvStore,
-  Mention,
-  Person,
-} from "@fedify/fedify";
+} from "@fedify/fedify/federation";
+import { getDocumentLoader } from "@fedify/fedify/runtime";
+import { importJwk } from "@fedify/fedify/sig";
+import { Hashtag, Mention, Person } from "@fedify/fedify/vocab";
 import {
   assert,
   assertEquals,
@@ -33,6 +32,7 @@ import type { Session } from "./session.ts";
 import {
   code,
   em,
+  hashtag,
   isText,
   link,
   markdown,
@@ -466,6 +466,22 @@ Deno.test({
     assertInstanceOf(cache9[0], Person);
     assertEquals(cache9[0].id, new URL("https://example.com/ap/actor/bot"));
   },
+});
+
+Deno.test("hashtag()", async () => {
+  const session = bot.getSession("https://example.com");
+  const t: Text<"inline", void> = hashtag("Fediverse");
+  assertEquals(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    '<a href="https://example.com/tags/fediverse" class="mention hashtag" ' +
+      'rel="tag" target="_blank">#<span>Fediverse</span></a>',
+  );
+  const tags = await Array.fromAsync(t.getTags(session));
+  assertEquals(tags.length, 1);
+  assertInstanceOf(tags[0], Hashtag);
+  assertEquals(tags[0].name, "#fediverse");
+  assertEquals(tags[0].href, new URL("https://example.com/tags/fediverse"));
+  assertEquals(t.getCachedObjects(), []);
 });
 
 Deno.test("em()", async () => {

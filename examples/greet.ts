@@ -1,4 +1,4 @@
-import { createBot, Image, link, mention, text } from "@fedify/botkit";
+import { createBot, hashtag, Image, link, mention, text } from "@fedify/botkit";
 import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
 
 const kv = await Deno.openKv();
@@ -64,7 +64,9 @@ bot.onMention = async (_session, message) => {
 const session = bot.getSession(Deno.env.get("ORIGIN") ?? "http://localhost");
 setInterval(async () => {
   const message = await session.publish(
-    text`Hi, folks! It's a minutely greeting. It will be deleted in 30 seconds.`,
+    text`Hi, folks! It's a minutely greeting. It will be deleted in 30 seconds.  ${
+      hashtag("greet")
+    }`,
   );
   setTimeout(async () => {
     await message.delete();

@@ -20,6 +20,7 @@ import {
   type Announce,
   type Create,
   getActorHandle,
+  Hashtag,
   Image,
   Link,
   type Object,
@@ -77,7 +78,7 @@ app.get("/", async (c) => {
   const { posts: messages, nextPost } = await getPosts(
     bot,
     ctx,
-    offset ? Temporal.Instant.from(offset) : undefined,
+    offset ? { offset: Temporal.Instant.from(offset) } : {},
   );
   const activityLink = ctx.getActorUri(bot.identifier);
   const feedLink = new URL("/feed.xml", url);
@@ -205,6 +206,48 @@ app.get("/", async (c) => {
   );
 });
 
+app.get("/tags/:hashtag", async (c) => {
+  const hashtag = c.req.param("hashtag");
+  const { bot } = c.env;
+  const url = new URL(c.req.url);
+  const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const session = bot.getSession(ctx);
+  const offset = c.req.query("offset");
+  const { posts, nextPost } = await getPosts(bot, ctx, {
+    hashtag,
+    offset: offset == null ? undefined : Temporal.Instant.from(offset),
+  });
+  let nextLink: URL | undefined;
+  if (nextPost?.published != null) {
+    nextLink = new URL(`/tags/${encodeURIComponent(hashtag)}`, url);
+    nextLink.searchParams.set("offset", nextPost.published.toString());
+  }
+  return c.html(
+    <Layout bot={bot} host={url.host} title={`#${hashtag}`}>
+      <header class="container">
+        <h1>#{hashtag}</h1>
+      </header>
+      <main class="container">
+        {posts.map((message) => (
+          <Message message={message} session={session} />
+        ))}
+      </main>
+      <footer class="container">
+        <nav style="display: block; text-align: end;">
+          {nextLink && (
+            <a rel="next" href={nextLink.href}>Older posts &rarr;</a>
+          )}
+        </nav>
+      </footer>
+    </Layout>,
+    {
+      headers: nextLink == null ? {} : {
+        Link: `<${nextLink.href}>; rel="next"; type="text/html"`,
+      },
+    },
+  );
+});
+
 app.get("/message/:id", async (c) => {
   const id = c.req.param("id");
   const { bot } = c.env;
@@ -220,12 +263,20 @@ app.get("/message/:id", async (c) => {
     { id },
   );
   const feedLink = new URL("/feed.xml", url);
+  let title = message.name;
+  if (title == null) {
+    title = message.summary ?? message.content;
+    if (title != null) {
+      title = unescape(textXss.process(title.toString()));
+    }
+  }
   return c.html(
     <Layout
       bot={bot}
       host={url.host}
       activityLink={activityLink}
       feedLink={feedLink}
+      title={title?.toString() ?? undefined}
     >
       <main class="container">
         <Message message={message} session={session} />
@@ -246,7 +297,7 @@ app.get("/feed.xml", async (c) => {
   const url = new URL(c.req.url);
   const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
   const session = bot.getSession(ctx);
-  const { posts } = await getPosts(bot, ctx, undefined, 30);
+  const { posts } = await getPosts(bot, ctx, { window: 30 });
   const botName = bot.name ?? bot.username;
   const canonicalUrl = new URL("/feed.xml", url);
   const profileUrl = new URL("/", url);
@@ -338,12 +389,18 @@ app.get("/feed.xml", async (c) => {
   return response;
 });
 
+interface GetPostsOptions {
+  readonly hashtag?: string;
+  readonly offset?: Temporal.Instant;
+  readonly window?: number;
+}
+
 async function getPosts(
   bot: BotImpl<unknown>,
   ctx: Context<unknown>,
-  offset?: Temporal.Instant,
-  window = 15,
+  options: GetPostsOptions = {},
 ): Promise<{ posts: MessageClass[]; nextPost?: Object }> {
+  const { offset, window = 15 } = options;
   let posts = await Array.fromAsync(
     bot.repository.getMessages({
       order: "newest",
@@ -354,6 +411,15 @@ async function getPosts(
   let lastPost: Announce | Create | undefined = posts[posts.length - 1];
   posts = posts.slice(0, posts.length - 1);
   posts = posts.filter(isPublic);
+  if (options.hashtag != null) {
+    const taggedPosts = [];
+    for (const post of posts) {
+      if (await hasHashtag(ctx, post, options.hashtag)) {
+        taggedPosts.push(post);
+      }
+    }
+    posts = taggedPosts;
+  }
   while (lastPost != null && posts.length < window) {
     const limit = (window - posts.length) * 2;
     const until = lastPost.published ??
@@ -368,7 +434,10 @@ async function getPosts(
     let i = 0;
     lastPost = undefined;
     for await (const post of nextPosts) {
-      if (isPublic(post) && posts.length < window + 1) posts.push(post);
+      if (
+        isPublic(post) && await hasHashtag(ctx, post, options.hashtag) &&
+        posts.length < window + 1
+      ) posts.push(post);
       lastPost = post;
       i++;
     }
@@ -385,4 +454,33 @@ async function getPosts(
 function isPublic(post: Create | Announce): boolean {
   return post.toIds.some((url) => url.href === PUBLIC_COLLECTION.href) ||
     post.ccIds.some((url) => url.href === PUBLIC_COLLECTION.href);
+}
+
+async function hasHashtag(
+  context: Context<unknown>,
+  post: Create | Announce,
+  hashtag?: string,
+): Promise<boolean> {
+  if (hashtag == null) return true;
+  hashtag = normalizeHashtag(hashtag);
+  const object = await post.getObject(context);
+  if (object == null) return false;
+  for await (const tag of object.getTags(context)) {
+    if (
+      tag instanceof Hashtag && tag.name != null &&
+      normalizeHashtag(tag.name.toString()) === hashtag
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function normalizeHashtag(hashtag: string): string {
+  return hashtag
+    .toLowerCase()
+    .trimStart()
+    .replace(/^#/, "")
+    .trim()
+    .replace(/\s+/g, "");
 }

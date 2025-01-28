@@ -38,9 +38,8 @@ export function Layout(
       <head>
         <meta charset="utf-8" />
         <title>
-          {title == null
-            ? bot.name == null ? handle : `${bot.name} (${handle})`
-            : title}
+          {title != null && `${title} — `}
+          {bot.name == null ? handle : `${bot.name} (${handle})`}
         </title>
         {activityLink &&
           (

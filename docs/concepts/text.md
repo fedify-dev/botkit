@@ -349,6 +349,39 @@ The above code will create a text like this:
 > notifying, use the `link()` construct instead.
 
 
+Hashtags
+--------
+
+You can include a hashtag in the text using the `hashtag()` function.
+It is an inline construct.  For example:
+
+~~~~ typescript
+text`Here's a hashtag: ${hashtag("#BotKit")}.`
+~~~~
+
+The above code will create a text like this:
+
+> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+
+It does not matter if you put the leading `"#"` or not.  The `hashtag()`
+function will add the leading `"#"` if it is not present.  For example:
+
+~~~~ typescript
+text`Here's a hashtag: ${hashtag("BotKit")}.`
+~~~~
+
+The result is equivalent to the previous example:
+
+> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+
+> [!NOTE]
+> The `hashtag()` function does not only format the hashtag but also denotes
+> the hashtag so that ActivityPub software can recognize it as a hashtag.
+> The hashtag will be searchable in the fediverse (some software may search it
+> only from public messages though).  If you want to just link to the hashtag
+> without denoting it, use the `link()` construct instead.
+
+
 Code
 ----
 
