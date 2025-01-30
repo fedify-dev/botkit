@@ -22,6 +22,7 @@ import {
   type Object,
 } from "@fedify/fedify";
 import { Hashtag } from "@fedify/fedify/vocab";
+import { hashtag as hashtagPlugin } from "@fedify/markdown-it-hashtag";
 import {
   mention as mentionPlugin,
   toFullHandle,
@@ -719,6 +720,12 @@ export interface MarkdownTextOptions {
   readonly mentions?: boolean;
 
   /**
+   * Whether to render hashtags in the Markdown text.
+   * @default {true}
+   */
+  readonly hashtags?: boolean;
+
+  /**
    * Whether to automatically linkify URLs in the Markdown text.
    * @default {true}
    */
@@ -727,6 +734,8 @@ export interface MarkdownTextOptions {
 
 interface MarkdownEnv {
   mentions: string[];
+  hashtags: string[];
+  origin: string;
   actors?: Record<string, string | null>;
 }
 
@@ -739,6 +748,7 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
   readonly #content: string;
   readonly #markdownIt: typeof MarkdownIt;
   readonly #mentions?: string[];
+  readonly #hashtags?: string[];
   #actors?: Record<string, Object>;
 
   /**
@@ -767,9 +777,39 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
         },
         label: toFullHandle,
       });
-      const env: MarkdownEnv = { mentions: [] };
+      const env: MarkdownEnv = {
+        mentions: [],
+        hashtags: [],
+        origin: "http://localhost",
+      };
       md.render(content, env);
       this.#mentions = env.mentions;
+    }
+    if (options.hashtags ?? true) {
+      md.use(hashtagPlugin, {
+        link(hashtag: string, env: MarkdownEnv) {
+          const tag = hashtag.substring(1).toLowerCase();
+          return new URL(`/tags/${encodeURIComponent(tag)}`, env.origin).href;
+        },
+        linkAttributes(_hashtag: string, _env: MarkdownEnv) {
+          return {
+            class: "mention hashtag",
+            rel: "tag",
+            target: "_blank",
+          };
+        },
+        label(hashtag: string, _env: MarkdownEnv) {
+          const tag = hashtag.substring(1);
+          return `#<span>${tag}</span>`;
+        },
+      });
+      const env: MarkdownEnv = {
+        mentions: [],
+        hashtags: [],
+        origin: "http://localhost",
+      };
+      md.render(content, env);
+      this.#hashtags = env.hashtags;
     }
     this.#markdownIt = md;
   }
@@ -815,7 +855,12 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
         ] satisfies [string, string | null]
       ).filter(([_, url]) => url != null),
     );
-    const env: MarkdownEnv = { mentions: [], actors };
+    const env: MarkdownEnv = {
+      mentions: [],
+      hashtags: [],
+      origin: session.context.origin,
+      actors,
+    };
     yield this.#markdownIt.render(this.#content, env);
   }
 
@@ -828,6 +873,18 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
         name: handle,
         href: object.id,
       });
+    }
+    if (this.#hashtags != null) {
+      for (const hashtag of this.#hashtags) {
+        const tag = hashtag.substring(1).toLowerCase();
+        yield new Hashtag({
+          name: `#${tag}`,
+          href: new URL(
+            `/tags/${encodeURIComponent(tag)}`,
+            session.context.origin,
+          ),
+        });
+      }
     }
   }
 

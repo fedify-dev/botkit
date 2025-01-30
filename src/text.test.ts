@@ -559,7 +559,8 @@ Deno.test("markdown()", async () => {
 - I can have a list.
 - I can have a **bold** text.
 - I can have an _italic_ text.
-- I can mention @fedify@hollo.social.`;
+- I can mention @fedify@hollo.social.
+- I can tag #Hashtag.`;
   const t: Text<"block", void> = markdown(md);
   assertEquals(
     (await Array.fromAsync(t.getHtml(session))).join(""),
@@ -571,13 +572,17 @@ Deno.test("markdown()", async () => {
       '<a  translate="no" class="h-card u-url mention" target="_blank" href="https://hollo.social/@fedify">' +
       '<span class="at">@</span><span class="user">fedify</span>' +
       '<span class="at">@</span><span class="domain">hollo.social</span></a>.</li>\n' +
+      '<li>I can tag <a  class="mention hashtag" rel="tag" target="_blank" href="https://example.com/tags/hashtag">#<span>Hashtag</span></a>.</li>\n' +
       "</ul>\n",
   );
   const tags = await Array.fromAsync(t.getTags(session));
-  assertEquals(tags.length, 1);
+  assertEquals(tags.length, 2);
   assertInstanceOf(tags[0], Mention);
   assertEquals(tags[0].name, "@fedify@hollo.social");
   assertEquals(tags[0].href, new URL("https://hollo.social/@fedify"));
+  assertInstanceOf(tags[1], Hashtag);
+  assertEquals(tags[1].name, "#hashtag");
+  assertEquals(tags[1].href, new URL("https://example.com/tags/hashtag"));
   const cache = t.getCachedObjects();
   assertEquals(cache.length, 1);
   assertInstanceOf(cache[0], Person);

@@ -404,6 +404,9 @@ The above code will create a text like this:
 Markdown
 --------
 
+> [!NOTE]
+> The `markdown()` function does not support raw HTML syntax.
+
 Sometimes you have a Markdown text and want to render it as a `Text` object.
 You can use the `markdown()` function to convert the Markdown text to the `Text`
 object.  It is a block construct.  For example:
@@ -452,7 +455,11 @@ The above code will create a text like this:
 > -  I can have an _italic_ text.
 
 Besides the standard Markdown syntax, the `markdown()` function also supports
-the following mentioning syntax for the fediverse:
+mentioning and hashtag syntax for the fediverse.
+
+### Mentions
+
+The following example shows how to mention an account:
 
 ~~~~ typescript
 markdown(`Hello, @fedify@hollo.social!`)
@@ -483,8 +490,39 @@ The above code will create a text like this:
 
 > Hello, @fedify@hollo.social!
 
+### Hashtags
+
+The following example shows how to include a hashtag:
+
+~~~~ typescript
+markdown(`Here's a hashtag: #BotKit`)
+~~~~
+
+The above code will create a text like this:
+
+> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+
 > [!NOTE]
-> The `markdown()` function does not support raw HTML syntax.
+> The `markdown()` function does not only format the hashtag but also denotes
+> the hashtag so that ActivityPub software can recognize it as a hashtag.
+> The hashtag will be searchable in the fediverse (some software may search it
+> only from public messages though).  If you want to just link to the hashtag
+> without denoting it, use the normal link syntax instead:
+>
+> ~~~~ typescript
+> markdown(`Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit)`)
+> ~~~~
+
+If you want `#`-syntax to be treated as a normal text, turn off the syntax
+by setting the `hashtags` option to `false`:
+
+~~~~ typescript
+markdown(`Here's a hashtag: #BotKit`, { hashtags: false })
+~~~~
+
+The above code will create a text like this:
+
+> Here's a hashtag: #BotKit.
 
 
 Determining if the text mentions an account
