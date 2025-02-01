@@ -60,11 +60,16 @@ import type {
   MessageEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
+  SharedMessageEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
 import { FollowRequestImpl } from "./follow-impl.ts";
-import { createMessage, messageClasses } from "./message-impl.ts";
-import type { Message, MessageClass } from "./message.ts";
+import {
+  createMessage,
+  getMessageVisibility,
+  messageClasses,
+} from "./message-impl.ts";
+import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import { app } from "./pages.tsx";
 import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -102,6 +107,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
   onMessage?: MessageEventHandler<TContextData>;
+  onSharedMessage?: SharedMessageEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -200,6 +206,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       .on(Accept, this.onFollowAccepted.bind(this))
       .on(Reject, this.onFollowRejected.bind(this))
       .on(Create, this.onCreated.bind(this))
+      .on(Announce, this.onAnnounced.bind(this))
       .setSharedKeyDispatcher(this.dispatchSharedKey.bind(this));
     if (this.software != null) {
       this.federation.setNodeInfoDispatcher(
@@ -625,6 +632,48 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if (this.onMessage != null) {
       await this.onMessage(session, await getMessage());
     }
+  }
+
+  async onAnnounced(
+    ctx: InboxContext<TContextData>,
+    announce: Announce,
+  ): Promise<void> {
+    if (
+      this.onSharedMessage == null || announce.id == null ||
+      announce.actorId == null
+    ) return;
+    const objectUri = ctx.parseUri(announce.objectId);
+    let object: Object | null = null;
+    if (
+      objectUri?.type === "object" &&
+      // deno-lint-ignore no-explicit-any
+      messageClasses.includes(objectUri.class as any)
+    ) {
+      const msg = await this.repository.getMessage(objectUri.values.id as Uuid);
+      if (msg instanceof Create) object = await msg.getObject(ctx);
+    } else {
+      object = await announce.getObject(ctx);
+    }
+    if (
+      !(object instanceof Article || object instanceof ChatMessage ||
+        object instanceof Note || object instanceof Question)
+    ) {
+      return;
+    }
+    const session = this.getSession(ctx);
+    const actor = announce.actorId.href == session.actorId.href
+      ? await session.getActor()
+      : await announce.getActor(ctx);
+    if (actor == null) return;
+    const original = await createMessage(object, session, {});
+    const sharedMessage: SharedMessage<MessageClass, TContextData> = {
+      raw: announce,
+      id: announce.id,
+      actor,
+      visibility: getMessageVisibility(announce.toIds, announce.ccIds, actor),
+      original,
+    };
+    await this.onSharedMessage(session, sharedMessage);
   }
 
   dispatchNodeInfo(_ctx: Context<TContextData>): NodeInfo {

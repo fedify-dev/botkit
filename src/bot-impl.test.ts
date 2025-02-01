@@ -42,7 +42,7 @@ import { assertInstanceOf } from "@std/assert/instance-of";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
 import type { FollowRequest } from "./follow.ts";
-import type { Message, MessageClass } from "./message.ts";
+import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import { MemoryRepository } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -1783,6 +1783,42 @@ Deno.test("BotImpl.onCreated()", async (t) => {
   });
 
   messaged = [];
+});
+
+Deno.test("BotImpl.onAnnounced()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const shares: [Session<void>, SharedMessage<MessageClass, void>][] = [];
+  bot.onSharedMessage = (session, sharedMessage) =>
+    void (shares.push([session, sharedMessage]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+  const announce = new Announce({
+    id: new URL("https://example.com/ap/actor/bot/announce/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    to: PUBLIC_COLLECTION,
+    cc: new URL("https://example.com/ap/actor/bot/followers"),
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+  });
+  await bot.onAnnounced(ctx, announce);
+  assertEquals(shares.length, 1);
+  const [session, sharedMessage] = shares[0];
+  assertEquals(session.bot, bot);
+  assertEquals(session.context, ctx);
+  assertEquals(sharedMessage.raw, announce);
+  assertEquals(sharedMessage.id, announce.id);
+  assertEquals(sharedMessage.actor.id, announce.actorId);
+  assertEquals(sharedMessage.visibility, "public");
+  assertEquals(sharedMessage.original.id, announce.objectId);
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
 });
 
 Deno.test("BotImpl.dispatchNodeInfo()", () => {

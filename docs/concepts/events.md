@@ -253,3 +253,24 @@ bot.onMessage = async (session, message) => {
 >   }
 > };
 > ~~~~
+
+
+Shared message
+--------------
+
+The `~Bot.onSharedMessage` event handler is called when someone shares (i.e.,
+boosts) a message on your bot.  It receives a `SharedMessage` object,
+which represents the shared message, as the second argument.
+
+The following is an example of a shared message event handler that re-shares
+the shared message:
+
+~~~~ typescript
+bot.onSharedMessage = async (session, sharedMessage) => {
+  await sharedMessage.original.share();
+};
+~~~~
+
+> [!TIP]
+> The `~Bot.onSharedMessage` event handler can be called when someone your
+> bot does not follow shares a message on your bot.

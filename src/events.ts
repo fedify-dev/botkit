@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import type { Actor } from "@fedify/fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
-import type { Message, MessageClass } from "./message.ts";
+import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import type { Session } from "./session.ts";
 
 /**
@@ -94,4 +94,16 @@ export type ReplyEventHandler<TContextData> = (
 export type MessageEventHandler<TContextData> = (
   session: Session<TContextData>,
   message: Message<MessageClass, TContextData>,
+) => void | Promise<void>;
+
+/**
+ * An event handler for a message shared by the bot.  To listen to this event,
+ * your bot needs to follow others first.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param message The shared message to the bot's timeline.
+ */
+export type SharedMessageEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  message: SharedMessage<MessageClass, TContextData>,
 ) => void | Promise<void>;

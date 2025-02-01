@@ -29,6 +29,7 @@ import type {
   MessageEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
+  SharedMessageEventHandler,
   UnfollowEventHandler,
 } from "./events.ts";
 import type { Repository } from "./repository.ts";
@@ -120,6 +121,12 @@ export interface Bot<TContextData> {
    * to this event, your bot needs to follow others first.
    */
   onMessage?: MessageEventHandler<TContextData>;
+
+  /**
+   * An event handler for a message shared to the bot.  To listen to this event,
+   * your bot needs to follow others first.
+   */
+  onSharedMessage?: SharedMessageEventHandler<TContextData>;
 }
 
 /**

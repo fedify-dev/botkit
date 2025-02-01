@@ -32,7 +32,7 @@ import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
-import { createMessage } from "./message-impl.ts";
+import { createMessage, getMessageVisibility } from "./message-impl.ts";
 import { MemoryRepository } from "./repository.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -435,4 +435,45 @@ Deno.test("AuthorizedMessage.update()", async (t) => {
       }
     });
   }
+});
+
+Deno.test("getMessageVisibility()", () => {
+  assertEquals(
+    getMessageVisibility([PUBLIC_COLLECTION], [], new Person({})),
+    "public",
+  );
+  assertEquals(
+    getMessageVisibility([], [PUBLIC_COLLECTION], new Person({})),
+    "unlisted",
+  );
+  assertEquals(
+    getMessageVisibility(
+      [],
+      [new URL("https://example.com/followers")],
+      new Person({
+        followers: new URL("https://example.com/followers"),
+      }),
+    ),
+    "followers",
+  );
+  assertEquals(
+    getMessageVisibility(
+      [new URL("https://example.com/followers")],
+      [],
+      new Person({
+        followers: new URL("https://example.com/followers"),
+      }),
+    ),
+    "followers",
+  );
+  assertEquals(
+    getMessageVisibility(
+      [new URL("https://example.com/actor")],
+      [],
+      new Person({}),
+      new Set(["https://example.com/actor"]),
+    ),
+    "direct",
+  );
+  assertEquals(getMessageVisibility([], [], new Person({})), "unknown");
 });

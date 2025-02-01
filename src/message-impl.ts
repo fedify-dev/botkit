@@ -437,9 +437,6 @@ export async function createMessage<T extends MessageClass, TContextData>(
   const content = raw.content.toString();
   const text = textXss.process(content);
   const html = htmlXss.process(content);
-  const to = raw.toIds.map((uri) => uri.href);
-  const cc = raw.ccIds.map((uri) => uri.href);
-  const recipients = new Set([...to, ...cc]);
   const mentions: Actor[] = [];
   const mentionedActorIds = new Set<string>();
   const hashtags: Hashtag[] = [];
@@ -485,18 +482,12 @@ export async function createMessage<T extends MessageClass, TContextData>(
     raw,
     id: raw.id,
     actor,
-    visibility: to.includes(PUBLIC_COLLECTION.href)
-      ? "public"
-      : cc.includes(PUBLIC_COLLECTION.href)
-      ? "unlisted"
-      : actor.followersId != null &&
-          (to.includes(actor.followersId.href) ||
-            cc.includes(actor.followersId.href))
-      ? "followers"
-      : recipients.size > 0 &&
-          recipients.intersection(mentionedActorIds).size === recipients.size
-      ? "direct"
-      : "unknown",
+    visibility: getMessageVisibility(
+      raw.toIds,
+      raw.ccIds,
+      actor,
+      mentionedActorIds,
+    ),
     language: raw.content instanceof LanguageString
       ? raw.content.language
       : undefined,
@@ -509,4 +500,28 @@ export async function createMessage<T extends MessageClass, TContextData>(
     published: raw.published ?? undefined,
     updated: raw.updated ?? undefined,
   });
+}
+
+export function getMessageVisibility(
+  toIds: URL[],
+  ccIds: URL[],
+  actor: Actor,
+  mentionedActorIds?: Set<string>,
+): MessageVisibility {
+  const to = toIds.map((url) => url.href);
+  const cc = ccIds.map((url) => url.href);
+  const recipients = new Set([...to, ...cc]);
+  return to.includes(PUBLIC_COLLECTION.href)
+    ? "public"
+    : cc.includes(PUBLIC_COLLECTION.href)
+    ? "unlisted"
+    : actor.followersId != null &&
+        (to.includes(actor.followersId.href) ||
+          cc.includes(actor.followersId.href))
+    ? "followers"
+    : recipients.size > 0 &&
+        recipients.intersection(mentionedActorIds ?? new Set()).size ===
+          recipients.size
+    ? "direct"
+    : "unknown";
 }
