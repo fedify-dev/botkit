@@ -580,8 +580,8 @@ await message.share();  // [!code highlight]
 > await message.share({ visibility: "followers" });
 > ~~~~
 
-If you need to undo the sharing, you can call the `~SharedMessage.unshare()`
-method:
+If you need to undo the sharing, you can call
+the `~AuthorizedSharedMessage.unshare()` method:
 
 ~~~~ typescript
 const sharedMessage = await message.share();

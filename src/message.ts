@@ -83,6 +83,9 @@ export type MessageVisibility =
 /**
  * A message in the ActivityPub network.  It is a thin wrapper around
  * a Fedify object: an `Article`, a `ChatMessage`, a `Note`, or a `Question`.
+ * @typeParam T The class of the message.  One of `Article`, `ChatMessage`,
+ *              `Note`, or `Question`.
+ * @typeParam TContextData The type of the context data.
  */
 export interface Message<T extends MessageClass, TContextData> {
   /**
@@ -183,12 +186,17 @@ export interface Message<T extends MessageClass, TContextData> {
    * @throws {TypeError} If the visibility of the message is not `"public"` or
    *                     `"unlisted"`.
    */
-  share(options?: MessageShareOptions): Promise<SharedMessage<TContextData>>;
+  share(
+    options?: MessageShareOptions,
+  ): Promise<AuthorizedSharedMessage<T, TContextData>>;
 }
 
 /**
  * An authorized message in the ActivityPub network.  Usually it is a message
  * published by the bot itself.
+ * @typeParam T The class of the message.  One of `Article`, `ChatMessage`,
+ *              `Note`, or `Question`.
+ * @typeParam TContextData The type of the context data.
  */
 export interface AuthorizedMessage<T extends MessageClass, TContextData>
   extends Message<T, TContextData> {
@@ -220,8 +228,11 @@ export interface MessageShareOptions {
 /**
  * A shared message in the ActivityPub network.  It is a thin wrapper around
  * an `Announce`, which is a Fedify object.
+ * @typeParam T The class of the message.  One of `Article`, `ChatMessage`,
+ *              `Note`, or `Question`.
+ * @typeParam TContextData The type of the context data.
  */
-export interface SharedMessage<TContextData> {
+export interface SharedMessage<T extends MessageClass, TContextData> {
   /**
    * The underlying raw shared message object.
    */
@@ -245,12 +256,20 @@ export interface SharedMessage<TContextData> {
   /**
    * The original message.
    */
-  readonly original: Message<MessageClass, TContextData>;
+  readonly original: Message<T, TContextData>;
+}
 
+/**
+ * An authorized shared message in the ActivityPub network.  Usually it is a
+ * message shared by the bot itself.
+ * @typeParam T The class of the message.  One of `Article`, `ChatMessage`,
+ *              `Note`, or `Question`.
+ * @typeParam TContextData The type of the context data.
+ */
+export interface AuthorizedSharedMessage<T extends MessageClass, TContextData>
+  extends SharedMessage<T, TContextData> {
   /**
    * Undoes the shared message.
-   *
-   * If the shared message is not made by the bot, it silently fails.
    *
    * If the shared message is already undone, it silently fails.
    */

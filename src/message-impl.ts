@@ -40,11 +40,11 @@ import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS, getDefaultWhiteList } from "xss";
 import type {
   AuthorizedMessage,
+  AuthorizedSharedMessage,
   Message,
   MessageClass,
   MessageShareOptions,
   MessageVisibility,
-  SharedMessage,
 } from "./message.ts";
 import type { Uuid } from "./repository.ts";
 import type { SessionImpl } from "./session-impl.ts";
@@ -134,7 +134,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
 
   async share(
     options: MessageShareOptions = {},
-  ): Promise<SharedMessage<TContextData>> {
+  ): Promise<AuthorizedSharedMessage<T, TContextData>> {
     const published = new Date();
     const id = uuidv7(+published) as Uuid;
     const visibility = options.visibility ?? this.visibility;

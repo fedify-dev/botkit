@@ -50,6 +50,7 @@ export {
 export type {
   Actor,
   AuthorizedMessage,
+  AuthorizedSharedMessage,
   Message,
   MessageClass,
   MessageShareOptions,
