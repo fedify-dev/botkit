@@ -39,6 +39,8 @@
   "fmt": {
     "exclude": [
       "*.md",
+      "*.yaml",
+      "*.yml",
       "src/static/*.ts"
     ]
   },
