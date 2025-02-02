@@ -136,6 +136,9 @@ const bot: BotWithVoidContextData = {
       unfollow() {
         throw new Error("Not implemented");
       },
+      follows() {
+        throw new Error("Not implemented");
+      },
       publish() {
         throw new Error("Not implemented");
       },

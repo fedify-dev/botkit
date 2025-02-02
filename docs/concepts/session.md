@@ -174,3 +174,30 @@ bot.onUnfollow = async (session, actor) => {
 > [!NOTE]
 > If you try to unfollow an actor that is not followed, the method will just
 > do nothing.
+
+
+Checking if the bot follows an actor
+------------------------------------
+
+The `Session` object has a `~Session.follows()` method that returns a boolean
+value indicating whether your bot follows a given actor.  The following example
+shows how to check if your bot follows an actor and respond accordingly:
+
+~~~~ typescript
+bot.onMention = async (session, message) => {
+  const follows = await session.follows(message.author);
+  await session.publish(
+    follows
+      ? text`Hi ${message.author}, I'm already following you!`
+      : text`Hi ${message.author}, I don't follow you yet.`
+  );
+};
+~~~~
+
+> [!TIP]
+> Like other methods, `~Session.follows()` accepts several types of arguments
+> such as `Actor`, `string`, and `URL`.
+
+> [!NOTE]
+> This method returns `false` if the given actor doesn't exist or is
+> inaccessible.

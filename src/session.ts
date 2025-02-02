@@ -66,15 +66,15 @@ export interface Session<TContextData> {
    * Send a follow request to the specified actor.
    *
    * Note that it does not guarantee that the follow request will be accepted.
-   * You might need to handle {@link Bot.onAcceptFollow} and {@link Bot.onRejectFollow}
-   * events to know the result.
+   * You might need to handle {@link Bot.onAcceptFollow} and
+   * {@link Bot.onRejectFollow} events to know the result.
    *
    * If the bot is already following the actor, it does nothing.
    * @param actor The actor to follow.  It can be an `Actor` object, or a `URL`
    *              of the actor, or a URI string or a fediverse handle of the
    *              actor.
    * @throws {TypeError} If the actor URL is invalid or the resolved object
-   *                     is not an `Actor`.
+   *                     is not an `Actor` or the actor is the bot itself.
    */
   follow(actor: Actor | URL | string): Promise<void>;
 
@@ -89,9 +89,20 @@ export interface Session<TContextData> {
    *              or a `URL` of the actor, or a URI string or a fediverse handle
    *              of the actor.
    * @throws {TypeError} If the actor URL is invalid or the resolved object
-   *                     is not an `Actor`.
+   *                     is not an `Actor` or the actor is the bot itself.
    */
   unfollow(actor: Actor | URL | string): Promise<void>;
+
+  /**
+   * Checks whether the bot is following the specified actor.
+   * @param actor The actor to check whether the bot is following.  It can be
+   *              an `Actor` object, or a `URL` of the actor, or a URI string
+   *              or a fediverse handle of the actor.
+   * @returns `true` if the bot is following the actor, otherwise `false`.
+   * @throws {TypeError} If the actor URL is invalid or the resolved object
+   *                     is not an `Actor`.
+   */
+  follows(actor: Actor | URL | string): Promise<boolean>;
 
   /**
    * Publishes a message attributed to the bot.

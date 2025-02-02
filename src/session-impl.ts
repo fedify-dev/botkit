@@ -77,6 +77,13 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
 
   async follow(actor: Actor | URL | string): Promise<void> {
     if (actor instanceof URL || typeof actor === "string") {
+      if (
+        actor instanceof URL && actor.href === this.actorId.href ||
+        typeof actor === "string" &&
+          (actor === this.actorId.href || actor === this.actorHandle)
+      ) {
+        throw new TypeError("The bot cannot follow itself.");
+      }
       const documentLoader = await this.context.getDocumentLoader(this.bot);
       const object = await this.context.lookupObject(actor, { documentLoader });
       if (!isActor(object)) {
@@ -86,6 +93,8 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     }
     if (actor.id == null) {
       throw new TypeError("The actor does not have an ID.");
+    } else if (actor.id.href === this.actorId.href) {
+      throw new TypeError("The bot cannot follow itself.");
     }
     const followee = await this.bot.repository.getFollowee(actor.id);
     if (followee != null) {
@@ -114,6 +123,13 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
   async unfollow(actor: Actor | URL | string): Promise<void> {
     const documentLoader = await this.context.getDocumentLoader(this.bot);
     if (actor instanceof URL || typeof actor === "string") {
+      if (
+        actor instanceof URL && actor.href === this.actorId.href ||
+        typeof actor === "string" &&
+          (actor === this.actorId.href || actor === this.actorHandle)
+      ) {
+        throw new TypeError("The bot cannot unfollow itself.");
+      }
       const object = await this.context.lookupObject(actor, { documentLoader });
       if (!isActor(object)) {
         throw new TypeError("The resolved object is not an Actor.");
@@ -122,6 +138,8 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     }
     if (actor.id == null) {
       throw new TypeError("The actor does not have an ID.");
+    } else if (actor.id.href === this.actorId.href) {
+      throw new TypeError("The bot cannot unfollow itself.");
     }
     const follow = await this.bot.repository.getFollowee(actor.id);
     if (follow == null) {
@@ -145,6 +163,38 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { excludeBaseUris: [new URL(this.context.origin)] },
       );
     }
+  }
+
+  async follows(actor: Actor | URL | string): Promise<boolean> {
+    let actorId: URL;
+    if (isActor(actor)) {
+      if (actor.id == null) {
+        throw new TypeError("The actor does not have an ID.");
+      }
+      actorId = actor.id;
+    } else if (actor instanceof URL) {
+      actorId = actor;
+    } else {
+      if (actor.startsWith("http://") || actor.startsWith("https://")) {
+        actorId = new URL(actor);
+      } else {
+        if (actor === this.actorHandle) return false;
+        const documentLoader = await this.context.getDocumentLoader(this.bot);
+        const object = await this.context.lookupObject(actor, {
+          documentLoader,
+        });
+        if (!isActor(object)) {
+          throw new TypeError("The resolved object is not an Actor.");
+        }
+        if (object.id == null) {
+          throw new TypeError("The actor does not have an ID.");
+        }
+        actorId = object.id;
+      }
+    }
+    if (actorId.href === this.actorId.href) return false;
+    const follow = await this.bot.repository.getFollowee(actorId);
+    return follow != null;
   }
 
   async publish(

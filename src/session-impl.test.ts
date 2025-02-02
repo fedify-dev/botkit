@@ -26,7 +26,9 @@ import {
 } from "@fedify/fedify/vocab";
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
+import { assertFalse } from "@std/assert/false";
 import { assertInstanceOf } from "@std/assert/instance-of";
+import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
 import { MemoryRepository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -87,6 +89,39 @@ Deno.test("SessionImpl.follow()", async (t) => {
     await session.follow(actor);
     assertEquals(ctx.sentActivities, []);
   });
+
+  ctx.sentActivities = [];
+
+  await t.step("follow bot itself", async () => {
+    await assertRejects(
+      () => session.follow(session.actorId.href),
+      TypeError,
+      "The bot cannot follow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    await assertRejects(
+      () => session.follow(session.actorId),
+      TypeError,
+      "The bot cannot follow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    await assertRejects(
+      () => session.follow(session.actorHandle),
+      TypeError,
+      "The bot cannot follow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    const actor = await session.getActor();
+    await assertRejects(
+      () => session.follow(actor),
+      TypeError,
+      "The bot cannot follow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+  });
 });
 
 Deno.test("SessionImpl.unfollow()", async (t) => {
@@ -145,6 +180,89 @@ Deno.test("SessionImpl.unfollow()", async (t) => {
     });
     await session.unfollow(actor);
     assertEquals(ctx.sentActivities, []);
+  });
+
+  ctx.sentActivities = [];
+
+  await t.step("unfollow bot itself", async () => {
+    await assertRejects(
+      () => session.unfollow(session.actorId.href),
+      TypeError,
+      "The bot cannot unfollow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    await assertRejects(
+      () => session.unfollow(session.actorId),
+      TypeError,
+      "The bot cannot unfollow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    await assertRejects(
+      () => session.unfollow(session.actorHandle),
+      TypeError,
+      "The bot cannot unfollow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+
+    const actor = await session.getActor();
+    await assertRejects(
+      () => session.unfollow(actor),
+      TypeError,
+      "The bot cannot unfollow itself.",
+    );
+    assertEquals(ctx.sentActivities, []);
+  });
+});
+
+Deno.test("SessionImpl.follows()", async (t) => {
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+
+  await t.step("when it follows", async () => {
+    const followeeId = new URL("https://example.com/ap/actor/alice");
+    const followee = new Person({
+      id: followeeId,
+      preferredUsername: "alice",
+    });
+    await repository.addFollowee(
+      new URL("https://example.com/ap/actor/alice"),
+      new Follow({
+        id: new URL(
+          "https://example.com/ap/follow/4114eadb-2596-408f-ad99-06f467c9ace0",
+        ),
+        actor: new URL("https://example.com/ap/actor/bot"),
+        object: followee,
+      }),
+    );
+    assert(await session.follows(followeeId.href));
+    assert(await session.follows(followeeId));
+    assert(await session.follows(followee));
+  });
+
+  await t.step("when it does not follow", async () => {
+    const actorId = new URL("https://example.com/ap/actor/john");
+    const actor = new Person({
+      id: actorId,
+      preferredUsername: "john",
+    });
+    assertFalse(await session.follows(actorId.href));
+    assertFalse(await session.follows(actorId));
+    assertFalse(await session.follows(actor));
+  });
+
+  await t.step("bot itself", async () => {
+    assertFalse(await session.follows(session.actorId.href));
+    assertFalse(await session.follows(session.actorId));
+    assertFalse(await session.follows(await session.getActor()));
+    assertFalse(await session.follows(session.actorHandle));
   });
 });
 
