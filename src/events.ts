@@ -119,3 +119,14 @@ export type LikeEventHandler<TContextData> = (
   session: Session<TContextData>,
   like: Like<TContextData>,
 ) => void | Promise<void>;
+
+/**
+ * An event handler for undoing a like of a message.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param like The like activity which is undone.
+ */
+export type UnlikeEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  like: Like<TContextData>,
+) => void | Promise<void>;

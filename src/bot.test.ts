@@ -89,6 +89,11 @@ Deno.test("createBot()", async () => {
   assertEquals(bot.onLike, onLike);
   assertEquals(impl.onLike, onLike);
 
+  function onUnlike(_session: Session<void>, _like: Like<void>) {}
+  bot.onUnlike = onUnlike;
+  assertEquals(bot.onUnlike, onUnlike);
+  assertEquals(impl.onUnlike, onUnlike);
+
   const response = await bot.fetch(
     new Request(
       "https://example.com/.well-known/webfinger?resource=acct:bot@example.com",

@@ -32,6 +32,7 @@ import type {
   ReplyEventHandler,
   SharedMessageEventHandler,
   UnfollowEventHandler,
+  UnlikeEventHandler,
 } from "./events.ts";
 import type { Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
@@ -133,6 +134,11 @@ export interface Bot<TContextData> {
    * An event handler for a like of a message.
    */
   onLike?: LikeEventHandler<TContextData>;
+
+  /**
+   * An event handler for an undoing of a like of a message.
+   */
+  onUnlike?: UnlikeEventHandler<TContextData>;
 }
 
 /**
@@ -400,6 +406,12 @@ export function createBot<TContextData = void>(
     },
     set onLike(value) {
       bot.onLike = value;
+    },
+    get onUnlike() {
+      return bot.onUnlike;
+    },
+    set onUnlike(value) {
+      bot.onUnlike = value;
     },
   } satisfies Bot<TContextData> & { impl: BotImpl<TContextData> };
   // @ts-ignore: the wrapper implements BotWithVoidContextData

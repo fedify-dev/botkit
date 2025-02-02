@@ -52,6 +52,7 @@ import {
   Reject,
 } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
+import { getLogger } from "@logtape/logtape";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import type {
@@ -64,6 +65,7 @@ import type {
   ReplyEventHandler,
   SharedMessageEventHandler,
   UnfollowEventHandler,
+  UnlikeEventHandler,
 } from "./events.ts";
 import { FollowRequestImpl } from "./follow-impl.ts";
 import {
@@ -113,6 +115,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onMessage?: MessageEventHandler<TContextData>;
   onSharedMessage?: SharedMessageEventHandler<TContextData>;
   onLike?: LikeEventHandler<TContextData>;
+  onUnlike?: UnlikeEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -207,7 +210,18 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
       .on(Follow, this.onFollowed.bind(this))
-      .on(Undo, this.onUnfollowed.bind(this))
+      .on(Undo, async (ctx, undo) => {
+        const object = await undo.getObject(ctx);
+        if (object instanceof Follow) await this.onUnfollowed(ctx, undo);
+        else if (object instanceof RawLike) await this.onUnliked(ctx, undo);
+        else {
+          const logger = getLogger(["botkit", "bot", "inbox"]);
+          logger.warn(
+            "The Undo object {undoId} is not about Follow or Like: {object}.",
+            { undoId: undo.id?.href, object },
+          );
+        }
+      })
       .on(Accept, this.onFollowAccepted.bind(this))
       .on(Reject, this.onFollowRejected.bind(this))
       .on(Create, this.onCreated.bind(this))
@@ -677,8 +691,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     await this.onSharedMessage(session, sharedMessage);
   }
 
-  async onLiked(ctx: InboxContext<TContextData>, like: RawLike): Promise<void> {
-    if (this.onLike == null || like.id == null || like.actorId == null) return;
+  async #parseLike(
+    ctx: InboxContext<TContextData>,
+    like: RawLike,
+  ): Promise<
+    { session: Session<TContextData>; like: Like<TContextData> } | undefined
+  > {
+    if (like.id == null || like.actorId == null) return undefined;
     const objectUri = ctx.parseUri(like.objectId);
     let object: Object | null = null;
     if (
@@ -691,22 +710,41 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     } else {
       object = await like.getObject(ctx);
     }
-    if (!isMessageObject(object)) return;
+    if (!isMessageObject(object)) return undefined;
     const session = this.getSession(ctx);
     const actor = like.actorId.href == session.actorId.href
       ? await session.getActor()
       : await like.getActor(ctx);
     if (actor == null) return;
     const message = await createMessage(object, session, {});
-    await this.onLike(
+    return {
       session,
-      {
+      like: {
         raw: like,
         id: like.id,
         actor,
         message,
-      } satisfies Like<TContextData>,
-    );
+      },
+    };
+  }
+
+  async onLiked(ctx: InboxContext<TContextData>, like: RawLike): Promise<void> {
+    if (this.onLike == null) return;
+    const sessionAndLike = await this.#parseLike(ctx, like);
+    if (sessionAndLike == null) return;
+    const { session, like: likeObject } = sessionAndLike;
+    await this.onLike(session, likeObject);
+  }
+
+  async onUnliked(ctx: InboxContext<TContextData>, undo: Undo): Promise<void> {
+    if (this.onUnlike == null) return;
+    const like = await undo.getObject(ctx);
+    if (!(like instanceof RawLike)) return;
+    if (undo.actorId?.href !== like.actorId?.href) return;
+    const sessionAndLike = await this.#parseLike(ctx, like);
+    if (sessionAndLike == null) return;
+    const { session, like: likeObject } = sessionAndLike;
+    await this.onUnlike(session, likeObject);
   }
 
   dispatchNodeInfo(_ctx: Context<TContextData>): NodeInfo {

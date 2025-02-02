@@ -295,3 +295,25 @@ bot.onLike = async (session, like) => {
   );
 };
 ~~~~
+
+
+Unlike
+------
+
+The `~Bot.onUnlike` event handler is called when someone undoes a `Like`
+activity on messages on your bot or actors your bot follows.  It receives
+a `Like` object, which represents the `Like` activity which was undone,
+as the second argument.
+
+The following is an example of an unlike event handler that sends a direct
+message when someone undoes a like activity on a message on your bot:
+
+~~~~ typescript
+bot.onUnlike = async (session, like) => {
+  if (like.message.actor.id?.href !== session.actorId.href) return;
+  await session.publish(
+    text`I'm sorry to hear that you unliked my message, ${like.actor}.`,
+    { visibility: "direct" },
+  );
+};
+~~~~

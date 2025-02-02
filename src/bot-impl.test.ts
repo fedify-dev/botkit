@@ -1832,7 +1832,7 @@ Deno.test("BotImpl.onLiked()", async () => {
   bot.onLike = (session, like) => void (likes.push([session, like]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
   const rawLike = new RawLike({
-    id: new URL("https://example.com/ap/actor/bot/announce/1"),
+    id: new URL("https://example.com/ap/actor/bot/like/1"),
     actor: new URL("https://example.com/ap/actor/bot"),
     object: new Note({
       id: new URL("https://example.com/ap/actor/bot/note/1"),
@@ -1853,6 +1853,50 @@ Deno.test("BotImpl.onLiked()", async () => {
   assertEquals(like.message.id, rawLike.objectId);
   assertEquals(ctx.sentActivities, []);
   assertEquals(ctx.forwardedRecipients, []);
+});
+
+Deno.test("BotImpl.onUnliked()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const likes: [Session<void>, Like<void>][] = [];
+  bot.onUnlike = (session, like) => void (likes.push([session, like]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+  const rawLike = new RawLike({
+    id: new URL("https://example.com/ap/actor/bot/like/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+  });
+  const undo = new Undo({
+    id: new URL("https://example.com/ap/actor/bot/unlike/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    object: rawLike,
+  });
+  await bot.onUnliked(ctx, undo);
+  assertEquals(likes.length, 1);
+  const [session, like] = likes[0];
+  assertEquals(session.bot, bot);
+  assertEquals(session.context, ctx);
+  assertEquals(like.raw, rawLike);
+  assertEquals(like.id, rawLike.id);
+  assertEquals(like.actor.id, rawLike.actorId);
+  assertEquals(like.message.id, rawLike.objectId);
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
+
+  likes.pop();
+  const invalidUndo = undo.clone({
+    actor: new URL("https://example.com/ap/actor/another"),
+  });
+  await bot.onUnliked(ctx, invalidUndo);
+  assertEquals(likes, []);
 });
 
 Deno.test("BotImpl.dispatchNodeInfo()", () => {
