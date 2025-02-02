@@ -24,6 +24,7 @@ import type {
   Question,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
+import type { AuthorizedLike } from "./reaction.ts";
 import type {
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
@@ -189,6 +190,12 @@ export interface Message<T extends MessageClass, TContextData> {
   share(
     options?: MessageShareOptions,
   ): Promise<AuthorizedSharedMessage<T, TContextData>>;
+
+  /**
+   * Likes the message.
+   * @returns The like object.
+   */
+  like(): Promise<AuthorizedLike<TContextData>>;
 }
 
 /**

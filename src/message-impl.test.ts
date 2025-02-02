@@ -16,13 +16,17 @@
 import { MemoryKvStore } from "@fedify/fedify/federation";
 import {
   Announce,
+  Article,
+  ChatMessage,
   Create,
   Delete,
   Hashtag,
+  Like as RawLike,
   Mention,
   Note,
   Person,
   PUBLIC_COLLECTION,
+  Question,
   Tombstone,
   Undo,
   Update,
@@ -32,11 +36,43 @@ import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
-import { createMessage, getMessageVisibility } from "./message-impl.ts";
+import {
+  createMessage,
+  getMessageClass,
+  getMessageVisibility,
+  isMessageObject,
+} from "./message-impl.ts";
 import { MemoryRepository } from "./repository.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
 import { text } from "./text.ts";
+
+Deno.test("isMessageObject()", () => {
+  assert(isMessageObject(new Article({})));
+  assert(isMessageObject(new ChatMessage({})));
+  assert(isMessageObject(new Note({})));
+  assert(isMessageObject(new Question({})));
+  assert(!isMessageObject(new Person({})));
+});
+
+Deno.test("getMessageClass()", () => {
+  assertEquals(
+    getMessageClass(new Article({})),
+    Article,
+  );
+  assertEquals(
+    getMessageClass(new ChatMessage({})),
+    ChatMessage,
+  );
+  assertEquals(
+    getMessageClass(new Note({})),
+    Note,
+  );
+  assertEquals(
+    getMessageClass(new Question({})),
+    Question,
+  );
+});
 
 Deno.test("createMessage()", async () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
@@ -316,6 +352,71 @@ Deno.test("MessageImpl.share()", async (t) => {
       originalPost.attributionId,
     ]);
     assertEquals(activity.objectId, sharedMsg.id);
+  });
+});
+
+Deno.test("MessageImpl.like()", async (t) => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+  const originalPost = new Note({
+    id: new URL(
+      "https://example.com/ap/note/c1c792ce-a0be-4685-b396-e59e5ef8c788",
+    ),
+    content: "<p>Hello, world!</p>",
+    attribution: new Person({
+      id: new URL("https://example.com/ap/actor/john"),
+      preferredUsername: "john",
+    }),
+    to: new URL("https://example.com/ap/actor/john/followers"),
+    cc: PUBLIC_COLLECTION,
+  });
+  const message = await createMessage<Note, void>(
+    originalPost,
+    session,
+    {},
+  );
+  const like = await message.like();
+
+  await t.step("like()", async () => {
+    assertEquals(ctx.sentActivities.length, 2);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, "followers");
+    assertInstanceOf(activity, RawLike);
+    assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity.objectId, message.id);
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [message.actor]);
+    assertInstanceOf(activity2, RawLike);
+    assertEquals(activity2, activity);
+    assertEquals(like.actor, await session.getActor());
+    assertEquals(like.raw, activity);
+    assertEquals(like.id, activity.id);
+    assertEquals(like.message, message);
+  });
+
+  ctx.sentActivities = [];
+
+  await t.step("unlike()", async () => {
+    await like.unlike();
+    assertEquals(ctx.sentActivities.length, 2);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, "followers");
+    assertInstanceOf(activity, Undo);
+    assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+    const object = await activity.getObject();
+    assertInstanceOf(object, RawLike);
+    assertEquals(object.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(object.objectId, message.id);
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [message.actor]);
+    assertInstanceOf(activity2, Undo);
+    assertEquals(activity2, activity);
   });
 });
 

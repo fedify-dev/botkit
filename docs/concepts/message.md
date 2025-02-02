@@ -8,9 +8,10 @@ Message
 =======
 
 The `Message` object is a representation of a message that is published to
-the fediverse.  You can interact with the `Message` object such as [replying
-to it](#replying-to-a-message), [sharing it](#sharing-a-message), [deleting
-it](#deleting-a-message), and so on.
+the fediverse.  You can interact with the `Message` object such as
+[liking it](#liking-a-message), [replying to it](#replying-to-a-message),
+[sharing it](#sharing-a-message), [deleting it](#deleting-a-message),
+and so on.
 
 
 Where to get a `Message` object
@@ -504,6 +505,34 @@ setTimeout(async () => {
 > Since the `~AuthorizedMessage.delete()` method belongs to
 > the `AuthorizedMessage` type, you cannot call it on an unauthorized `Message`
 > object.
+
+
+Liking a message
+----------------
+
+You can like a message by calling the `~Message.like()` method:
+
+~~~~ typescript
+const message = await session.publish(
+  text`This message will be liked.`
+);
+await message.like();  // [!code highlight]
+~~~~
+
+> [!CAUTION]
+> You may call the `~Message.like()` method on a message that is already liked,
+> but it will not raise an error.  Under the hood, such a call actually sends
+> multiple `Like` activities to the fediverse, whose behavior is
+> undefined—some servers may ignore the duplicated activities, some servers
+> may allow them and count them as multiple likes.
+
+If you need to undo the liking, you can call the `~AuthorizedLike.unlike()`
+method:
+
+~~~~ typescript
+const like = await message.like();
+await like.unlike();  // [!code highlight]
+~~~~
 
 
 Replying to a message

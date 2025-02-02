@@ -108,6 +108,20 @@ Deno.cron("scheduled messages", "0 0 12 * * *", async () => {
 [`Deno.cron()`]: https://docs.deno.com/api/deno/~/Deno.cron
 
 
+Automatically liking mentions
+-----------------------------
+
+It is simple to automatically like mentions of your bot.  You can use the
+[`onMention`](./concepts/events.md#mention) event handler and
+the [`Message.like()`](./concepts/message.md#liking-a-message) method together:
+
+~~~~ typescript
+bot.onMention = async (session, message) => {
+  await message.like();
+};
+~~~~
+
+
 Automatically replying to mentions
 ----------------------------------
 

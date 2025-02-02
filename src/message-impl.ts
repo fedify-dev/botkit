@@ -24,6 +24,7 @@ import {
   Document,
   Hashtag,
   isActor,
+  Like as RawLike,
   type Link,
   Mention,
   Note,
@@ -46,6 +47,7 @@ import type {
   MessageShareOptions,
   MessageVisibility,
 } from "./message.ts";
+import type { AuthorizedLike } from "./reaction.ts";
 import type { Uuid } from "./repository.ts";
 import type { SessionImpl } from "./session-impl.ts";
 import type {
@@ -93,7 +95,10 @@ export class MessageImpl<T extends MessageClass, TContextData>
 
   constructor(
     session: SessionImpl<TContextData>,
-    message: Omit<Message<T, TContextData>, "delete" | "reply" | "share">,
+    message: Omit<
+      Message<T, TContextData>,
+      "delete" | "reply" | "share" | "like"
+    >,
   ) {
     this.session = session;
     this.raw = message.raw;
@@ -195,6 +200,66 @@ export class MessageImpl<T extends MessageClass, TContextData>
             ccs: announce.ccIds,
             object: announce,
           }),
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+          },
+        );
+      },
+    };
+  }
+
+  async like(): Promise<AuthorizedLike<TContextData>> {
+    const uuid = crypto.randomUUID();
+    const actor = this.session.context.getActorUri(this.session.bot.identifier);
+    const id = new URL(`#like/${uuid}`, actor);
+    const activity = new RawLike({
+      id,
+      actor,
+      object: this.id,
+    });
+    await this.session.context.sendActivity(
+      this.session.bot,
+      "followers",
+      activity,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+      },
+    );
+    await this.session.context.sendActivity(
+      this.session.bot,
+      this.actor,
+      activity,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+      },
+    );
+    return {
+      raw: activity,
+      id,
+      actor: await this.session.getActor(),
+      message: this,
+      unlike: async () => {
+        const undo = new Undo({
+          id: new URL(`#unlike/${uuid}`, actor),
+          actor,
+          object: activity,
+        });
+        await this.session.context.sendActivity(
+          this.session.bot,
+          "followers",
+          undo,
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+          },
+        );
+        await this.session.context.sendActivity(
+          this.session.bot,
+          this.actor,
+          undo,
           {
             preferSharedInbox: true,
             excludeBaseUris: [new URL(this.session.context.origin)],
