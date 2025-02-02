@@ -25,6 +25,7 @@ import { BotImpl } from "./bot-impl.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
+  LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
   RejectEventHandler,
@@ -127,6 +128,11 @@ export interface Bot<TContextData> {
    * your bot needs to follow others first.
    */
   onSharedMessage?: SharedMessageEventHandler<TContextData>;
+
+  /**
+   * An event handler for a like of a message.
+   */
+  onLike?: LikeEventHandler<TContextData>;
 }
 
 /**
@@ -327,6 +333,7 @@ export function createBot<TContextData = void>(
   // we wrap a BotImpl instance with a plain object.
   // See also https://github.com/denoland/deno/issues/24062
   const wrapper = {
+    impl: bot,
     get federation() {
       return bot.federation;
     },
@@ -352,6 +359,18 @@ export function createBot<TContextData = void>(
     set onUnfollow(value) {
       bot.onUnfollow = value;
     },
+    get onAcceptFollow() {
+      return bot.onAcceptFollow;
+    },
+    set onAcceptFollow(value) {
+      bot.onAcceptFollow = value;
+    },
+    get onRejectFollow() {
+      return bot.onRejectFollow;
+    },
+    set onRejectFollow(value) {
+      bot.onRejectFollow = value;
+    },
     get onMention() {
       return bot.onMention;
     },
@@ -364,7 +383,25 @@ export function createBot<TContextData = void>(
     set onReply(value) {
       bot.onReply = value;
     },
-  } satisfies Bot<TContextData>;
+    get onMessage() {
+      return bot.onMessage;
+    },
+    set onMessage(value) {
+      bot.onMessage = value;
+    },
+    get onSharedMessage() {
+      return bot.onSharedMessage;
+    },
+    set onSharedMessage(value) {
+      bot.onSharedMessage = value;
+    },
+    get onLike() {
+      return bot.onLike;
+    },
+    set onLike(value) {
+      bot.onLike = value;
+    },
+  } satisfies Bot<TContextData> & { impl: BotImpl<TContextData> };
   // @ts-ignore: the wrapper implements BotWithVoidContextData
   return wrapper;
 }

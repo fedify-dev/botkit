@@ -16,6 +16,7 @@
 import type { Actor } from "@fedify/fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
+import type { Like } from "./reaction.ts";
 import type { Session } from "./session.ts";
 
 /**
@@ -106,4 +107,15 @@ export type MessageEventHandler<TContextData> = (
 export type SharedMessageEventHandler<TContextData> = (
   session: Session<TContextData>,
   message: SharedMessage<MessageClass, TContextData>,
+) => void | Promise<void>;
+
+/**
+ * An event handler for a like of a message.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param like The like activity of the message.
+ */
+export type LikeEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  like: Like<TContextData>,
 ) => void | Promise<void>;

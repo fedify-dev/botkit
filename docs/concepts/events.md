@@ -274,3 +274,24 @@ bot.onSharedMessage = async (session, sharedMessage) => {
 > [!TIP]
 > The `~Bot.onSharedMessage` event handler can be called when someone your
 > bot does not follow shares a message on your bot.
+
+
+Like
+----
+
+The `~Bot.onLike` event handler is called when someone likes messages on your
+bot or actors your bot follows.  It receives a `Like` object, which represents
+the like activity, as the second argument.
+
+The following is an example of a like event handler that sends a direct message
+when someone likes a message on your bot:
+
+~~~~ typescript
+bot.onLike = async (session, like) => {
+  if (like.message.actor.id?.href !== session.actorId.href) return;
+  await session.publish(
+    text`Thanks for liking my message, ${like.actor}!`,
+    { visibility: "direct" },
+  );
+};
+~~~~

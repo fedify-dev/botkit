@@ -31,6 +31,7 @@ import {
   Image,
   type InboxContext,
   isActor,
+  Like as RawLike,
   type Link,
   Mention,
   type NodeInfo,
@@ -56,6 +57,7 @@ import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
+  LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
   RejectEventHandler,
@@ -67,10 +69,12 @@ import { FollowRequestImpl } from "./follow-impl.ts";
 import {
   createMessage,
   getMessageVisibility,
+  isMessageObject,
   messageClasses,
 } from "./message-impl.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import { app } from "./pages.tsx";
+import type { Like } from "./reaction.ts";
 import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -108,6 +112,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onReply?: ReplyEventHandler<TContextData>;
   onMessage?: MessageEventHandler<TContextData>;
   onSharedMessage?: SharedMessageEventHandler<TContextData>;
+  onLike?: LikeEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -207,6 +212,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       .on(Reject, this.onFollowRejected.bind(this))
       .on(Create, this.onCreated.bind(this))
       .on(Announce, this.onAnnounced.bind(this))
+      .on(RawLike, this.onLiked.bind(this))
       .setSharedKeyDispatcher(this.dispatchSharedKey.bind(this));
     if (this.software != null) {
       this.federation.setNodeInfoDispatcher(
@@ -654,12 +660,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     } else {
       object = await announce.getObject(ctx);
     }
-    if (
-      !(object instanceof Article || object instanceof ChatMessage ||
-        object instanceof Note || object instanceof Question)
-    ) {
-      return;
-    }
+    if (!isMessageObject(object)) return;
     const session = this.getSession(ctx);
     const actor = announce.actorId.href == session.actorId.href
       ? await session.getActor()
@@ -674,6 +675,38 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       original,
     };
     await this.onSharedMessage(session, sharedMessage);
+  }
+
+  async onLiked(ctx: InboxContext<TContextData>, like: RawLike): Promise<void> {
+    if (this.onLike == null || like.id == null || like.actorId == null) return;
+    const objectUri = ctx.parseUri(like.objectId);
+    let object: Object | null = null;
+    if (
+      objectUri?.type === "object" &&
+      // deno-lint-ignore no-explicit-any
+      messageClasses.includes(objectUri.class as any)
+    ) {
+      const msg = await this.repository.getMessage(objectUri.values.id as Uuid);
+      if (msg instanceof Create) object = await msg.getObject(ctx);
+    } else {
+      object = await like.getObject(ctx);
+    }
+    if (!isMessageObject(object)) return;
+    const session = this.getSession(ctx);
+    const actor = like.actorId.href == session.actorId.href
+      ? await session.getActor()
+      : await like.getActor(ctx);
+    if (actor == null) return;
+    const message = await createMessage(object, session, {});
+    await this.onLike(
+      session,
+      {
+        raw: like,
+        id: like.id,
+        actor,
+        message,
+      } satisfies Like<TContextData>,
+    );
   }
 
   dispatchNodeInfo(_ctx: Context<TContextData>): NodeInfo {
