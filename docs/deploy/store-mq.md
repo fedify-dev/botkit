@@ -219,6 +219,8 @@ const bot = createBot<void>({
   kv: new DenoKvStore(kv),
   queue: new DenoKvMessageQueue(kv),
 });
+
+bot.federation.startQueue();
 ~~~~
 
 > [!NOTE]
