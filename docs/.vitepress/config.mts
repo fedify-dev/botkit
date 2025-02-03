@@ -40,6 +40,16 @@ const concepts = {
   ],
 };
 
+const deploy = {
+  text: "Deploy",
+  items: [
+    { text: "Store and message queue", link: "/deploy/store-mq.md" },
+    { text: "Deno Deploy", link: "/deploy/deno-deploy.md" },
+    { text: "Docker", link: "/deploy/docker.md" },
+    { text: "Self-hosting", link: "/deploy/self-hosting.md" },
+  ],
+};
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "BotKit by Fedify",
@@ -52,6 +62,7 @@ export default defineConfig({
       { text: "About", link: "/intro.md" },
       { text: "Start", link: "/start.md" },
       concepts,
+      deploy,
       { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
     ],
@@ -60,6 +71,7 @@ export default defineConfig({
       { text: "What is BotKit?", link: "/intro.md" },
       { text: "Getting started", link: "/start.md" },
       concepts,
+      deploy,
       { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
       { text: "Changelog", link: "/changelog.md" },
