@@ -31,11 +31,12 @@ FediChatBot
 <img src="https://raw.githubusercontent.com/fedify-dev/fedichatbot/refs/heads/main/logo.png" width="128" height="128">
 
 [FediChatBot] is an LLM-powered chatbot for fediverse, of course, built on top
-of BotKit.  It consists of about 300 lines of code, and it's a good example of
+of BotKit.  It consists of about 350 lines of code, and it's a good example of
 how to build a chatbot with BotKit.  You can find the source code at:
 <https://github.com/fedify-dev/fedichatbot>.
 
-If you want to try FediChatBot, follow `@FediChatBot@fedichatbot.deno.dev` on
+If you want to try FediChatBot, follow [@FediChatBot@fedichatbot.deno.dev] on
 your fediverse instance.  You can mention it or send a direct message to it.
 
 [FediChatBot]: https://github.com/fedify-dev/fedichatbot
+[@FediChatBot@fedichatbot.deno.dev]: https://fedichatbot.deno.dev/
