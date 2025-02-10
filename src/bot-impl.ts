@@ -633,7 +633,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       messageClasses.includes(replyTarget.class)
     ) {
       const message = await getMessage();
-      await ctx.forwardActivity(this, "followers");
+      if (
+        message.visibility === "public" || message.visibility === "unlisted"
+      ) {
+        await ctx.forwardActivity(this, "followers");
+      }
       await this.onReply(session, message);
     }
     for await (const tag of object.getTags(ctx)) {
