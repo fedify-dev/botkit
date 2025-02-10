@@ -48,7 +48,7 @@ install BotKit as a dependency:
 ~~~~ bash
 mkdir my-bot/
 cd my-bot/
-deno add jsr:@fedify/botkit@^0.1.0-dev
+deno add jsr:@fedify/botkit
 ~~~~
 
 Since BotKit uses the [Temporal] API which is still unstable in Deno, you need
@@ -57,7 +57,7 @@ to turn it on in your *deno.json* settings:
 ~~~~ json [deno.json] {5}
 {
   "imports": {
-    "@fedify/botkit": "jsr:@fedify/botkit@0.1.0-dev.13+d94fa9e4"
+    "@fedify/botkit": "jsr:@fedify/botkit@0.1.0"
   },
   "unstable": ["temporal"]
 }

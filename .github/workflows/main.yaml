@@ -60,7 +60,7 @@ jobs:
     - run: deno publish --allow-dirty
     - if: github.ref_type == 'tag'
       id: extract-changelog
-      uses: dahlia/submark@0.3.1
+      uses: dahlia/submark@ed8f47b4d51fda07e12b6e991641a8bd5ec62f8e
       with:
         input-file: CHANGES.md
         heading-level: 2
@@ -106,4 +106,4 @@ jobs:
     - id: deploy
       uses: actions/deploy-pages@v4
 
-# cSpell: ignore denoland softprops
+# cSpell: ignore denoland submark softprops
