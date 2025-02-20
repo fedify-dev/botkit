@@ -3,6 +3,7 @@
 [BotKit] by Fedify
 ==================
 
+[![JSR][JSR badge]][JSR]
 [![GitHub Actions][GitHub Actions badge]][GitHub Actions]
 [![Codecov][Codecov badge]][Codecov]
 [![Fediverse][Fediverse badge]][Fediverse]
@@ -60,6 +61,8 @@ export default bot;
 For more information, see the [BotKit docs][BotKit].
 
 [BotKit]: https://botkit.fedify.dev/
+[JSR]: https://jsr.io/@fedify/botkit
+[JSR badge]: https://jsr.io/badges/@fedify/botkit
 [GitHub Actions]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml
 [GitHub Actions badge]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml/badge.svg
 [Codecov]: https://codecov.io/gh/fedify-dev/botkit
