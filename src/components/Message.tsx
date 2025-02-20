@@ -16,7 +16,7 @@
 /** @jsx react-jsx */
 /** @jsxImportSource @hono/hono/jsx */
 import { LanguageString } from "@fedify/fedify/runtime";
-import { getActorHandle, Link } from "@fedify/fedify/vocab";
+import { Document, getActorHandle, Image, Link } from "@fedify/fedify/vocab";
 import type { MessageClass } from "../message.ts";
 import type { Session } from "../session.ts";
 
@@ -40,6 +40,7 @@ export async function Message({ session, message }: MessageProps) {
     suppressError: true,
   });
   const authorHandle = author == null ? null : await getActorHandle(author);
+  const attachments = await Array.fromAsync(message.getAttachments());
   return (
     <article>
       <header>
@@ -75,6 +76,25 @@ export async function Message({ session, message }: MessageProps) {
           ? message.content.language.compact()
           : undefined}
       />
+      {attachments.length > 0 && (
+        <div>
+          {attachments.filter((a) =>
+            a instanceof Image || a instanceof Document
+          ).filter((a) => a.mediaType?.startsWith("image/") && a.url != null)
+            .map((a) => (
+              <figure>
+                <img
+                  src={a.url instanceof Link ? a.url.href?.href : a.url!.href}
+                  width={a.width ?? undefined}
+                  height={a.height ?? undefined}
+                  alt={a.name?.toString() ?? undefined}
+                  style="max-width: 75%;"
+                />
+                <figcaption>{a.name?.toString()}</figcaption>
+              </figure>
+            ))}
+        </div>
+      )}
       <footer>
         {message.published &&
           (

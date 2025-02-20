@@ -6,6 +6,8 @@ Version 0.2.0
 
 To be released.
 
+ -  Image attachments in posts became shown in the web interface.
+
 
 Version 0.1.1
 -------------
