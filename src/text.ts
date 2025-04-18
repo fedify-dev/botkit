@@ -746,7 +746,7 @@ interface MarkdownEnv {
 export class MarkdownText<TContextData> implements Text<"block", TContextData> {
   readonly type = "block";
   readonly #content: string;
-  readonly #markdownIt: typeof MarkdownIt;
+  readonly #markdownIt: MarkdownIt;
   readonly #mentions?: string[];
   readonly #hashtags?: string[];
   #actors?: Record<string, Object>;
