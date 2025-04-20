@@ -7,6 +7,7 @@ import {
   groupIconMdPlugin,
   groupIconVitePlugin,
 } from "vitepress-plugin-group-icons";
+import llmstxt from "vitepress-plugin-llms";
 
 const jsrRefPlugin = await jsrRef({
   package: "@fedify/botkit",
@@ -162,6 +163,11 @@ export default defineConfig({
   vite: {
     plugins: [
       groupIconVitePlugin(),
+      llmstxt({
+        ignoreFiles: [
+          "changelog.md",
+        ],
+      }),
     ],
   },
 
