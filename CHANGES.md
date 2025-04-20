@@ -8,6 +8,21 @@ To be released.
 
  -  Image attachments in posts became shown in the web interface.
 
+ -  Added custom emoji support.
+
+     -  The return type of `Text.getTags()` method became
+         `AsyncIterable<Link | Object>` (was `AsyncIterable<Link>`).
+     -  Added `Bot.addCustomEmojis()` method.
+     -  Added `CustomEmojiText` class.
+     -  Added `customEmoji()` function.
+     -  Added `CustomEmojiBase` interface.
+     -  Added `CustomEmojiFromUrl` interface.
+     -  Added `CustomEmojiFromFile` interface.
+     -  Added `CustomEmoji` type.
+     -  Added `DeferredEmoji` type.
+     -  Added `Emoji` class.
+
+
 
 Version 0.1.1
 -------------

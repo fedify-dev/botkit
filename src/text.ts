@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   type Actor,
+  type Emoji,
   getActorHandle,
   isActor,
   Link,
@@ -29,6 +30,7 @@ import {
 } from "@fedify/markdown-it-mention";
 import { escape } from "@std/html/entities";
 import MarkdownIt from "markdown-it";
+import type { DeferredEmoji } from "./emoji.ts";
 import type { Session } from "./session.ts";
 
 /**
@@ -54,7 +56,7 @@ export interface Text<TType extends "block" | "inline", TContextData> {
    * @param session The bot session
    * @returns An async iterable of tags.
    */
-  getTags(session: Session<TContextData>): AsyncIterable<Link>;
+  getTags(session: Session<TContextData>): AsyncIterable<Link | Object>;
 
   /**
    * Gets cached objects. The result of this method depends on
@@ -170,7 +172,7 @@ export class TemplatedText<TContextData>
     if (paraState === "opened") yield "</p>";
   }
 
-  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     for (const value of this.#values) {
       if (!isText<TContextData>(value)) continue;
       yield* value.getTags(session);
@@ -243,7 +245,9 @@ export class PlainText<TContextData> implements Text<"inline", TContextData> {
     }
   }
 
-  async *getTags(_session: Session<TContextData>): AsyncIterable<Link> {
+  async *getTags(
+    _session: Session<TContextData>,
+  ): AsyncIterable<Link | Object> {
   }
 
   getCachedObjects(): Object[] {
@@ -336,7 +340,7 @@ export class MentionText<TContextData> implements Text<"inline", TContextData> {
     yield "</a>";
   }
 
-  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     const label = await this.#getLabel(session);
     const actor = await this.#getActor(session);
     if (isActor(actor)) {
@@ -475,7 +479,7 @@ export class HashtagText<TContextData> implements Text<"inline", TContextData> {
     yield "</span></a>";
   }
 
-  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     yield new Hashtag({
       href: new URL(
         `/tags/${encodeURIComponent(this.#tag.toLowerCase())}`,
@@ -525,7 +529,7 @@ export class StrongText<TContextData> implements Text<"inline", TContextData> {
     yield "</strong>";
   }
 
-  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     return this.#text.getTags(session);
   }
 
@@ -567,7 +571,7 @@ export class EmText<TContextData> implements Text<"inline", TContextData> {
     yield "</em>";
   }
 
-  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     return this.#text.getTags(session);
   }
 
@@ -621,7 +625,7 @@ export class LinkText<TContextData> implements Text<"inline", TContextData> {
     yield "</a>";
   }
 
-  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     return this.#label.getTags(session);
   }
 
@@ -669,6 +673,7 @@ export function link<TContextData>(
 /**
  * A text tree that renders a inline code.  You normally don't need to
  * instantiate this directly; use the {@link code} function instead.
+ * @typeParam TContextData The type of the context data.
  */
 export class CodeText<TContextData> implements Text<"inline", TContextData> {
   readonly type = "inline";
@@ -688,7 +693,7 @@ export class CodeText<TContextData> implements Text<"inline", TContextData> {
     yield "</code>";
   }
 
-  getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     return this.#code.getTags(session);
   }
 
@@ -707,6 +712,69 @@ export function code<TContextData>(
   code: Text<"inline", TContextData> | string,
 ): Text<"inline", TContextData> {
   return new CodeText(code);
+}
+
+/**
+ * A text tree that renders a custom emoji.  You normally don't need to
+ * instantiate this directly; use the {@link customEmoji} function instead.
+ * @typeParam TContextData The type of the context data.
+ * @since 0.2.0
+ */
+export class CustomEmojiText<TContextData>
+  implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  readonly #emoji: Emoji | DeferredEmoji<TContextData>;
+
+  /**
+   * Creates a {@link CustomEmojiText} tree with a custom emoji.
+   * @param emoji The custom emoji to render.
+   */
+  constructor(emoji: Emoji | DeferredEmoji<TContextData>) {
+    this.#emoji = emoji;
+  }
+
+  /**
+   * Gets the emoji object.  If the emoji is a deferred emoji, it will
+   * be resolved with the given session.
+   * @param session The bot session.
+   * @returns The emoji object.
+   */
+  getEmoji(session: Session<TContextData>): Emoji {
+    if (typeof this.#emoji === "function") return this.#emoji(session);
+    return this.#emoji;
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    const emoji = this.getEmoji(session);
+    if (emoji.name == null) return;
+    yield "\u200b"; // zero-width space for segmentation
+    yield escape(emoji.name.toString());
+    yield "\u200b";
+  }
+
+  async *getTags(
+    session: Session<TContextData>,
+  ): AsyncIterable<Link | Object> {
+    yield this.getEmoji(session);
+  }
+
+  getCachedObjects(): Object[] {
+    return [];
+  }
+}
+
+/**
+ * Renders a custom emoji.  You can use this function to create a
+ * {@link CustomEmojiText} tree.
+ * @param emoji The custom emoji to render. See also {@link Bot.addCustomEmojis}
+ *              method.
+ * @returns A {@link CustomEmojiText} tree.
+ * @since 0.2.0
+ */
+export function customEmoji<TContextData>(
+  emoji: Emoji | DeferredEmoji<TContextData>,
+): Text<"inline", TContextData> {
+  return new CustomEmojiText(emoji);
 }
 
 /**
@@ -746,7 +814,7 @@ interface MarkdownEnv {
 export class MarkdownText<TContextData> implements Text<"block", TContextData> {
   readonly type = "block";
   readonly #content: string;
-  readonly #markdownIt: typeof MarkdownIt;
+  readonly #markdownIt: MarkdownIt;
   readonly #mentions?: string[];
   readonly #hashtags?: string[];
   #actors?: Record<string, Object>;
@@ -864,7 +932,7 @@ export class MarkdownText<TContextData> implements Text<"block", TContextData> {
     yield this.#markdownIt.render(this.#content, env);
   }
 
-  async *getTags(session: Session<TContextData>): AsyncIterable<Link> {
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
     if (this.#mentions == null) return;
     const actors = await this.#getMentionedActors(session);
     for (const [handle, object] of globalThis.Object.entries(actors)) {

@@ -20,17 +20,21 @@ import {
 } from "@fedify/fedify/federation";
 import { getDocumentLoader } from "@fedify/fedify/runtime";
 import { importJwk } from "@fedify/fedify/sig";
-import { Hashtag, Mention, Person } from "@fedify/fedify/vocab";
+import { Emoji, Hashtag, Image, Mention, Person } from "@fedify/fedify/vocab";
 import {
   assert,
   assertEquals,
   assertFalse,
   assertInstanceOf,
 } from "@std/assert";
+import { BotImpl } from "./bot-impl.ts";
 import type { BotWithVoidContextData } from "./bot.ts";
+import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
 import type { Session } from "./session.ts";
 import {
   code,
+  customEmoji,
+  CustomEmojiText,
   em,
   hashtag,
   isText,
@@ -149,6 +153,11 @@ const bot: BotWithVoidContextData = {
   },
   fetch(_req: Request) {
     return Promise.resolve(new Response());
+  },
+  addCustomEmojis<TEmojiName extends string>(
+    _emojis: Record<TEmojiName, CustomEmoji>,
+  ): Record<TEmojiName, DeferredEmoji<void>> {
+    return {} as Record<TEmojiName, DeferredEmoji<void>>;
   },
 };
 
@@ -617,4 +626,119 @@ Deno.test("markdown()", async () => {
   assertEquals(cache3.length, 1);
   assertInstanceOf(cache3[0], Person);
   assertEquals(cache3[0].id, new URL("https://example.com/ap/actor/bot"));
+});
+
+// Test customEmoji() and CustomEmojiText
+Deno.test("customEmoji(), CustomEmojiText", async (t) => {
+  const localBot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const session = localBot.getSession("https://example.com");
+  const emojiData: CustomEmoji = {
+    type: "image/png",
+    url: "https://example.com/emoji.png",
+  };
+  const deferredEmoji = localBot.addCustomEmoji("testEmoji", emojiData);
+  const emojiObject = deferredEmoji(session); // Get the Emoji object
+
+  await t.step("customEmoji() function", () => {
+    const emojiText = customEmoji<void>(deferredEmoji);
+    assertInstanceOf(emojiText, CustomEmojiText<void>);
+    assertEquals(emojiText.getEmoji(session), emojiObject);
+
+    const emojiTextDirect = customEmoji<void>(emojiObject);
+    assertInstanceOf(emojiTextDirect, CustomEmojiText<void>);
+    assertEquals(emojiTextDirect.getEmoji(session), emojiObject);
+  });
+
+  await t.step("CustomEmojiText.getHtml()", async () => {
+    const emojiText = new CustomEmojiText(deferredEmoji);
+    assertEquals(
+      (await Array.fromAsync(emojiText.getHtml(session))).join(""),
+      "\u200b:testEmoji:\u200b", // Zero-width spaces around name
+    );
+
+    // Test with Emoji object directly
+    const emojiTextDirect = new CustomEmojiText<void>(emojiObject);
+    assertEquals(
+      (await Array.fromAsync(emojiTextDirect.getHtml(session))).join(""),
+      "\u200b:testEmoji:\u200b",
+    );
+
+    // Test with emoji without name
+    const emojiNoName = new Emoji({
+      id: new URL("https://example.com/ap/emoji/noname"),
+      icon: new Image({ url: new URL("https://example.com/noname.png") }),
+    });
+    const emojiTextNoName = new CustomEmojiText<void>(emojiNoName);
+    assertEquals(
+      (await Array.fromAsync(emojiTextNoName.getHtml(session))).join(""),
+      "",
+    );
+  });
+
+  await t.step("CustomEmojiText.getTags()", async () => {
+    const emojiText = new CustomEmojiText(deferredEmoji);
+    const tags = await Array.fromAsync(emojiText.getTags(session));
+    assertEquals(tags.length, 1);
+    assertInstanceOf(tags[0], Emoji);
+    assertEquals(tags[0].id, emojiObject.id);
+    assertEquals(tags[0].name, emojiObject.name);
+
+    // Test with Emoji object directly
+    const emojiTextDirect = new CustomEmojiText<void>(emojiObject);
+    const tagsDirect = await Array.fromAsync(emojiTextDirect.getTags(session));
+    assertEquals(tagsDirect.length, 1);
+    assertEquals(tagsDirect[0], emojiObject);
+  });
+
+  await t.step("CustomEmojiText.getCachedObjects()", () => {
+    const emojiText = new CustomEmojiText(deferredEmoji);
+    assertEquals(emojiText.getCachedObjects(), []); // CustomEmojiText doesn't cache objects itself
+
+    const emojiTextDirect = new CustomEmojiText(emojiObject);
+    assertEquals(emojiTextDirect.getCachedObjects(), []);
+  });
+});
+
+Deno.test("customEmoji()", async () => {
+  const localBot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const session = localBot.getSession("https://example.com");
+  const emojiData1: CustomEmoji = {
+    type: "image/png",
+    url: "https://example.com/emoji1.png",
+  };
+  const emojiData2: CustomEmoji = {
+    type: "image/gif",
+    file: "/path/to/emoji2.gif",
+  };
+  const deferredEmoji1 = localBot.addCustomEmoji("emoji1", emojiData1);
+  const deferredEmoji2 = localBot.addCustomEmoji("emoji2", emojiData2);
+  const emojiObject1 = deferredEmoji1(session);
+  const emojiObject2 = deferredEmoji2(session);
+
+  const t = text<void>`Hello ${customEmoji(deferredEmoji1)} world ${
+    customEmoji(emojiObject2)
+  }!`;
+
+  // Test getHtml()
+  assertEquals(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    "<p>Hello \u200b:emoji1:\u200b world \u200b:emoji2:\u200b!</p>",
+  );
+
+  // Test getTags()
+  const tags = await Array.fromAsync(t.getTags(session));
+  assertEquals(tags.length, 2);
+  assertInstanceOf(tags[0], Emoji);
+  assertEquals(tags[0].id, emojiObject1.id);
+  assertInstanceOf(tags[1], Emoji);
+  assertEquals(tags[1].id, emojiObject2.id);
+
+  // Test getCachedObjects()
+  assertEquals(t.getCachedObjects(), []); // TemplatedText itself doesn't cache, relies on children
 });

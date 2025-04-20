@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/mod.ts",
     "./bot": "./src/bot.ts",
+    "./emoji": "./src/emoji.ts",
     "./events": "./src/events.ts",
     "./follow": "./src/follow.ts",
     "./message": "./src/message.ts",
@@ -26,6 +27,7 @@
     "@phensley/language-tag": "npm:@phensley/language-tag@^1.9.2",
     "@std/assert": "jsr:@std/assert@^1.0.10",
     "@std/html": "jsr:@std/html@^1.0.3",
+    "@std/media-types": "jsr:@std/media-types@^1.1.0",
     "@std/uuid": "jsr:@std/uuid@^1.0.4",
     "markdown-it": "npm:markdown-it@^14.1.0",
     "xss": "npm:xss@^1.0.15"

@@ -14,6 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
+  type Context,
+  createFederation,
+  type Federation,
+  generateCryptoKeyPair,
+  type InboxContext,
+  type NodeInfo,
+  Object,
+  type PageItems,
+  type Recipient,
+  type RequestContext,
+  type Software,
+} from "@fedify/fedify";
+import {
   Accept,
   type Activity,
   type Actor,
@@ -21,40 +34,30 @@ import {
   type Application,
   Article,
   ChatMessage,
-  type Context,
   Create,
-  createFederation,
+  type CryptographicKey,
+  Emoji,
   Endpoints,
-  type Federation,
   Follow,
-  generateCryptoKeyPair,
   Image,
-  type InboxContext,
   isActor,
   Like as RawLike,
-  type Link,
+  Link,
   Mention,
-  type NodeInfo,
   Note,
-  type Object,
-  type PageItems,
   PropertyValue,
-  Question,
-  type Recipient,
-  type RequestContext,
-  Service,
-  type Software,
-  Undo,
-} from "@fedify/fedify";
-import {
-  type CryptographicKey,
   PUBLIC_COLLECTION,
+  Question,
   Reject,
+  Service,
+  Undo,
 } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import { getLogger } from "@logtape/logtape";
+import { extension } from "@std/media-types/extension";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
+import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -93,12 +96,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly username: string;
   readonly name?: string;
   readonly summary?: Text<"block", TContextData>;
-  #summary: { text: string; tags: Link[] } | null;
+  #summary: { text: string; tags: (Link | Object)[] } | null;
   readonly icon?: URL | Image;
   readonly image?: URL | Image;
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
-  #properties: { pairs: PropertyValue[]; tags: Link[] } | null;
+  #properties: { pairs: PropertyValue[]; tags: (Link | Object)[] } | null;
   readonly followerPolicy: "accept" | "reject" | "manual";
+  readonly customEmojis: Record<string, CustomEmoji>;
   readonly repository: Repository;
   readonly software?: Software;
   readonly behindProxy: boolean;
@@ -129,6 +133,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.properties = options.properties ?? {};
     this.#properties = null;
     this.followerPolicy = options.followerPolicy ?? "accept";
+    this.customEmojis = {};
     this.repository = options.repository ?? new KvRepository(options.kv);
     this.software = options.software;
     this.pages = {
@@ -207,6 +212,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       "/ap/announce/{id}",
       this.dispatchAnnounce.bind(this),
     );
+    this.federation.setObjectDispatcher(
+      Emoji,
+      "/ap/emoji/{name}",
+      this.dispatchEmoji.bind(this),
+    );
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
       .on(Follow, this.onFollowed.bind(this))
@@ -238,11 +248,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   async getActorSummary(
     session: Session<TContextData>,
-  ): Promise<{ text: string; tags: Link[] } | null> {
+  ): Promise<{ text: string; tags: (Link | Object)[] } | null> {
     if (this.summary == null) return null;
     if (this.#summary == null) {
       let summary = "";
-      const tags: Link[] = [];
+      const tags: (Link | Object)[] = [];
       for await (const chunk of this.summary.getHtml(session)) {
         summary += chunk;
       }
@@ -256,10 +266,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   async getActorProperties(
     session: Session<TContextData>,
-  ): Promise<{ pairs: PropertyValue[]; tags: Link[] }> {
+  ): Promise<{ pairs: PropertyValue[]; tags: (Link | Object)[] }> {
     if (this.#properties != null) return this.#properties;
     const pairs: PropertyValue[] = [];
-    const tags: Link[] = [];
+    const tags: (Link | Object)[] = [];
     for (const name in this.properties) {
       const value = this.properties[name];
       const pair = new PropertyValue({
@@ -293,7 +303,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       tags: allTags.filter((tag, i) =>
         allTags.findIndex((t) =>
           t.name?.toString() === tag.name?.toString() &&
-          t.href?.href === tag.href?.href
+          (t instanceof Link
+            ? tag instanceof Link && t.href?.href === tag.href?.href
+            : tag instanceof Object && t.id?.href === tag.id?.href)
         ) === i
       ),
       icon: this.icon == null
@@ -509,6 +521,15 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if (!(activity instanceof Announce)) return null;
     const isVisible = await this.getPermissionChecker(ctx);
     return isVisible(activity) ? activity : null;
+  }
+
+  dispatchEmoji(
+    ctx: Context<TContextData>,
+    values: { name: string },
+  ): Emoji | null {
+    const customEmoji = this.customEmojis[values.name];
+    if (customEmoji == null) return null;
+    return this.getEmoji(ctx, values.name, customEmoji);
   }
 
   dispatchSharedKey(_ctx: Context<TContextData>): { identifier: string } {
@@ -799,6 +820,91 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ) {
       return await this.federation.fetch(request, { contextData });
     }
+    const match = /^\/emojis\/([a-z0-9-_]+)(?:$|\.)/.exec(url.pathname);
+    if (match != null) {
+      const customEmoji = this.customEmojis[match[1]];
+      if (customEmoji == null || !("file" in customEmoji)) {
+        return new Response("Not Found", { status: 404 });
+      }
+      let file: Deno.FsFile;
+      try {
+        file = await Deno.open(customEmoji.file);
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          return new Response("Not Found", { status: 404 });
+        }
+        throw error;
+      }
+      const fileInfo = await file.stat();
+      return new Response(file.readable, {
+        headers: {
+          "Content-Type": customEmoji.type,
+          "Content-Length": fileInfo.size.toString(),
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "Last-Modified": (fileInfo.mtime ?? new Date()).toUTCString(),
+          "ETag": `"${fileInfo.mtime?.getTime().toString(36)}${
+            fileInfo.size.toString(36)
+          }"`,
+        },
+      });
+    }
     return await app.fetch(request, { bot: this, contextData });
+  }
+
+  getEmoji(
+    ctx: Context<TContextData>,
+    name: string,
+    data: CustomEmoji,
+  ): Emoji {
+    let url: URL;
+    if ("url" in data) {
+      url = new URL(data.url);
+    } else {
+      const ext = extension(data.type);
+      url = new URL(
+        `/emojis/${name}${ext == null ? "" : `.${ext}`}`,
+        ctx.origin,
+      );
+    }
+    return new Emoji({
+      id: ctx.getObjectUri(Emoji, { name }),
+      name: `:${name}:`,
+      icon: new Image({
+        mediaType: data.type,
+        url,
+      }),
+    });
+  }
+
+  addCustomEmoji<TEmojiName extends string>(
+    name: TEmojiName,
+    data: CustomEmoji,
+  ): DeferredEmoji<TContextData> {
+    if (!name.match(/^[a-z0-9-_]+$/i)) {
+      throw new TypeError(
+        `Invalid custom emoji name: ${name}. It must match /^[a-z0-9-_]+$/i.`,
+      );
+    } else if (name in this.customEmojis) {
+      throw new TypeError(`Duplicate custom emoji name: ${name}`);
+    } else if (!data.type.startsWith("image/")) {
+      throw new TypeError(`Unsupported media type: ${data.type}`);
+    }
+    this.customEmojis[name] = data;
+    return (session: Session<TContextData>) =>
+      this.getEmoji(
+        session.context,
+        name,
+        data,
+      );
+  }
+
+  addCustomEmojis<TEmojiName extends string>(
+    emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
+  ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>> {
+    const emojiMap = {} as Record<TEmojiName, DeferredEmoji<TContextData>>;
+    for (const name in emojis) {
+      emojiMap[name] = this.addCustomEmoji(name, emojis[name]);
+    }
+    return emojiMap;
   }
 }

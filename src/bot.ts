@@ -22,6 +22,7 @@ import type {
 import type { Software } from "@fedify/fedify/nodeinfo";
 import type { Application, Image, Service } from "@fedify/fedify/vocab";
 import { BotImpl } from "./bot-impl.ts";
+import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -87,6 +88,22 @@ export interface Bot<TContextData> {
    * @returns The response to the request.
    */
   fetch(request: Request, contextData: TContextData): Promise<Response>;
+
+  /**
+   * Defines custom emojis for the bot.  The custom emojis are used for
+   * rendering the bot's profile and posts.  The custom emojis are defined
+   * by their names, and the names are used as the keys of the emojis.
+   * @param emojis The custom emojis to define.  The keys are the names of
+   *               the emojis, and the values are the custom emoji definitions.
+   * @returns The defined emojis.  The keys are the names of the emojis, and
+   *          the values are the emoji objects, which are used for passing
+   *          to the {@link customEmoji} function.
+   * @throws {TypeError} If any emoji name is invalid or duplicate.
+   * @since 0.2.0
+   */
+  addCustomEmojis<TEmojiName extends string>(
+    emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
+  ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>>;
 
   /**
    * An event handler for a follow request to the bot.
@@ -352,6 +369,11 @@ export function createBot<TContextData = void>(
     },
     fetch(request, contextData) {
       return bot.fetch(request, contextData);
+    },
+    addCustomEmojis<TEmojiName extends string>(
+      emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
+    ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>> {
+      return bot.addCustomEmojis(emojis);
     },
     get onFollow() {
       return bot.onFollow;

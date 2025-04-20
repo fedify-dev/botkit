@@ -32,6 +32,7 @@ export {
   Service,
   type Software,
 } from "./bot.ts";
+export { type CustomEmoji, Emoji } from "./emoji.ts";
 export type * from "./events.ts";
 export type { FollowRequest } from "./follow.ts";
 export {
@@ -71,6 +72,7 @@ export type {
   SessionPublishOptionsWithClass,
 } from "./session.ts";
 export {
+  customEmoji,
   em,
   hashtag,
   link,

@@ -22,6 +22,7 @@ import {
   Article,
   Create,
   CryptographicKey,
+  Emoji,
   Follow,
   Image,
   Like as RawLike,
@@ -40,8 +41,10 @@ import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertFalse } from "@std/assert/false";
 import { assertInstanceOf } from "@std/assert/instance-of";
+import { assertThrows } from "@std/assert/throws";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
+import type { CustomEmoji } from "./emoji.ts";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import type { Like } from "./reaction.ts";
@@ -1961,6 +1964,171 @@ Deno.test("BotImpl.fetch()", async () => {
   });
   const response2 = await botBehindProxy.fetch(request);
   assertEquals(response2.status, 200);
+});
+
+// Test BotImpl.addCustomEmoji() and BotImpl.addCustomEmojis()
+Deno.test("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", async (t) => {
+  const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
+
+  await t.step("addCustomEmoji()", () => {
+    const emojiData: CustomEmoji = {
+      type: "image/png",
+      url: "https://example.com/emoji.png",
+    };
+    const deferredEmoji = bot.addCustomEmoji("testEmoji", emojiData);
+    assertEquals(typeof deferredEmoji, "function");
+    assertEquals(bot.customEmojis["testEmoji"], emojiData);
+
+    // Test invalid name
+    assertThrows(
+      () => bot.addCustomEmoji("invalid name", emojiData),
+      TypeError,
+      "Invalid custom emoji name",
+    );
+
+    // Test duplicate name
+    assertThrows(
+      () => bot.addCustomEmoji("testEmoji", emojiData),
+      TypeError,
+      "Duplicate custom emoji name",
+    );
+
+    // Test unsupported media type
+    assertThrows(
+      () =>
+        bot.addCustomEmoji("invalidType", {
+          // @ts-expect-error: Intended type error for testing runtime check
+          type: "text/plain",
+          url: "https://example.com/emoji.txt",
+        }),
+      TypeError,
+      "Unsupported media type",
+    );
+  });
+
+  await t.step("addCustomEmojis()", () => {
+    const emojisData = {
+      emoji1: { type: "image/png", url: "https://example.com/emoji1.png" },
+      emoji2: { type: "image/gif", file: "/path/to/emoji2.gif" },
+    } as const;
+    const deferredEmojis = bot.addCustomEmojis(emojisData);
+
+    assertEquals(typeof deferredEmojis["emoji1"], "function");
+    assertEquals(typeof deferredEmojis["emoji2"], "function");
+    assertEquals(bot.customEmojis["emoji1"], emojisData.emoji1);
+    assertEquals(bot.customEmojis["emoji2"], emojisData.emoji2);
+
+    // Test duplicate name within the batch
+    assertThrows(
+      () =>
+        bot.addCustomEmojis({
+          emoji1: { type: "image/png", url: "https://example.com/dup1.png" },
+        }),
+      TypeError,
+      "Duplicate custom emoji name: emoji1",
+    );
+  });
+});
+
+// Test BotImpl.getEmoji()
+Deno.test("BotImpl.getEmoji()", async () => {
+  const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
+  const ctx = bot.federation.createContext(
+    new URL("https://example.com"),
+    undefined,
+  );
+
+  // Test with remote URL
+  const remoteEmojiData: CustomEmoji = {
+    type: "image/png",
+    url: "https://remote.com/emoji.png",
+  };
+  bot.customEmojis["remoteEmoji"] = remoteEmojiData;
+  const remoteEmoji = bot.getEmoji(ctx, "remoteEmoji", remoteEmojiData);
+  assertInstanceOf(remoteEmoji, Emoji);
+  assertEquals(
+    remoteEmoji.id,
+    new URL("https://example.com/ap/emoji/remoteEmoji"),
+  );
+  assertEquals(remoteEmoji.name, ":remoteEmoji:");
+  const icon = await remoteEmoji.getIcon();
+  assertInstanceOf(icon, Image);
+  assertEquals(icon.mediaType, "image/png");
+  assertEquals(icon.url?.href, "https://remote.com/emoji.png");
+
+  // Test with local file
+  const localEmojiData: CustomEmoji = {
+    type: "image/gif",
+    file: "/path/to/local/emoji.gif",
+  };
+  bot.customEmojis["localEmoji"] = localEmojiData;
+  const localEmoji = bot.getEmoji(ctx, "localEmoji", localEmojiData);
+  assertInstanceOf(localEmoji, Emoji);
+  assertEquals(
+    localEmoji.id,
+    new URL("https://example.com/ap/emoji/localEmoji"),
+  );
+  assertEquals(localEmoji.name, ":localEmoji:");
+  const icon2 = await localEmoji.getIcon();
+  assertInstanceOf(icon2, Image);
+  assertEquals(icon2.mediaType, "image/gif");
+  assertEquals(
+    icon2.url?.href,
+    "https://example.com/emojis/localEmoji.gif",
+  );
+
+  // Test with local file without extension mapping
+  const localEmojiDataNoExt: CustomEmoji = {
+    type: "image/webp",
+    file: "/path/to/local/emoji",
+  };
+  bot.customEmojis["localEmojiNoExt"] = localEmojiDataNoExt;
+  const localEmojiNoExt = bot.getEmoji(
+    ctx,
+    "localEmojiNoExt",
+    localEmojiDataNoExt,
+  );
+  const icon3 = await localEmojiNoExt.getIcon();
+  assertInstanceOf(icon3, Image);
+  assertEquals(icon3.mediaType, "image/webp");
+  assertEquals(
+    icon3.url?.href,
+    "https://example.com/emojis/localEmojiNoExt.webp",
+  );
+});
+
+// Test BotImpl.dispatchEmoji()
+Deno.test("BotImpl.dispatchEmoji()", () => {
+  const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
+  const ctx = bot.federation.createContext(
+    new URL("https://example.com"),
+    undefined,
+  );
+  const emojiData: CustomEmoji = {
+    type: "image/png",
+    url: "https://example.com/emoji.png",
+  };
+  bot.customEmojis["testEmoji"] = emojiData;
+
+  // Test dispatching an existing emoji
+  const emoji = bot.dispatchEmoji(ctx, { name: "testEmoji" });
+  assertInstanceOf(emoji, Emoji);
+  assertEquals(emoji.id, new URL("https://example.com/ap/emoji/testEmoji"));
+  assertEquals(emoji.name, ":testEmoji:");
+
+  // Test dispatching a non-existent emoji
+  const nonExistent = bot.dispatchEmoji(ctx, { name: "nonExistent" });
+  assertEquals(nonExistent, null);
+});
+
+Deno.test("BotImpl.getFollowersFirstCursor()", () => {
+  const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
+  const ctx = bot.federation.createContext(
+    new URL("https://example.com"),
+    undefined,
+  );
+  assertEquals(bot.getFollowersFirstCursor(ctx, "non-existent"), null);
+  assertEquals(bot.getFollowersFirstCursor(ctx, "bot"), "0");
 });
 
 interface SentActivity {

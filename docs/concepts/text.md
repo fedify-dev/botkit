@@ -401,6 +401,39 @@ The above code will create a text like this:
 > It is not a code block, but an inline code.
 
 
+Custom emojis
+-------------
+
+*This API is available since BotKit 0.2.0.*
+
+You can include a custom emoji in the text using the `customEmoji()` function.
+It is an inline construct.
+
+In order to use the `customEmoji()` function, you need to define custom emojis
+first.  You can define custom emojis by using the `Bot.addCustomEmojis()`
+method after creating the bot:
+
+~~~~ typescript
+// Define custom emojis:
+const emojis = bot.addCustomEmojis({
+  // Use a local image file:
+  botkit: { file: `${import.meta.dirname}/botkit.png`, type: "image/png" },
+  // Use a remote image URL:
+  fedify: { url: "https://fedify.dev/logo.png", type: "image/png" },
+});
+~~~~
+
+The `~Bot.addCustomEmojis()` method returns an object that contains the custom
+emojis.  You can use the keys of the object to refer to the custom emojis.
+For example:
+
+~~~~ typescript
+text`Here's a custom emoji:
+
+${customEmoji(emojis.botkit)} by ${customEmoji(emojis.fedify)}.`
+~~~~
+
+
 Markdown
 --------
 
