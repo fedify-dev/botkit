@@ -19,12 +19,14 @@ import type {
   Article,
   ChatMessage,
   Document,
+  Emoji as CustomEmoji,
   Hashtag,
   Note,
   Question,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
-import type { AuthorizedLike } from "./reaction.ts";
+import { DeferredCustomEmoji, Emoji } from "./emoji.ts";
+import type { AuthorizedLike, AuthorizedReaction } from "./reaction.ts";
 import type {
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
@@ -196,6 +198,17 @@ export interface Message<T extends MessageClass, TContextData> {
    * @returns The like object.
    */
   like(): Promise<AuthorizedLike<TContextData>>;
+
+  /**
+   * Reacts to the message with a Unicode emoji or a custom emoji.
+   * @param emoji The emoji to react with.  It can be either a Unicode emoji or
+   *              a custom emoji.
+   * @returns The reaction object.
+   * @since 0.2.0
+   */
+  react(
+    emoji: Emoji | CustomEmoji | DeferredCustomEmoji<TContextData>,
+  ): Promise<AuthorizedReaction<TContextData>>;
 }
 
 /**

@@ -13,7 +13,13 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { Actor, Like as RawLike } from "@fedify/fedify/vocab";
+import type {
+  Actor,
+  Emoji as CustomEmoji,
+  EmojiReact,
+  Like as RawLike,
+} from "@fedify/fedify/vocab";
+import type { Emoji } from "./emoji.ts";
 import type { Message, MessageClass } from "./message.ts";
 export { type Actor, Like as RawLike } from "@fedify/fedify/vocab";
 
@@ -56,4 +62,54 @@ export interface AuthorizedLike<TContextData> extends Like<TContextData> {
    * If the like is already undone, this method does nothing.
    */
   unlike(): Promise<void>;
+}
+
+/**
+ * An emoji reaction to a message.  It is a thin wrapper around an
+ * `EmojiReact`, which is a Fedify object.
+ * @typeParam TContextData The type of the context data.
+ * @since 0.2.0
+ */
+export interface Reaction<TContextData> {
+  /**
+   * The underlying raw `Like` or `EmojiReact` activity.
+   */
+  readonly raw: RawLike | EmojiReact;
+
+  /**
+   * The URI of the reaction activity.
+   */
+  readonly id: URL;
+
+  /**
+   * The actor who reacted to the message.
+   */
+  readonly actor: Actor;
+
+  /**
+   * The message that was reacted.
+   */
+  readonly message: Message<MessageClass, TContextData>;
+
+  /**
+   * The emoji that was used in the reaction.  It can be either a Unicode emoji
+   * or a custom emoji.
+   */
+  readonly emoji: Emoji | CustomEmoji;
+}
+
+/**
+ * An authorized emoji reaction to a message.  Usually it is a reaction
+ * that the bot itself made.
+ * @typeParam TContextData The type of the context data.
+ * @since 0.2.0
+ */
+export interface AuthorizedReaction<TContextData>
+  extends Reaction<TContextData> {
+  /**
+   * Undoes the reaction.
+   *
+   * If the reaction is already undone, this method does nothing.
+   */
+  unreact(): Promise<void>;
 }

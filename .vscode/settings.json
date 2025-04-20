@@ -47,6 +47,7 @@
     "activitypub",
     "botkit",
     "denokv",
+    "fanout",
     "fedi",
     "Fedify",
     "fediverse",
@@ -72,6 +73,7 @@
     "unfollowing",
     "unfollows",
     "unliked",
+    "unreact",
     "uuidv7",
     "vitepress"
   ]

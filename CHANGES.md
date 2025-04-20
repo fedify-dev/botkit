@@ -21,9 +21,13 @@ To be released.
      -  Added `CustomEmoji` type.
      -  Added `DeferredCustomEmoji` type.
 
- -  Added `Emoji` type.
+ -  Added emoji reaction support.
 
- -  Added `isEmoji()` predicate function.
+     -  Added `Emoji` type.
+     -  Added `isEmoji()` predicate function.
+     -  Added `Message.react()` method.
+     -  Added `Reaction` interface.
+     -  Added `AuthorizedReaction` interface.
 
  -  Added `SessionGetOutboxOptions` interface.
 

@@ -63,7 +63,14 @@ export type {
   MessageVisibility,
   SharedMessage,
 } from "./message.ts";
-export { type AuthorizedLike, type Like, RawLike } from "./reaction.ts";
+export {
+  type AuthorizedLike,
+  type AuthorizedReaction,
+  EmojiReact,
+  type Like,
+  RawLike,
+  type Reaction,
+} from "./reaction.ts";
 export {
   Announce,
   Create,

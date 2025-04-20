@@ -22,6 +22,8 @@ import {
   Create,
   Delete,
   Document,
+  Emoji as CustomEmoji,
+  EmojiReact,
   Hashtag,
   isActor,
   Like as RawLike,
@@ -39,6 +41,7 @@ import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS, getDefaultWhiteList } from "xss";
+import { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type {
   AuthorizedMessage,
   AuthorizedSharedMessage,
@@ -47,7 +50,7 @@ import type {
   MessageShareOptions,
   MessageVisibility,
 } from "./message.ts";
-import type { AuthorizedLike } from "./reaction.ts";
+import type { AuthorizedLike, AuthorizedReaction } from "./reaction.ts";
 import type { Uuid } from "./repository.ts";
 import type { SessionImpl } from "./session-impl.ts";
 import type {
@@ -97,7 +100,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     session: SessionImpl<TContextData>,
     message: Omit<
       Message<T, TContextData>,
-      "delete" | "reply" | "share" | "like"
+      "delete" | "reply" | "share" | "like" | "react"
     >,
   ) {
     this.session = session;
@@ -234,6 +237,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
       {
         preferSharedInbox: true,
         excludeBaseUris: [new URL(this.session.context.origin)],
+        fanout: "skip",
       },
     );
     return {
@@ -263,6 +267,79 @@ export class MessageImpl<T extends MessageClass, TContextData>
           {
             preferSharedInbox: true,
             excludeBaseUris: [new URL(this.session.context.origin)],
+            fanout: "skip",
+          },
+        );
+      },
+    };
+  }
+
+  async react(
+    emoji: Emoji | CustomEmoji | DeferredCustomEmoji<TContextData>,
+  ): Promise<AuthorizedReaction<TContextData>> {
+    const uuid = crypto.randomUUID();
+    const actor = this.session.context.getActorUri(this.session.bot.identifier);
+    const id = new URL(`#react/${uuid}`, actor);
+    if (typeof emoji === "function") {
+      emoji = await emoji(this.session);
+    }
+    const activity = new EmojiReact({
+      id,
+      actor,
+      object: this.id,
+      name: typeof emoji === "string" ? emoji : emoji.name,
+      tags: typeof emoji === "string" ? [] : [emoji],
+    });
+    await this.session.context.sendActivity(
+      this.session.bot,
+      "followers",
+      activity,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+      },
+    );
+    await this.session.context.sendActivity(
+      this.session.bot,
+      this.actor,
+      activity,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+        fanout: "skip",
+      },
+    );
+    return {
+      raw: activity,
+      id,
+      actor: await this.session.getActor(),
+      message: this,
+      emoji,
+      unreact: async () => {
+        const undo = new Undo({
+          id: new URL(`#unreact/${uuid}`, actor),
+          actor,
+          object: activity,
+          name: typeof emoji === "string" ? emoji : emoji.name,
+          tags: typeof emoji === "string" ? [] : [emoji],
+        });
+        await this.session.context.sendActivity(
+          this.session.bot,
+          "followers",
+          undo,
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+          },
+        );
+        await this.session.context.sendActivity(
+          this.session.bot,
+          this.actor,
+          undo,
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+            fanout: "skip",
           },
         );
       },

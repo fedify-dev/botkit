@@ -20,7 +20,10 @@ import {
   ChatMessage,
   Create,
   Delete,
+  Emoji as CustomEmoji,
+  EmojiReact,
   Hashtag,
+  Image,
   Like as RawLike,
   Mention,
   Note,
@@ -36,6 +39,7 @@ import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
+import { type DeferredCustomEmoji, isEmoji } from "./emoji.ts";
 import {
   createMessage,
   getMessageClass,
@@ -577,4 +581,142 @@ Deno.test("getMessageVisibility()", () => {
     "direct",
   );
   assertEquals(getMessageVisibility([], [], new Person({})), "unknown");
+});
+
+Deno.test("MessageImpl.react()", async (t) => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+  const originalPost = new Note({
+    id: new URL(
+      "https://example.com/ap/note/react-test-note",
+    ),
+    content: "<p>React to this!</p>",
+    attribution: new Person({
+      id: new URL("https://example.com/ap/actor/john"),
+      preferredUsername: "john",
+    }),
+    to: PUBLIC_COLLECTION,
+  });
+  const message = await createMessage<Note, void>(
+    originalPost,
+    session,
+    {},
+  );
+
+  await t.step("react() with string emoji", async () => {
+    ctx.sentActivities = []; // Clear previous activities
+    const emoji = "👍";
+    assert(isEmoji(emoji));
+    const reaction = await message.react(emoji);
+    assertEquals(ctx.sentActivities.length, 2);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, "followers");
+    assertInstanceOf(activity, EmojiReact);
+    assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity.objectId, message.id);
+    assertEquals(activity.name, "👍");
+    assertEquals(await Array.fromAsync(activity.getTags()), []);
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [message.actor]);
+    assertInstanceOf(activity2, EmojiReact);
+    assertEquals(activity2, activity);
+    assertEquals(reaction.actor, await session.getActor());
+    assertEquals(reaction.raw, activity);
+    assertEquals(reaction.id, activity.id);
+    assertEquals(reaction.message, message);
+    assertEquals(reaction.emoji, emoji);
+
+    // Test unreact
+    ctx.sentActivities = [];
+    await reaction.unreact();
+    assertEquals(ctx.sentActivities.length, 2);
+    const { recipients: urRecipients, activity: urActivity } =
+      ctx.sentActivities[0];
+    assertEquals(urRecipients, "followers");
+    assertInstanceOf(urActivity, Undo);
+    assertEquals(urActivity.actorId, ctx.getActorUri(bot.identifier));
+    const urObject = await urActivity.getObject();
+    assertInstanceOf(urObject, EmojiReact);
+    assertEquals(urObject.id, reaction.id);
+    const { recipients: urRecipients2, activity: urActivity2 } =
+      ctx.sentActivities[1];
+    assertEquals(urRecipients2, [message.actor]);
+    assertInstanceOf(urActivity2, Undo);
+    assertEquals(urActivity2, urActivity);
+  });
+
+  await t.step("react() with CustomEmoji", async () => {
+    ctx.sentActivities = [];
+    const customEmoji = new CustomEmoji({
+      id: new URL("https://example.com/emojis/custom"),
+      name: ":custom:",
+      icon: new Image({
+        url: new URL("https://example.com/emojis/custom.png"),
+      }),
+    });
+    const reaction = await message.react(customEmoji);
+    assertEquals(ctx.sentActivities.length, 2);
+    const { activity } = ctx.sentActivities[0];
+    assertInstanceOf(activity, EmojiReact);
+    assertEquals(activity.name, ":custom:");
+    const tags = await Array.fromAsync(activity.getTags());
+    assertEquals(tags.length, 1);
+    assertEquals(tags[0], customEmoji);
+    assertEquals(reaction.emoji, customEmoji);
+
+    // Test unreact
+    ctx.sentActivities = [];
+    await reaction.unreact();
+    assertEquals(ctx.sentActivities.length, 2);
+    const { activity: urActivity } = ctx.sentActivities[0];
+    assertInstanceOf(urActivity, Undo);
+    const urObject = await urActivity.getObject();
+    assertInstanceOf(urObject, EmojiReact);
+    assertEquals(urObject.id, reaction.id);
+    const urTags = await Array.fromAsync(urActivity.getTags());
+    assertEquals(urTags.length, 1);
+    assertEquals(urTags[0], customEmoji);
+  });
+
+  await t.step("react() with DeferredCustomEmoji", async () => {
+    ctx.sentActivities = [];
+    const deferredEmoji: DeferredCustomEmoji<void> = (sessionParam) => {
+      assertEquals(sessionParam, session); // Ensure correct session is passed
+      return new CustomEmoji({
+        id: new URL("https://example.com/emojis/deferred"),
+        name: ":deferred:",
+        icon: new Image({
+          url: new URL("https://example.com/emojis/deferred.png"),
+        }),
+      });
+    };
+    const reaction = await message.react(deferredEmoji);
+    assertEquals(ctx.sentActivities.length, 2);
+    const { activity } = ctx.sentActivities[0];
+    assertInstanceOf(activity, EmojiReact);
+    assertEquals(activity.name, ":deferred:");
+    const tags = await Array.fromAsync(activity.getTags());
+    assertEquals(tags.length, 1);
+    assertInstanceOf(tags[0], CustomEmoji);
+    assertEquals(tags[0].id?.href, "https://example.com/emojis/deferred");
+    assertEquals(reaction.emoji, tags[0]);
+
+    // Test unreact
+    ctx.sentActivities = [];
+    await reaction.unreact();
+    assertEquals(ctx.sentActivities.length, 2);
+    const { activity: urActivity } = ctx.sentActivities[0];
+    assertInstanceOf(urActivity, Undo);
+    const urObject = await urActivity.getObject();
+    assertInstanceOf(urObject, EmojiReact);
+    assertEquals(urObject.id, reaction.id);
+    const urTags = await Array.fromAsync(urActivity.getTags());
+    assertEquals(urTags.length, 1);
+    assertEquals(urTags[0], tags[0]); // Should be the resolved CustomEmoji
+  });
 });
