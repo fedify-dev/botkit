@@ -29,7 +29,7 @@ import {
 } from "@std/assert";
 import { BotImpl } from "./bot-impl.ts";
 import type { BotWithVoidContextData } from "./bot.ts";
-import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
+import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
 import type { Session } from "./session.ts";
 import {
   code,
@@ -156,8 +156,8 @@ const bot: BotWithVoidContextData = {
   },
   addCustomEmojis<TEmojiName extends string>(
     _emojis: Record<TEmojiName, CustomEmoji>,
-  ): Record<TEmojiName, DeferredEmoji<void>> {
-    return {} as Record<TEmojiName, DeferredEmoji<void>>;
+  ): Record<TEmojiName, DeferredCustomEmoji<void>> {
+    return {} as Record<TEmojiName, DeferredCustomEmoji<void>>;
   },
 };
 

@@ -57,7 +57,7 @@ import { getLogger } from "@logtape/logtape";
 import { extension } from "@std/media-types/extension";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
-import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
+import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -879,7 +879,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   addCustomEmoji<TEmojiName extends string>(
     name: TEmojiName,
     data: CustomEmoji,
-  ): DeferredEmoji<TContextData> {
+  ): DeferredCustomEmoji<TContextData> {
     if (!name.match(/^[a-z0-9-_]+$/i)) {
       throw new TypeError(
         `Invalid custom emoji name: ${name}. It must match /^[a-z0-9-_]+$/i.`,
@@ -900,8 +900,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   addCustomEmojis<TEmojiName extends string>(
     emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
-  ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>> {
-    const emojiMap = {} as Record<TEmojiName, DeferredEmoji<TContextData>>;
+  ): Readonly<Record<TEmojiName, DeferredCustomEmoji<TContextData>>> {
+    const emojiMap = {} as Record<
+      TEmojiName,
+      DeferredCustomEmoji<TContextData>
+    >;
     for (const name in emojis) {
       emojiMap[name] = this.addCustomEmoji(name, emojis[name]);
     }

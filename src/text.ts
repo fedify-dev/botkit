@@ -30,7 +30,7 @@ import {
 } from "@fedify/markdown-it-mention";
 import { escape } from "@std/html/entities";
 import MarkdownIt from "markdown-it";
-import type { DeferredEmoji } from "./emoji.ts";
+import type { DeferredCustomEmoji } from "./emoji.ts";
 import type { Session } from "./session.ts";
 
 /**
@@ -723,13 +723,13 @@ export function code<TContextData>(
 export class CustomEmojiText<TContextData>
   implements Text<"inline", TContextData> {
   readonly type = "inline";
-  readonly #emoji: Emoji | DeferredEmoji<TContextData>;
+  readonly #emoji: Emoji | DeferredCustomEmoji<TContextData>;
 
   /**
    * Creates a {@link CustomEmojiText} tree with a custom emoji.
    * @param emoji The custom emoji to render.
    */
-  constructor(emoji: Emoji | DeferredEmoji<TContextData>) {
+  constructor(emoji: Emoji | DeferredCustomEmoji<TContextData>) {
     this.#emoji = emoji;
   }
 
@@ -772,7 +772,7 @@ export class CustomEmojiText<TContextData>
  * @since 0.2.0
  */
 export function customEmoji<TContextData>(
-  emoji: Emoji | DeferredEmoji<TContextData>,
+  emoji: Emoji | DeferredCustomEmoji<TContextData>,
 ): Text<"inline", TContextData> {
   return new CustomEmojiText(emoji);
 }

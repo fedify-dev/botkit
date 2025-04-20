@@ -19,8 +19,11 @@ To be released.
      -  Added `CustomEmojiFromUrl` interface.
      -  Added `CustomEmojiFromFile` interface.
      -  Added `CustomEmoji` type.
-     -  Added `DeferredEmoji` type.
-     -  Added `Emoji` class.
+     -  Added `DeferredCustomEmoji` type.
+
+ -  Added `Emoji` type.
+
+ -  Added `isEmoji()` predicate function.
 
  -  Added `SessionGetOutboxOptions` interface.
 

@@ -22,7 +22,7 @@ import type {
 import type { Software } from "@fedify/fedify/nodeinfo";
 import type { Application, Image, Service } from "@fedify/fedify/vocab";
 import { BotImpl } from "./bot-impl.ts";
-import type { CustomEmoji, DeferredEmoji } from "./emoji.ts";
+import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
@@ -103,7 +103,7 @@ export interface Bot<TContextData> {
    */
   addCustomEmojis<TEmojiName extends string>(
     emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
-  ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>>;
+  ): Readonly<Record<TEmojiName, DeferredCustomEmoji<TContextData>>>;
 
   /**
    * An event handler for a follow request to the bot.
@@ -372,7 +372,7 @@ export function createBot<TContextData = void>(
     },
     addCustomEmojis<TEmojiName extends string>(
       emojis: Readonly<Record<TEmojiName, CustomEmoji>>,
-    ): Readonly<Record<TEmojiName, DeferredEmoji<TContextData>>> {
+    ): Readonly<Record<TEmojiName, DeferredCustomEmoji<TContextData>>> {
       return bot.addCustomEmojis(emojis);
     },
     get onFollow() {

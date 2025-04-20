@@ -13,9 +13,38 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { Emoji } from "@fedify/fedify/vocab";
+import type { Emoji as EmojiObject } from "@fedify/fedify/vocab";
 import type { Session } from "./session.ts";
-export { Emoji } from "@fedify/fedify/vocab";
+
+/**
+ * A branded type for a single emoji character (more exactly, a single
+ * Unicode grapheme cluster of emoji).  This is used to represent a single emoji
+ * in a string format.  It is not a full-fledged emoji object, but rather a
+ * string that is guaranteed to be a single emoji.
+ *
+ * You can narrow a string to an {@link Emoji} type using the {@link isEmoji}
+ * predicate function.
+ * @since 0.2.0
+ */
+export type Emoji = string & { readonly __emoji: unique symbol };
+
+/**
+ * A type guard that checks if a value is a single emoji character.
+ * @param value The value to check.
+ * @returns `true` if the value is a single emoji character, `false` otherwise.
+ * @since 0.2.0
+ */
+export function isEmoji(value: unknown): value is Emoji {
+  if (typeof value !== "string") return false;
+
+  // First check if we have exactly one grapheme cluster
+  const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+  const segments = [...segmenter.segment(value)];
+  if (segments.length !== 1) return false;
+
+  // Then check if this grapheme cluster has the emoji property
+  return /\p{Emoji}/u.test(segments[0].segment);
+}
 
 /**
  * The common interface for defining custom emojis.
@@ -58,13 +87,13 @@ export interface CustomEmojiFromFile extends CustomEmojiBase {
 export type CustomEmoji = CustomEmojiFromUrl | CustomEmojiFromFile;
 
 /**
- * A deferred {@link Emoji}, which is a function that takes a {@link Session}
- * and returns an {@link Emoji}.  This is useful for creating emojis that
- * depend on the session data.
+ * A deferred `Emoji` (provided by Fedify), which is a function that
+ * takes a {@link Session} and returns an `Emoji`.  This is useful for
+ * creating emojis that depend on the session data.
  * @since 0.2.0
  * @param TContextData The type of the context data.
- * @return The {@link Emoji} object.
+ * @return The `Emoji` object.
  */
-export type DeferredEmoji<TContextData> = (
+export type DeferredCustomEmoji<TContextData> = (
   session: Session<TContextData>,
-) => Emoji;
+) => EmojiObject;

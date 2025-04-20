@@ -32,7 +32,12 @@ export {
   Service,
   type Software,
 } from "./bot.ts";
-export { type CustomEmoji, Emoji } from "./emoji.ts";
+export {
+  type CustomEmoji,
+  type DeferredCustomEmoji,
+  type Emoji,
+  isEmoji,
+} from "./emoji.ts";
 export type * from "./events.ts";
 export type { FollowRequest } from "./follow.ts";
 export {
