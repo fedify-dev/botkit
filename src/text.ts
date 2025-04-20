@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import {
   type Actor,
-  type Emoji,
+  Emoji,
   getActorHandle,
   isActor,
   Link,
@@ -129,6 +129,7 @@ export class TemplatedText<TContextData>
       if (isText<TContextData>(v)) return v;
       if (v instanceof URL) return link(v);
       if (isActor(v)) return mention(v);
+      if (v instanceof Emoji) return customEmoji(v);
       return new PlainText(String(v));
     });
   }

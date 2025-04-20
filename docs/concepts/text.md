@@ -138,6 +138,18 @@ The above code will create a text like this:
 
 > Hello, [@fedify@hollo.social](https://hollo.social/@fedify).
 
+### `Emoji` 
+
+*This API is available since BotKit 0.2.0.*
+
+If you put an `Emoji` object (provided by Fedify) inside the interpolation,
+it will be rendered as a custom emoji.  You usually get `Emoji` objects from
+the `Reaction.emoji` property.  For example:
+
+~~~~ typescript
+text`Here's a custom emoji: ${reaction.emoji}.`
+~~~~
+
 ### `URL` object
 
 If you put a `URL` object inside the interpolation, it will be rendered as a
