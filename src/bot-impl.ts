@@ -36,7 +36,8 @@ import {
   ChatMessage,
   Create,
   type CryptographicKey,
-  Emoji,
+  Emoji as APEmoji,
+  EmojiReact,
   Endpoints,
   Follow,
   Image,
@@ -57,16 +58,23 @@ import { getLogger } from "@logtape/logtape";
 import { extension } from "@std/media-types/extension";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
-import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
+import {
+  type CustomEmoji,
+  type DeferredCustomEmoji,
+  type Emoji,
+  isEmoji,
+} from "./emoji.ts";
 import type {
   AcceptEventHandler,
   FollowEventHandler,
   LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
+  ReactionEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
   SharedMessageEventHandler,
+  UndoneReactionEventHandler,
   UnfollowEventHandler,
   UnlikeEventHandler,
 } from "./events.ts";
@@ -79,7 +87,7 @@ import {
 } from "./message-impl.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import { app } from "./pages.tsx";
-import type { Like } from "./reaction.ts";
+import type { Like, Reaction } from "./reaction.ts";
 import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -120,6 +128,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onSharedMessage?: SharedMessageEventHandler<TContextData>;
   onLike?: LikeEventHandler<TContextData>;
   onUnlike?: UnlikeEventHandler<TContextData>;
+  onReact?: ReactionEventHandler<TContextData>;
+  onUnreact?: UndoneReactionEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -213,7 +223,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       this.dispatchAnnounce.bind(this),
     );
     this.federation.setObjectDispatcher(
-      Emoji,
+      APEmoji,
       "/ap/emoji/{name}",
       this.dispatchEmoji.bind(this),
     );
@@ -526,7 +536,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   dispatchEmoji(
     ctx: Context<TContextData>,
     values: { name: string },
-  ): Emoji | null {
+  ): APEmoji | null {
     const customEmoji = this.customEmojis[values.name];
     if (customEmoji == null) return null;
     return this.getEmoji(ctx, values.name, customEmoji);
@@ -754,6 +764,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   }
 
   async onLiked(ctx: InboxContext<TContextData>, like: RawLike): Promise<void> {
+    if (like.name != null) return this.onReacted(ctx, like);
     if (this.onLike == null) return;
     const sessionAndLike = await this.#parseLike(ctx, like);
     if (sessionAndLike == null) return;
@@ -762,14 +773,96 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   }
 
   async onUnliked(ctx: InboxContext<TContextData>, undo: Undo): Promise<void> {
-    if (this.onUnlike == null) return;
     const like = await undo.getObject(ctx);
     if (!(like instanceof RawLike)) return;
+    if (like.name != null) return this.onUnreacted(ctx, undo);
+    if (this.onUnlike == null) return;
     if (undo.actorId?.href !== like.actorId?.href) return;
     const sessionAndLike = await this.#parseLike(ctx, like);
     if (sessionAndLike == null) return;
     const { session, like: likeObject } = sessionAndLike;
     await this.onUnlike(session, likeObject);
+  }
+
+  async #parseReaction(
+    ctx: InboxContext<TContextData>,
+    react: EmojiReact | RawLike,
+  ): Promise<
+    | { session: Session<TContextData>; reaction: Reaction<TContextData> }
+    | undefined
+  > {
+    if (react.id == null || react.actorId == null || react.name == null) {
+      return undefined;
+    }
+    let emoji: Emoji | APEmoji | undefined;
+    if (isEmoji(react.name)) {
+      emoji = react.name;
+    } else if (
+      typeof react.name === "string" && react.name.startsWith(":") &&
+      react.name.endsWith(":")
+    ) {
+      for await (const tag of react.getTags(ctx)) {
+        if (tag instanceof APEmoji && tag.name === react.name) {
+          emoji = tag;
+          break;
+        }
+      }
+    }
+    if (emoji == null) return undefined;
+    const objectUri = ctx.parseUri(react.objectId);
+    let object: Object | null = null;
+    if (
+      objectUri?.type === "object" &&
+      // deno-lint-ignore no-explicit-any
+      messageClasses.includes(objectUri.class as any)
+    ) {
+      const msg = await this.repository.getMessage(objectUri.values.id as Uuid);
+      if (msg instanceof Create) object = await msg.getObject(ctx);
+    } else {
+      object = await react.getObject(ctx);
+    }
+    if (!isMessageObject(object)) return undefined;
+    const session = this.getSession(ctx);
+    const actor = react.actorId.href == session.actorId.href
+      ? await session.getActor()
+      : await react.getActor(ctx);
+    if (actor == null) return;
+    const message = await createMessage(object, session, {});
+    return {
+      session,
+      reaction: {
+        raw: react,
+        id: react.id,
+        actor,
+        message,
+        emoji,
+      },
+    };
+  }
+
+  async onReacted(
+    ctx: InboxContext<TContextData>,
+    react: EmojiReact | RawLike,
+  ): Promise<void> {
+    if (this.onReact == null) return;
+    const sessionAndReaction = await this.#parseReaction(ctx, react);
+    if (sessionAndReaction == null) return;
+    const { session, reaction } = sessionAndReaction;
+    await this.onReact(session, reaction);
+  }
+
+  async onUnreacted(
+    ctx: InboxContext<TContextData>,
+    undo: Undo,
+  ): Promise<void> {
+    if (this.onUnreact == null) return;
+    const react = await undo.getObject(ctx);
+    if (!(react instanceof EmojiReact || react instanceof RawLike)) return;
+    if (undo.actorId?.href !== react.actorId?.href) return;
+    const sessionAndReaction = await this.#parseReaction(ctx, react);
+    if (sessionAndReaction == null) return;
+    const { session, reaction } = sessionAndReaction;
+    await this.onUnreact(session, reaction);
   }
 
   dispatchNodeInfo(_ctx: Context<TContextData>): NodeInfo {
@@ -855,7 +948,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ctx: Context<TContextData>,
     name: string,
     data: CustomEmoji,
-  ): Emoji {
+  ): APEmoji {
     let url: URL;
     if ("url" in data) {
       url = new URL(data.url);
@@ -866,8 +959,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         ctx.origin,
       );
     }
-    return new Emoji({
-      id: ctx.getObjectUri(Emoji, { name }),
+    return new APEmoji({
+      id: ctx.getObjectUri(APEmoji, { name }),
       name: `:${name}:`,
       icon: new Image({
         mediaType: data.type,

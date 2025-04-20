@@ -29,6 +29,10 @@ To be released.
      -  Added `Message.react()` method.
      -  Added `Reaction` interface.
      -  Added `AuthorizedReaction` interface.
+     -  Added `Bot.onReact` event.
+     -  Added `Bot.onUnreact` event.
+     -  Added `ReactionEventHandler` type.
+     -  Added `UndoneReactionEventHandler` type.
 
  -  Added `SessionGetOutboxOptions` interface.
 

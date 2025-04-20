@@ -317,3 +317,52 @@ bot.onUnlike = async (session, like) => {
   );
 };
 ~~~~
+
+
+Emoji reaction
+--------------
+
+*This API is available since BotKit 0.2.0.*
+
+The `~Bot.onReact` event handler is called when someone reacts with an emoji to
+messages on your bot or actors your bot follows.  It receives a `Reaction`
+object, which represents the reaction activity, as the second argument.
+
+The following is an example of a reaction event handler that sends a direct
+message when someone reacts with an emoji to a message on your bot:
+
+~~~~ typescript
+bot.onReact = async (session, reaction) => {
+  if (reaction.message.actor.id?.href !== session.actorId.href) return;
+  await session.publish(
+    text`Thanks for reacting with ${reaction.emoji} to my message, ${reaction.actor}!`,
+    { visibility: "direct" },
+  );
+};
+~~~~
+
+
+Undoing emoji reaction
+----------------------
+
+*This API is available since BotKit 0.2.0.*
+
+The `~Bot.onUnreact` event handler is called when someone removes an emoji
+reaction from messages on your bot or actors your bot follows.  It receives
+a `Reaction` object, which represents the emoji reaction activity which was
+undone, as the second argument.
+
+The following is an example of an unreact event handler that sends a direct
+message when someone removes a heart reaction from a message on your bot:
+
+~~~~ typescript
+bot.onUnreact = async (session, reaction) => {
+  if (reaction.message.actor.id?.href !== session.actorId.href) return;
+  if (reaction.emoji === "❤️") {
+    await session.publish(
+      text`I see you took back your heart reaction, ${reaction.actor}.`,
+      { visibility: "direct" },
+    );
+  }
+};
+~~~~

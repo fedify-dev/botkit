@@ -29,9 +29,11 @@ import type {
   LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
+  ReactionEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
   SharedMessageEventHandler,
+  UndoneReactionEventHandler,
   UnfollowEventHandler,
   UnlikeEventHandler,
 } from "./events.ts";
@@ -156,6 +158,18 @@ export interface Bot<TContextData> {
    * An event handler for an undoing of a like of a message.
    */
   onUnlike?: UnlikeEventHandler<TContextData>;
+
+  /**
+   * An event handler for an emoji reaction to a message.
+   * @since 0.2.0
+   */
+  onReact?: ReactionEventHandler<TContextData>;
+
+  /**
+   * An event handler for an undoing of an emoji reaction to a message.
+   * @since 0.2.0
+   */
+  onUnreact?: UndoneReactionEventHandler<TContextData>;
 }
 
 /**
@@ -434,6 +448,18 @@ export function createBot<TContextData = void>(
     },
     set onUnlike(value) {
       bot.onUnlike = value;
+    },
+    get onReact() {
+      return bot.onReact;
+    },
+    set onReact(value) {
+      bot.onReact = value;
+    },
+    get onUnreact() {
+      return bot.onUnreact;
+    },
+    set onUnreact(value) {
+      bot.onUnreact = value;
     },
   } satisfies Bot<TContextData> & { impl: BotImpl<TContextData> };
   // @ts-ignore: the wrapper implements BotWithVoidContextData

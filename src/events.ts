@@ -16,7 +16,7 @@
 import type { Actor } from "@fedify/fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
-import type { Like } from "./reaction.ts";
+import type { Like, Reaction } from "./reaction.ts";
 import type { Session } from "./session.ts";
 
 /**
@@ -129,4 +129,28 @@ export type LikeEventHandler<TContextData> = (
 export type UnlikeEventHandler<TContextData> = (
   session: Session<TContextData>,
   like: Like<TContextData>,
+) => void | Promise<void>;
+
+/**
+ * An event handler for an emoji reaction to a message.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param reaction The emoji reaction to the message.
+ * @since 0.2.0
+ */
+export type ReactionEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  reaction: Reaction<TContextData>,
+) => void | Promise<void>;
+
+/**
+ * An event handler for undoing an emoji reaction to a message.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param reaction The emoji reaction to the message which is undone.
+ * @since 0.2.0
+ */
+export type UndoneReactionEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  reaction: Reaction<TContextData>,
 ) => void | Promise<void>;

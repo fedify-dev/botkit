@@ -23,6 +23,7 @@ import {
   Create,
   CryptographicKey,
   Emoji,
+  EmojiReact,
   Follow,
   Image,
   Like as RawLike,
@@ -47,7 +48,7 @@ import { parseSemVer } from "./bot.ts";
 import type { CustomEmoji } from "./emoji.ts";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
-import type { Like } from "./reaction.ts";
+import type { Like, Reaction } from "./reaction.ts";
 import { MemoryRepository } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
@@ -1902,6 +1903,212 @@ Deno.test("BotImpl.onUnliked()", async () => {
   assertEquals(likes, []);
 });
 
+Deno.test("BotImpl.onReacted()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const reactions: [Session<void>, Reaction<void>][] = [];
+  bot.onReact = (session, reaction) =>
+    void (reactions.push([session, reaction]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  // Test with Like containing an emoji name
+  const rawLike = new RawLike({
+    id: new URL("https://example.com/ap/actor/bot/like/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    name: ":heart:",
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+    tags: [
+      new Emoji({
+        id: new URL("https://example.com/ap/emoji/heart"),
+        name: ":heart:",
+        icon: new Image({
+          mediaType: "image/png",
+          url: new URL("https://example.com/emoji/heart.png"),
+        }),
+      }),
+    ],
+  });
+
+  await bot.onReacted(ctx, rawLike);
+  assertEquals(reactions.length, 1);
+  const [session, reaction] = reactions[0];
+  assertEquals(session.bot, bot);
+  assertEquals(session.context, ctx);
+  assertEquals(reaction.raw, rawLike);
+  assertEquals(reaction.id, rawLike.id);
+  assertEquals(reaction.actor.id, rawLike.actorId);
+  assertEquals(reaction.message.id, rawLike.objectId);
+  assertInstanceOf(reaction.emoji, Emoji);
+  assertEquals(reaction.emoji.name, ":heart:");
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
+
+  // Test with EmojiReact
+  reactions.pop();
+  const emojiReact = new EmojiReact({
+    id: new URL("https://example.com/ap/actor/bot/react/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    name: ":thumbsup:",
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+    tags: [
+      new Emoji({
+        id: new URL("https://example.com/ap/emoji/thumbsup"),
+        name: ":thumbsup:",
+        icon: new Image({
+          mediaType: "image/png",
+          url: new URL("https://example.com/emoji/thumbsup.png"),
+        }),
+      }),
+    ],
+  });
+
+  await bot.onReacted(ctx, emojiReact);
+  assertEquals(reactions.length, 1);
+  const [session2, reaction2] = reactions[0];
+  assertEquals(session2.bot, bot);
+  assertEquals(session2.context, ctx);
+  assertEquals(reaction2.raw, emojiReact);
+  assertEquals(reaction2.id, emojiReact.id);
+  assertEquals(reaction2.actor.id, emojiReact.actorId);
+  assertEquals(reaction2.message.id, emojiReact.objectId);
+  assertInstanceOf(reaction2.emoji, Emoji);
+  assertEquals(reaction2.emoji.name, ":thumbsup:");
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
+});
+
+Deno.test("BotImpl.onUnreacted()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const reactions: [Session<void>, Reaction<void>][] = [];
+  bot.onUnreact = (session, reaction) =>
+    void (reactions.push([session, reaction]));
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  // Test with Like containing an emoji name
+  const rawLike = new RawLike({
+    id: new URL("https://example.com/ap/actor/bot/like/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    name: ":heart:",
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+    tags: [
+      new Emoji({
+        id: new URL("https://example.com/ap/emoji/heart"),
+        name: ":heart:",
+        icon: new Image({
+          mediaType: "image/png",
+          url: new URL("https://example.com/emoji/heart.png"),
+        }),
+      }),
+    ],
+  });
+
+  const undo = new Undo({
+    id: new URL("https://example.com/ap/actor/bot/unreact/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    object: rawLike,
+  });
+
+  await bot.onUnreacted(ctx, undo);
+  assertEquals(reactions.length, 1);
+  const [session, reaction] = reactions[0];
+  assertEquals(session.bot, bot);
+  assertEquals(session.context, ctx);
+  assertEquals(reaction.raw, rawLike);
+  assertEquals(reaction.id, rawLike.id);
+  assertEquals(reaction.actor.id, rawLike.actorId);
+  assertEquals(reaction.message.id, rawLike.objectId);
+  assertInstanceOf(reaction.emoji, Emoji);
+  assertEquals(reaction.emoji.name, ":heart:");
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
+
+  // Test with EmojiReact
+  reactions.pop();
+  const emojiReact = new EmojiReact({
+    id: new URL("https://example.com/ap/actor/bot/react/1"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    name: ":thumbsup:",
+    object: new Note({
+      id: new URL("https://example.com/ap/actor/bot/note/1"),
+      attribution: new URL("https://example.com/ap/actor/bot"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      content: "Hello, world!",
+    }),
+    tags: [
+      new Emoji({
+        id: new URL("https://example.com/ap/emoji/thumbsup"),
+        name: ":thumbsup:",
+        icon: new Image({
+          mediaType: "image/png",
+          url: new URL("https://example.com/emoji/thumbsup.png"),
+        }),
+      }),
+    ],
+  });
+
+  const undoEmojiReact = new Undo({
+    id: new URL("https://example.com/ap/actor/bot/unreact/2"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    object: emojiReact,
+  });
+
+  await bot.onUnreacted(ctx, undoEmojiReact);
+  assertEquals(reactions.length, 1);
+  const [session2, reaction2] = reactions[0];
+  assertEquals(session2.bot, bot);
+  assertEquals(session2.context, ctx);
+  assertEquals(reaction2.raw, emojiReact);
+  assertEquals(reaction2.id, emojiReact.id);
+  assertEquals(reaction2.actor.id, emojiReact.actorId);
+  assertEquals(reaction2.message.id, emojiReact.objectId);
+  assertInstanceOf(reaction2.emoji, Emoji);
+  assertEquals(reaction2.emoji.name, ":thumbsup:");
+  assertEquals(ctx.sentActivities, []);
+  assertEquals(ctx.forwardedRecipients, []);
+
+  // Test with mismatched actor
+  reactions.pop();
+  const invalidUndo = undoEmojiReact.clone({
+    actor: new URL("https://example.com/ap/actor/another"),
+  });
+  await bot.onUnreacted(ctx, invalidUndo);
+  assertEquals(reactions, []);
+
+  // Test with non-reaction object
+  reactions.pop();
+  const nonReactionUndo = new Undo({
+    id: new URL("https://example.com/ap/actor/bot/unreact/3"),
+    actor: new URL("https://example.com/ap/actor/bot"),
+    object: new Note({}),
+  });
+  await bot.onUnreacted(ctx, nonReactionUndo);
+  assertEquals(reactions, []);
+});
+
 Deno.test("BotImpl.dispatchNodeInfo()", () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -2176,3 +2383,5 @@ function createMockInboxContext(
   };
   return ctx;
 }
+
+// cSpell: ignore thumbsup
