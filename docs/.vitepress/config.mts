@@ -155,6 +155,10 @@ export default defineConfig({
     },
   },
 
+  sitemap: {
+    hostname: process.env.SITEMAP_HOSTNAME,
+  },
+
   vite: {
     plugins: [
       groupIconVitePlugin(),
