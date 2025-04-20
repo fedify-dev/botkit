@@ -22,7 +22,7 @@ import {
   Create,
   Delete,
   Document,
-  Emoji as CustomEmoji,
+  type Emoji as CustomEmoji,
   EmojiReact,
   Hashtag,
   isActor,
@@ -41,7 +41,7 @@ import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS, getDefaultWhiteList } from "xss";
-import { DeferredCustomEmoji, Emoji } from "./emoji.ts";
+import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type {
   AuthorizedMessage,
   AuthorizedSharedMessage,

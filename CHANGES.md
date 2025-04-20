@@ -25,6 +25,7 @@ To be released.
 
      -  Added `Emoji` type.
      -  Added `isEmoji()` predicate function.
+     -  Added `emoji()` tagged template literal function.
      -  Added `Message.react()` method.
      -  Added `Reaction` interface.
      -  Added `AuthorizedReaction` interface.

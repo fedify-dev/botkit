@@ -535,6 +535,59 @@ await like.unlike();  // [!code highlight]
 ~~~~
 
 
+Reacting to a message with an emoji
+-----------------------------------
+
+*This API is available since BotKit 0.2.0.*
+
+You can react to a message with an emoji by calling the `~Message.react()`
+method:
+
+~~~~ typescript
+const message = await session.publish(
+  text`This message will be reacted to with an emoji.`
+);
+await message.react(emoji`👍`);  // [!code highlight]
+~~~~
+
+> [!NOTE]
+> The tagged template literal function `emoji()` takes a string and returns
+> an `Emoji` value, which is a brand of `string`.  If it takes anything other
+> than a single emoji, it will throw a `TypeError` at runtime.
+
+Or you can use the `~Message.react()` method with a custom emoji.  You need to
+define custom emojis in advance by calling the `Bot.addCustomEmojis()` method:
+
+~~~~ typescript
+const emojis = bot.addCustomEmojis({
+  // Use a remote image URL:
+  yesBlob: {
+    url: "https://cdn3.emoji.gg/emojis/68238-yesblob.png",
+    mediaType: "image/png",
+  },
+  // Use a local image file:
+  noBlob: {
+    file: `${import.meta.dirname}/emojis/no_blob.png`,
+    mediaType: "image/webp",
+  },
+});
+~~~~
+
+Then you can use the custom emojis in the `~Message.react()` method:
+
+~~~~ typescript
+await message.react(emojis.yesBlob);
+~~~~
+
+If you need to undo the reaction, you can call
+the `~AuthorizedReaction.unreact()` method:
+
+~~~~ typescript
+const reaction = await message.react(emojis.noBlob);
+await reaction.unreact();  // [!code highlight]
+~~~~
+
+
 Replying to a message
 ---------------------
 

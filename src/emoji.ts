@@ -47,6 +47,27 @@ export function isEmoji(value: unknown): value is Emoji {
 }
 
 /**
+ * A tagged template literal function that creates an {@link Emoji} from
+ * a string.  It is a simple wrapper around the `String.raw` function,
+ * but it also checks if the resulting string is a valid emoji.
+ * @param strings The template strings.
+ * @param values The values to interpolate into the template strings.
+ * @returns The resulting {@link Emoji} value.
+ * @throws {TypeError} If the resulting string is not a valid emoji.
+ * @since 0.2.0
+ */
+export function emoji(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): Emoji {
+  const result = String.raw(strings, ...values);
+  if (!isEmoji(result)) {
+    throw new TypeError(`Invalid emoji: ${result}`);
+  }
+  return result;
+}
+
+/**
  * The common interface for defining custom emojis.
  * @since 0.2.0
  */

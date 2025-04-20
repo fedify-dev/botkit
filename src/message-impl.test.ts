@@ -39,7 +39,7 @@ import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
-import { type DeferredCustomEmoji, isEmoji } from "./emoji.ts";
+import { type DeferredCustomEmoji, emoji } from "./emoji.ts";
 import {
   createMessage,
   getMessageClass,
@@ -609,9 +609,7 @@ Deno.test("MessageImpl.react()", async (t) => {
 
   await t.step("react() with string emoji", async () => {
     ctx.sentActivities = []; // Clear previous activities
-    const emoji = "👍";
-    assert(isEmoji(emoji));
-    const reaction = await message.react(emoji);
+    const reaction = await message.react(emoji`👍`);
     assertEquals(ctx.sentActivities.length, 2);
     const { recipients, activity } = ctx.sentActivities[0];
     assertEquals(recipients, "followers");
@@ -629,7 +627,7 @@ Deno.test("MessageImpl.react()", async (t) => {
     assertEquals(reaction.raw, activity);
     assertEquals(reaction.id, activity.id);
     assertEquals(reaction.message, message);
-    assertEquals(reaction.emoji, emoji);
+    assertEquals(reaction.emoji, emoji`👍`);
 
     // Test unreact
     ctx.sentActivities = [];

@@ -36,6 +36,7 @@ export {
   type CustomEmoji,
   type DeferredCustomEmoji,
   type Emoji,
+  emoji,
   isEmoji,
 } from "./emoji.ts";
 export type * from "./events.ts";

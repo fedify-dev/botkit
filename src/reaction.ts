@@ -21,7 +21,7 @@ import type {
 } from "@fedify/fedify/vocab";
 import type { Emoji } from "./emoji.ts";
 import type { Message, MessageClass } from "./message.ts";
-export { type Actor, Like as RawLike } from "@fedify/fedify/vocab";
+export { type Actor, EmojiReact, Like as RawLike } from "@fedify/fedify/vocab";
 
 /**
  * A like of a message.  It is a thin wrapper around a `Like`, which is

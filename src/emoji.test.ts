@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import { assert } from "@std/assert/assert";
 import { assertFalse } from "@std/assert/false";
-import { isEmoji } from "./emoji.ts";
+import { emoji, isEmoji } from "./emoji.ts";
 
 Deno.test("isEmoji() with valid emojis", () => {
   const validEmojis = [
@@ -110,5 +110,49 @@ Deno.test("isEmoji() with tricky invalid inputs", () => {
       isEmoji(input),
       `Expected '${input}' not to be recognized as an emoji`,
     );
+  }
+});
+Deno.test("emoji() tagged template function with valid emojis", () => {
+  const validEmojis = [
+    emoji`😀`, // simple emoji
+    emoji`👍`, // thumbs up
+    emoji`🚀`, // rocket
+    emoji`🏳️‍🌈`, // pride flag
+    emoji`👨‍👩‍👧‍👦`, // family
+    emoji`👩🏽‍🔬`, // woman scientist with medium skin tone
+    emoji`🧘🏻‍♀️`, // woman in lotus position
+    emoji`🇯🇵`, // flag
+  ];
+
+  for (const emojiValue of validEmojis) {
+    assert(isEmoji(emojiValue));
+  }
+});
+
+Deno.test("emoji() tagged template function with interpolation", () => {
+  const rocket = "🚀";
+  const result = emoji`${rocket}`;
+  assert(isEmoji(result));
+  assert(result === "🚀");
+});
+
+Deno.test("emoji() throws with invalid inputs", () => {
+  const invalidInputs = [
+    () => emoji`😀😀`, // multiple emojis
+    () => emoji`hi😀`, // mixed content
+    () => emoji`👍awesome`, // mixed content
+    () => emoji` 😀`, // emoji with leading space
+    () => emoji`😀 `, // emoji with trailing space
+    () => emoji``, // empty string
+  ];
+
+  for (const fn of invalidInputs) {
+    try {
+      fn();
+      assert(false, "Expected function to throw TypeError");
+    } catch (error) {
+      assert(error instanceof TypeError);
+      assert(error.message.startsWith("Invalid emoji:"));
+    }
   }
 });

@@ -25,7 +25,7 @@ import type {
   Question,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
-import { DeferredCustomEmoji, Emoji } from "./emoji.ts";
+import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type { AuthorizedLike, AuthorizedReaction } from "./reaction.ts";
 import type {
   SessionPublishOptions,
