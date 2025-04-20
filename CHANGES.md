@@ -22,6 +22,8 @@ To be released.
      -  Added `DeferredEmoji` type.
      -  Added `Emoji` class.
 
+ -  Added `SessionGetOutboxOptions` interface.
+
 
 
 Version 0.1.1

@@ -68,6 +68,7 @@ export {
 } from "./repository.ts";
 export type {
   Session,
+  SessionGetOutboxOptions,
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";
