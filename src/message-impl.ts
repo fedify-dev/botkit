@@ -182,6 +182,16 @@ export class MessageImpl<T extends MessageClass, TContextData>
         excludeBaseUris: [new URL(this.session.context.origin)],
       },
     );
+    await this.session.context.sendActivity(
+      this.session.bot,
+      this.actor,
+      announce,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.session.context.origin)],
+        fanout: "skip",
+      },
+    );
     const actor = announce.actorId?.href === this.session.actorId.href
       ? await this.session.getActor()
       : await announce.getActor(this.session.context);
@@ -194,21 +204,32 @@ export class MessageImpl<T extends MessageClass, TContextData>
       original: this,
       unshare: async () => {
         await this.session.bot.repository.removeMessage(id);
+        const undo = new Undo({
+          id: new URL("#delete", uri),
+          actor: this.session.context.getActorUri(
+            this.session.bot.identifier,
+          ),
+          tos: announce.toIds,
+          ccs: announce.ccIds,
+          object: announce,
+        });
         await this.session.context.sendActivity(
           this.session.bot,
           "followers",
-          new Undo({
-            id: new URL("#delete", uri),
-            actor: this.session.context.getActorUri(
-              this.session.bot.identifier,
-            ),
-            tos: announce.toIds,
-            ccs: announce.ccIds,
-            object: announce,
-          }),
+          undo,
           {
             preferSharedInbox: true,
             excludeBaseUris: [new URL(this.session.context.origin)],
+          },
+        );
+        await this.session.context.sendActivity(
+          this.session.bot,
+          this.actor,
+          undo,
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(this.session.context.origin)],
+            fanout: "skip",
           },
         );
       },
@@ -474,6 +495,22 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
       update,
       { preferSharedInbox, excludeBaseUris },
     );
+    if (this.replyTarget != null) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        this.replyTarget.actor,
+        update,
+        { preferSharedInbox: true, excludeBaseUris, fanout: "skip" },
+      );
+    }
+    if (this.quoteTarget != null) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        this.quoteTarget.actor,
+        update,
+        { preferSharedInbox: true, excludeBaseUris, fanout: "skip" },
+      );
+    }
   }
 
   async delete(): Promise<void> {
@@ -525,6 +562,22 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
         mentionedActors,
         activity,
         { preferSharedInbox: true, excludeBaseUris },
+      );
+    }
+    if (this.replyTarget != null) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        this.replyTarget.actor,
+        activity,
+        { preferSharedInbox: true, excludeBaseUris, fanout: "skip" },
+      );
+    }
+    if (this.quoteTarget != null) {
+      await this.session.context.sendActivity(
+        this.session.bot,
+        this.quoteTarget.actor,
+        activity,
+        { preferSharedInbox: true, excludeBaseUris, fanout: "skip" },
       );
     }
   }

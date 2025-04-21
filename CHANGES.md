@@ -43,6 +43,18 @@ To be released.
 
  -  Added `SessionGetOutboxOptions` interface.
 
+ -  Activities are more precisely propagated.
+
+     -  The `Message.reply()` method now sends the `Create` activity to
+        the author of the original message as well.
+     -  The `Message.share()` method now sends the `Announce` activity to
+        the author of the original message as well.
+     -  The `AuthorizedSharedMessage.unshare()` method now sends the `Undo`
+        activity to the author of the original message as well.
+     -  The `AuthorizedMessage.update()` method now sends the `Update` activity
+        to the author of the original message as well if it is a reply.
+     -  The `AuthorizedMessage.delete()` method now sends the `Delete` activity
+        to the author of the original message as well if it is a reply.
 
 
 Version 0.1.1

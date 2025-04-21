@@ -316,12 +316,20 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox, excludeBaseUris },
       );
     }
+    if (options.replyTarget != null) {
+      await this.context.sendActivity(
+        this.bot,
+        options.replyTarget.actor,
+        activity,
+        { preferSharedInbox, excludeBaseUris, fanout: "skip" },
+      );
+    }
     if (options.quoteTarget != null) {
       await this.context.sendActivity(
         this.bot,
         options.quoteTarget.actor,
         activity,
-        { preferSharedInbox, excludeBaseUris },
+        { preferSharedInbox, excludeBaseUris, fanout: "skip" },
       );
     }
     return await createMessage(

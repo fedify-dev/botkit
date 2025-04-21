@@ -270,12 +270,20 @@ Deno.test("MessageImpl.reply()", async () => {
   assertEquals(await repository.countMessages(), 1);
   const [create] = await Array.fromAsync(repository.getMessages());
   assert(create != null);
-  assertEquals(ctx.sentActivities.length, 1);
+  assertEquals(ctx.sentActivities.length, 2);
   const { recipients, activity } = ctx.sentActivities[0];
   assertEquals(recipients, "followers");
   assertInstanceOf(activity, Create);
   assertEquals(
     await activity.toJsonLd({ format: "compact" }),
+    await create.toJsonLd({ format: "compact" }),
+  );
+  const { recipients: recipients2, activity: activity2 } =
+    ctx.sentActivities[1];
+  assertEquals(recipients2, [originalMsg.actor]);
+  assertInstanceOf(activity2, Create);
+  assertEquals(
+    await activity2.toJsonLd({ format: "compact" }),
     await create.toJsonLd({ format: "compact" }),
   );
   assertEquals(
@@ -319,7 +327,7 @@ Deno.test("MessageImpl.share()", async (t) => {
     assertEquals(await repository.countMessages(), 1);
     const [announce] = await Array.fromAsync(repository.getMessages());
     assert(announce != null);
-    assertEquals(ctx.sentActivities.length, 1);
+    assertEquals(ctx.sentActivities.length, 2);
     const { recipients, activity } = ctx.sentActivities[0];
     assertEquals(recipients, "followers");
     assertInstanceOf(activity, Announce);
@@ -330,6 +338,19 @@ Deno.test("MessageImpl.share()", async (t) => {
     ]);
     assertEquals(
       await activity.toJsonLd({ format: "compact" }),
+      await announce.toJsonLd({ format: "compact" }),
+    );
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [originalMsg.actor]);
+    assertInstanceOf(activity2, Announce);
+    assertEquals(activity2.toIds, [ctx.getFollowersUri(bot.identifier)]);
+    assertEquals(activity2.ccIds, [
+      PUBLIC_COLLECTION,
+      originalPost.attributionId,
+    ]);
+    assertEquals(
+      await activity2.toJsonLd({ format: "compact" }),
       await announce.toJsonLd({ format: "compact" }),
     );
     assertEquals(
@@ -346,7 +367,7 @@ Deno.test("MessageImpl.share()", async (t) => {
   await t.step("unshare()", async () => {
     await sharedMsg.unshare();
     assertEquals(await repository.countMessages(), 0);
-    assertEquals(ctx.sentActivities.length, 1);
+    assertEquals(ctx.sentActivities.length, 2);
     const { recipients, activity } = ctx.sentActivities[0];
     assertEquals(recipients, "followers");
     assertInstanceOf(activity, Undo);
@@ -357,6 +378,17 @@ Deno.test("MessageImpl.share()", async (t) => {
       originalPost.attributionId,
     ]);
     assertEquals(activity.objectId, sharedMsg.id);
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [originalMsg.actor]);
+    assertInstanceOf(activity2, Undo);
+    assertEquals(activity2.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity2.toIds, [ctx.getFollowersUri(bot.identifier)]);
+    assertEquals(activity2.ccIds, [
+      PUBLIC_COLLECTION,
+      originalPost.attributionId,
+    ]);
+    assertEquals(activity2.objectId, sharedMsg.id);
   });
 });
 
