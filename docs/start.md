@@ -57,7 +57,7 @@ to turn it on in your *deno.json* settings:
 ~~~~ json [deno.json] {5}
 {
   "imports": {
-    "@fedify/botkit": "jsr:@fedify/botkit@0.1.1"
+    "@fedify/botkit": "jsr:@fedify/botkit@0.2.0"
   },
   "unstable": ["temporal"]
 }

@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.2.0
 -------------
 
-To be released.
+Released on April 21, 2025.
 
  -  Image attachments in posts became shown in the web interface.
 

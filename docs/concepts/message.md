@@ -434,7 +434,6 @@ while (quote != null) {
 }
 ~~~~
 
-
 ### Want more?
 
 If you want more data from the message, you can get the raw object of
