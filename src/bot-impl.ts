@@ -56,6 +56,7 @@ import {
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import { getLogger } from "@logtape/logtape";
 import { extension } from "@std/media-types/extension";
+import { parseMediaType } from "@std/media-types/parse-media-type";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import {
@@ -70,6 +71,7 @@ import type {
   LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
+  QuoteEventHandler,
   ReactionEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
@@ -124,6 +126,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onRejectFollow?: RejectEventHandler<TContextData>;
   onMention?: MentionEventHandler<TContextData>;
   onReply?: ReplyEventHandler<TContextData>;
+  onQuote?: QuoteEventHandler<TContextData>;
   onMessage?: MessageEventHandler<TContextData>;
   onSharedMessage?: SharedMessageEventHandler<TContextData>;
   onLike?: LikeEventHandler<TContextData>;
@@ -667,9 +670,51 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       if (
         message.visibility === "public" || message.visibility === "unlisted"
       ) {
-        await ctx.forwardActivity(this, "followers");
+        await ctx.forwardActivity(this, "followers", {
+          skipIfUnsigned: true,
+          preferSharedInbox: true,
+          excludeBaseUris: [new URL(ctx.origin)],
+        });
       }
       await this.onReply(session, message);
+    }
+    let quoteUrl: URL | null = null;
+    // FIXME: eliminate this duplication
+    for await (const tag of object.getTags(ctx)) {
+      if (tag instanceof Link) {
+        const mediaType = tag.mediaType == null
+          ? null
+          : parseMediaType(tag.mediaType);
+        if (
+          tag.rel === "https://misskey-hub.net/ns#_misskey_quote" ||
+          mediaType?.[0] === "application/activity+json" ||
+          mediaType?.[0] === "application/ld+json" &&
+            mediaType[1]?.profile === "https://www.w3.org/ns/activitystreams"
+        ) {
+          quoteUrl = tag.href;
+          break;
+        }
+      }
+    }
+    if (quoteUrl == null) quoteUrl = object.quoteUrl;
+    const quoteTarget = ctx.parseUri(quoteUrl);
+    if (
+      this.onQuote != null &&
+      quoteTarget?.type === "object" &&
+      // @ts-ignore: quoteTarget.class satisfies (typeof messageClasses)[number]
+      messageClasses.includes(quoteTarget.class)
+    ) {
+      const message = await getMessage();
+      if (
+        message.visibility === "public" || message.visibility === "unlisted"
+      ) {
+        await ctx.forwardActivity(this, "followers", {
+          skipIfUnsigned: true,
+          preferSharedInbox: true,
+          excludeBaseUris: [new URL(ctx.origin)],
+        });
+      }
+      await this.onQuote(session, message);
     }
     for await (const tag of object.getTags(ctx)) {
       if (

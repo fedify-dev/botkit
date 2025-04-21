@@ -40,6 +40,8 @@ To be released.
 
      -  Added `SessionPublishOptions.quoteTarget` option.
      -  Added `Message.quoteTarget` property.
+     -  Added `Bot.onQuote` event.
+     -  Added `QuoteEventHandler` type.
 
  -  Added `SessionGetOutboxOptions` interface.
 

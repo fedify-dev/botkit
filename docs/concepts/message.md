@@ -226,6 +226,12 @@ bot.onMention = async (session, message) => {
 };
 ~~~~
 
+> [!NOTE]
+> Quoting behavior can vary significantly between different ActivityPub
+> implementations.  Some platforms like Misskey display quotes prominently,
+> while others like Mastodon might implement quotes differently or not support
+> them at all.
+
 
 Extracting information from a message
 -------------------------------------

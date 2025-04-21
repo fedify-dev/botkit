@@ -29,6 +29,7 @@ import type {
   LikeEventHandler,
   MentionEventHandler,
   MessageEventHandler,
+  QuoteEventHandler,
   ReactionEventHandler,
   RejectEventHandler,
   ReplyEventHandler,
@@ -136,6 +137,12 @@ export interface Bot<TContextData> {
    * An event handler for a reply to the bot.
    */
   onReply?: ReplyEventHandler<TContextData>;
+
+  /**
+   * An event handler for a quote of the bot's message.
+   * @since 0.2.0
+   */
+  onQuote?: QuoteEventHandler<TContextData>;
 
   /**
    * An event handler for a message shown to the bot's timeline.  To listen
@@ -424,6 +431,12 @@ export function createBot<TContextData = void>(
     },
     set onReply(value) {
       bot.onReply = value;
+    },
+    get onQuote() {
+      return bot.onQuote;
+    },
+    set onQuote(value) {
+      bot.onQuote = value;
     },
     get onMessage() {
       return bot.onMessage;

@@ -203,6 +203,29 @@ document.
 > };
 
 
+Quote
+-----
+
+*This API is available since BotKit 0.2.0.*
+
+The `~Bot.onQuote` event handler is called when someone quotes one of your bot's
+messages. It receives a `Message` object, which represents the message that
+quotes your bot's message, as the second argument.
+
+The following is an example of a quote event handler that responds to a message
+that quotes one of your bot's posts:
+
+~~~~ typescript
+bot.onQuote = async (session, quote) => {
+  await quote.reply(text`I see you quoted my post, ${quote.actor}!`);
+};
+~~~~
+
+If you want to get the quoted message, you can use the `~Message.quoteTarget`
+property.  See also the [*Quotes* section](./message.md#quotes) in the *Message*
+concept document.
+
+
 Message
 -------
 
@@ -231,10 +254,11 @@ bot.onMessage = async (session, message) => {
 
 > [!CAUTION]
 > The `~Bot.onMessage` event handler is called for every message that your
-> bot receives, which includes mentions and replies.  If your bot listens to
-> the `~Bot.onMention` or `~Bot.onReply` event with the `~Bot.onMessage` event
-> handler, the `~Bot.onMention` or `~Bot.onReply` event handler is called
-> first.  You should be careful not to perform unexpected actions.
+> bot receives, which includes mentions, replies, and quotes.  If your bot
+> listens to the `~Bot.onMention` or `~Bot.onReply` or `~Bot.onQuote` events
+> with the `~Bot.onMessage` event handler, the `~Bot.onMention` or
+> `~Bot.onReply` or `~Bot.onQuote` event handlers are called first.
+> You should be careful not to perform unexpected actions.
 >
 > The below example shows how to avoid the `~Bot.onMessage` event handler from
 > being called when a mention message is received:

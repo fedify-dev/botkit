@@ -1753,6 +1753,60 @@ Deno.test("BotImpl.onCreated()", async (t) => {
 
   mentioned = [];
   messaged = [];
+  ctx.forwardedRecipients = [];
+
+  await t.step("on quote", async () => {
+    const create = new Create({
+      id: new URL(
+        "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+      ),
+      actor: new URL("https://example.com/ap/actor/john"),
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/john/followers"),
+      object: new Note({
+        id: new URL(
+          "https://example.com/ap/note/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
+        ),
+        attribution: new Person({
+          id: new URL("https://example.com/ap/actor/john"),
+          preferredUsername: "john",
+        }),
+        to: PUBLIC_COLLECTION,
+        cc: new URL("https://example.com/ap/actor/john/followers"),
+        content: "It's a quote!",
+        quoteUrl: new URL(
+          "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
+        ),
+      }),
+    });
+    let quoted: [Session<void>, Message<MessageClass, void>][] = [];
+    bot.onQuote = (session, msg) => void (quoted.push([session, msg]));
+
+    await bot.onCreated(ctx, create);
+
+    assertEquals(quoted.length, 1);
+    const [session, msg] = quoted[0];
+    assertEquals(session.bot, bot);
+    assertEquals(session.context, ctx);
+    assertInstanceOf(msg.raw, Note);
+    assertEquals(msg.raw.id, create.objectId);
+    assert(msg.quoteTarget != null);
+    assertEquals(
+      msg.quoteTarget.id,
+      new URL(
+        "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
+      ),
+    );
+    assertEquals(replied, []);
+    assertEquals(mentioned, []);
+    assertEquals(messaged, quoted);
+    assertEquals(ctx.sentActivities, []);
+    assertEquals(ctx.forwardedRecipients, ["followers"]);
+
+    quoted = [];
+    messaged = [];
+    ctx.forwardedRecipients = [];
+  });
 
   await t.step("on message", async () => {
     const create = new Create({

@@ -654,6 +654,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     } else if (tag instanceof Hashtag) {
       hashtags.push(tag);
     } else if (tag instanceof Link) {
+      // FIXME: eliminate this duplication
       const mediaType = tag.mediaType == null
         ? null
         : parseMediaType(tag.mediaType);

@@ -86,6 +86,18 @@ export type ReplyEventHandler<TContextData> = (
 ) => void | Promise<void>;
 
 /**
+ * An event handler for a quote of the bot's message.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param quote The message which quotes the bot's message.
+ * @since 0.2.0
+ */
+export type QuoteEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  quote: Message<MessageClass, TContextData>,
+) => void | Promise<void>;
+
+/**
  * An event handler for a message shown to the bot's timeline.  To listen to
  * this event, your bot needs to follow others first.
  * @typeParam TContextData The type of the context data.
