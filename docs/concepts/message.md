@@ -209,6 +209,23 @@ await session.publish(text`你好，世界！`, {
 
 [BCP 47]: https://tools.ietf.org/html/bcp47
 
+### Quoting
+
+*This API is available since BotKit 0.2.0.*
+
+You can quote a message by providing `~SessionPublishOptions.quoteTarget`
+option.  The value of the option has to be a `Message` object that you want
+to quote.  For example:
+
+~~~~ typescript
+bot.onMention = async (session, message) => {
+  await session.publish(
+    text`This message quotes the message.`,
+    { quoteTarget: message },  // [!code highlight]
+  );
+};
+~~~~
+
 
 Extracting information from a message
 -------------------------------------
@@ -391,6 +408,26 @@ You can get the timestamp when the message was last updated through the
 object.
 
 [`Temporal.Instant`]: https://tc39.es/proposal-temporal/docs/instant.html
+
+### Quotes
+
+*This API is available since BotKit 0.2.0.*
+
+You can get the message that is quoted in the message through
+the `~Message.quoteTarget` property.  It is either another `Message` object
+or `undefined` if the message is not a quote.
+
+Since the quoted message itself can be a quote, you can traverse the
+conversation by following the `~Message.quoteTarget` property recursively:
+
+~~~~ typescript
+let quote: Message<MessageClass, void> | undefined = message.quoteTarget;
+while (quote != null) {
+  console.log(quote);
+  quote = quote.quoteTarget;
+}
+~~~~
+
 
 ### Want more?
 

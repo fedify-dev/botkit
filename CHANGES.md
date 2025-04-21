@@ -34,6 +34,11 @@ To be released.
      -  Added `ReactionEventHandler` type.
      -  Added `UndoneReactionEventHandler` type.
 
+ -  Added quote support.
+
+     -  Added `SessionPublishOptions.quoteTarget` option.
+     -  Added `Message.quoteTarget` property.
+
  -  Added `SessionGetOutboxOptions` interface.
 
 

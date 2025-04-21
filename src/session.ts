@@ -26,6 +26,7 @@ import type { LanguageTag } from "@phensley/language-tag";
 import type { Bot } from "./bot.ts";
 import type {
   AuthorizedMessage,
+  Message,
   MessageClass,
   MessageVisibility,
 } from "./message.ts";
@@ -112,7 +113,7 @@ export interface Session<TContextData> {
    */
   publish(
     content: Text<"block", TContextData>,
-    options?: SessionPublishOptions,
+    options?: SessionPublishOptions<TContextData>,
   ): Promise<AuthorizedMessage<Note, TContextData>>;
 
   /**
@@ -124,7 +125,7 @@ export interface Session<TContextData> {
    */
   publish<T extends MessageClass>(
     content: Text<"block", TContextData>,
-    options: SessionPublishOptionsWithClass<T>,
+    options: SessionPublishOptionsWithClass<T, TContextData>,
   ): Promise<AuthorizedMessage<T, TContextData>>;
 
   /**
@@ -139,8 +140,9 @@ export interface Session<TContextData> {
 
 /**
  * Options for publishing a message.
+ * @typeParam TContextData The type of the context data.
  */
-export interface SessionPublishOptions {
+export interface SessionPublishOptions<TContextData> {
   /**
    * The language of the published message.
    */
@@ -156,13 +158,23 @@ export interface SessionPublishOptions {
    * The media attachments of the published message.
    */
   readonly attachments?: Document[];
+
+  /**
+   * The message to quote in the published message.
+   * @since 0.2.0
+   */
+  readonly quoteTarget?: Message<MessageClass, TContextData>;
 }
 
 /**
  * Options for publishing a message with a specific class.
+ * @typeParam T The class of the published message.
+ * @typeParam TContextData The type of the context data.
  */
-export interface SessionPublishOptionsWithClass<T extends MessageClass>
-  extends SessionPublishOptions {
+export interface SessionPublishOptionsWithClass<
+  T extends MessageClass,
+  TContextData,
+> extends SessionPublishOptions<TContextData> {
   /**
    * The class of the published message.  If omitted, `Note` will be used.
    */

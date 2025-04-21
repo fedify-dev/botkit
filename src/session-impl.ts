@@ -24,8 +24,9 @@ import {
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify";
-import { Follow, Undo } from "@fedify/fedify/vocab";
+import { Follow, Link, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
+import { escape } from "@std/html/entities";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
@@ -42,7 +43,7 @@ import type { Text } from "./text.ts";
 const logger = getLogger(["botkit", "session"]);
 
 export interface SessionImplPublishOptions<TContextData>
-  extends SessionPublishOptions {
+  extends SessionPublishOptions<TContextData> {
   replyTarget?: Message<MessageClass, TContextData>;
 }
 
@@ -50,7 +51,7 @@ export interface SessionImplPublishOptionsWithClass<
   T extends MessageClass,
   TContextData,
 > extends
-  SessionPublishOptionsWithClass<T>,
+  SessionPublishOptionsWithClass<T, TContextData>,
   SessionImplPublishOptions<TContextData> {
 }
 
@@ -226,12 +227,29 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         mentionedActorIds.push(tag.href);
       }
     }
+    if (options.quoteTarget != null) {
+      let url = options.quoteTarget.raw.url ?? options.quoteTarget.id;
+      if (url instanceof Link) url = url.href ?? options.quoteTarget.id;
+      contentHtml += `\n\n<p class="quote-inline"><br>RE: <a href="${
+        escape(url.href)
+      }">${escape(url.href)}</a></p>`;
+      tags.push(
+        new Link({
+          mediaType:
+            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
+          rel: "https://misskey-hub.net/ns#_misskey_quote",
+          href: options.quoteTarget.id,
+          name: `RE: ${url.href}`,
+        }),
+      );
+    }
     const msg = new cls({
       id: this.context.getObjectUri<MessageClass>(cls, { id }),
       contents: options.language == null
         ? [contentHtml]
         : [new LanguageString(contentHtml, options.language), contentHtml],
       replyTarget: options.replyTarget?.id,
+      quoteUrl: options.quoteTarget?.id,
       tags,
       attribution: this.context.getActorUri(this.bot.identifier),
       attachments: options.attachments ?? [],
@@ -298,11 +316,20 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         { preferSharedInbox, excludeBaseUris },
       );
     }
+    if (options.quoteTarget != null) {
+      await this.context.sendActivity(
+        this.bot,
+        options.quoteTarget.actor,
+        activity,
+        { preferSharedInbox, excludeBaseUris },
+      );
+    }
     return await createMessage(
       msg,
       this,
       cachedObjects,
       options.replyTarget,
+      options.quoteTarget,
       true,
     );
   }

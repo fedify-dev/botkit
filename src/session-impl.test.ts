@@ -30,6 +30,7 @@ import { assertFalse } from "@std/assert/false";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertRejects } from "@std/assert/rejects";
 import { BotImpl } from "./bot-impl.ts";
+import { createMessage } from "./message-impl.ts";
 import { MemoryRepository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
 import { mention, text } from "./text.ts";
@@ -385,6 +386,71 @@ Deno.test("SessionImpl.publish()", async (t) => {
     assertEquals(directMsg.html, object.content);
     assertEquals(directMsg.visibility, "direct");
     // assertEquals(directMsg.mentions, [mentioned]); // FIXME
+  });
+
+  ctx.sentActivities = [];
+
+  await t.step("quote", async () => {
+    const originalAuthor = new Person({
+      id: new URL("https://example.com/ap/actor/john"),
+      preferredUsername: "john",
+    });
+    const originalPost = new Note({
+      id: new URL(
+        "https://example.com/ap/note/c1c792ce-a0be-4685-b396-e59e5ef8c788",
+      ),
+      content: "<p>Hello, world!</p>",
+      attribution: originalAuthor,
+      to: new URL("https://example.com/ap/actor/john/followers"),
+      cc: PUBLIC_COLLECTION,
+    });
+    const originalMsg = await createMessage<Note, void>(
+      originalPost,
+      session,
+      {},
+    );
+    const quote = await session.publish(text`Check this out!`, {
+      quoteTarget: originalMsg,
+    });
+    assertEquals(ctx.sentActivities.length, 2);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assertEquals(recipients, "followers");
+    assertInstanceOf(activity, Create);
+    assertEquals(activity.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity.toIds, [PUBLIC_COLLECTION]);
+    assertEquals(activity.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+    const object = await activity.getObject(ctx);
+    const { recipients: recipients2, activity: activity2 } =
+      ctx.sentActivities[1];
+    assertEquals(recipients2, [originalAuthor]);
+    assertInstanceOf(activity2, Create);
+    assertEquals(activity2.actorId, ctx.getActorUri(bot.identifier));
+    assertEquals(activity2.toIds, [PUBLIC_COLLECTION]);
+    assertEquals(activity2.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+    assertInstanceOf(object, Note);
+    assertEquals(object.attributionId, ctx.getActorUri(bot.identifier));
+    assertEquals(object.toIds, [PUBLIC_COLLECTION]);
+    assertEquals(object.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+    assertEquals(
+      object.content,
+      `<p>Check this out!</p>
+
+<p class="quote-inline"><br>RE: <a href="${originalMsg.id.href}">${originalMsg.id.href}</a></p>`,
+    );
+    assertEquals(object.quoteUrl, originalMsg.id);
+    assertEquals(quote.id, object.id);
+    assertEquals(
+      quote.text,
+      `Check this out!\n\nRE: ${originalMsg.id.href}`,
+    );
+    assertEquals(
+      quote.html,
+      `<p>Check this out!</p>
+
+<p><br>RE: <a href="${originalMsg.id.href}">${originalMsg.id.href}</a></p>`,
+    );
+    assertEquals(quote.visibility, "public");
+    assertEquals(quote.quoteTarget?.id, originalMsg.id);
   });
 });
 

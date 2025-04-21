@@ -147,6 +147,12 @@ export interface Message<T extends MessageClass, TContextData> {
   readonly attachments: readonly Document[];
 
   /**
+   * The message quoted by this message, if any.
+   * @since 0.2.0
+   */
+  readonly quoteTarget?: Message<MessageClass, TContextData>;
+
+  /**
    * The published time of the message.
    */
   readonly published?: Temporal.Instant;
@@ -164,7 +170,7 @@ export interface Message<T extends MessageClass, TContextData> {
    */
   reply(
     text: Text<"block", TContextData>,
-    options?: SessionPublishOptions,
+    options?: SessionPublishOptions<TContextData>,
   ): Promise<AuthorizedMessage<Note, TContextData>>;
 
   /**
@@ -176,7 +182,7 @@ export interface Message<T extends MessageClass, TContextData> {
    */
   reply<T extends MessageClass>(
     text: Text<"block", TContextData>,
-    options?: SessionPublishOptionsWithClass<T>,
+    options?: SessionPublishOptionsWithClass<T, TContextData>,
   ): Promise<AuthorizedMessage<T, TContextData>>;
 
   /**

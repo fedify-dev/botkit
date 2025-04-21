@@ -27,7 +27,7 @@ import {
   Hashtag,
   isActor,
   Like as RawLike,
-  type Link,
+  Link,
   Mention,
   Note,
   type Object,
@@ -39,6 +39,7 @@ import {
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
+import { parseMediaType } from "@std/media-types/parse-media-type";
 import { generate as uuidv7 } from "@std/uuid/unstable-v7";
 import { FilterXSS, getDefaultWhiteList } from "xss";
 import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
@@ -90,6 +91,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
   text: string;
   html: string;
   readonly replyTarget?: Message<MessageClass, TContextData> | undefined;
+  readonly quoteTarget?: Message<MessageClass, TContextData> | undefined;
   mentions: readonly Actor[];
   hashtags: readonly Hashtag[];
   readonly attachments: readonly Document[];
@@ -112,6 +114,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     this.text = message.text;
     this.html = message.html;
     this.replyTarget = message.replyTarget;
+    this.quoteTarget = message.quoteTarget;
     this.mentions = message.mentions;
     this.hashtags = message.hashtags;
     this.attachments = message.attachments;
@@ -121,17 +124,17 @@ export class MessageImpl<T extends MessageClass, TContextData>
 
   reply(
     text: Text<"block", TContextData>,
-    options?: SessionPublishOptions,
+    options?: SessionPublishOptions<TContextData>,
   ): Promise<AuthorizedMessage<Note, TContextData>>;
   reply<T extends MessageClass>(
     text: Text<"block", TContextData>,
-    options?: SessionPublishOptionsWithClass<T> | undefined,
+    options?: SessionPublishOptionsWithClass<T, TContextData> | undefined,
   ): Promise<AuthorizedMessage<T, TContextData>>;
   reply(
     text: Text<"block", TContextData>,
     options?:
-      | SessionPublishOptions
-      | SessionPublishOptionsWithClass<MessageClass>,
+      | SessionPublishOptions<TContextData>
+      | SessionPublishOptionsWithClass<MessageClass, TContextData>,
   ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     return this.session.publish(text, {
       visibility: this.visibility === "unknown" ? "direct" : this.visibility,
@@ -544,6 +547,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
   session: SessionImpl<TContextData>,
   cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
+  quote?: Message<MessageClass, TContextData>,
   authorized?: true,
 ): Promise<AuthorizedMessage<T, TContextData>>;
 export async function createMessage<T extends MessageClass, TContextData>(
@@ -551,6 +555,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
   session: SessionImpl<TContextData>,
   cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
+  quote?: Message<MessageClass, TContextData>,
   authorized?: boolean,
 ): Promise<Message<T, TContextData>>;
 export async function createMessage<T extends MessageClass, TContextData>(
@@ -558,6 +563,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
   session: SessionImpl<TContextData>,
   cachedObjects: Record<string, Object>,
   replyTarget?: Message<MessageClass, TContextData>,
+  quoteTarget?: Message<MessageClass, TContextData>,
   authorized: boolean = false,
 ): Promise<Message<T, TContextData>> {
   if (raw.id == null) throw new TypeError("The raw.id is required.");
@@ -582,6 +588,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
   const mentions: Actor[] = [];
   const mentionedActorIds = new Set<string>();
   const hashtags: Hashtag[] = [];
+  const quoteLinks: Link[] = [];
   for await (const tag of raw.getTags(options)) {
     if (tag instanceof Mention && tag.href != null) {
       const obj = tag.href.href === session.actorId?.href
@@ -593,6 +600,18 @@ export async function createMessage<T extends MessageClass, TContextData>(
       mentionedActorIds.add(tag.href.href);
     } else if (tag instanceof Hashtag) {
       hashtags.push(tag);
+    } else if (tag instanceof Link) {
+      const mediaType = tag.mediaType == null
+        ? null
+        : parseMediaType(tag.mediaType);
+      if (
+        tag.rel === "https://misskey-hub.net/ns#_misskey_quote" ||
+        mediaType?.[0] === "application/activity+json" ||
+        mediaType?.[0] === "application/ld+json" &&
+          mediaType[1]?.profile === "https://www.w3.org/ns/activitystreams"
+      ) {
+        quoteLinks.push(tag);
+      }
     }
   }
   const attachments: Document[] = [];
@@ -612,12 +631,44 @@ export async function createMessage<T extends MessageClass, TContextData>(
         session.context,
         parsed.values.id,
       );
-    } else rt = await raw.getReplyTarget(options);
+    } else {
+      rt = await raw.getReplyTarget(options);
+    }
     if (
       rt instanceof Article || rt instanceof ChatMessage ||
       rt instanceof Note || rt instanceof Question
     ) {
       replyTarget = await createMessage(rt, session, cachedObjects);
+    }
+  }
+  if (quoteTarget == null) {
+    let quoteUrl: URL | null = null;
+    for (const quoteLink of quoteLinks) {
+      if (quoteLink.href == null) continue;
+      quoteUrl = quoteLink.href;
+      break;
+    }
+    if (quoteUrl == null) quoteUrl = raw.quoteUrl;
+    let qt: Object | null = null;
+    const parsed = session.context.parseUri(quoteUrl);
+    // @ts-ignore: The `class` property satisfies the `MessageClass` type.
+    if (parsed?.type === "object" && messageClasses.includes(parsed.class)) {
+      // @ts-ignore: The `class` property satisfies the `MessageClass` type.
+      // deno-lint-ignore no-explicit-any
+      const cls: new (values: any) => T = parsed.class;
+      qt = await session.bot.dispatchMessage(
+        cls,
+        session.context,
+        parsed.values.id,
+      );
+    } else if (quoteUrl != null) {
+      qt = await session.context.lookupObject(quoteUrl, options);
+    }
+    if (
+      qt instanceof Article || qt instanceof ChatMessage ||
+      qt instanceof Note || qt instanceof Question
+    ) {
+      quoteTarget = await createMessage(qt, session, cachedObjects);
     }
   }
   return new (authorized ? AuthorizedMessageImpl : MessageImpl)(session, {
@@ -636,6 +687,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     text: unescape(text),
     html,
     replyTarget,
+    quoteTarget,
     mentions,
     hashtags,
     attachments,

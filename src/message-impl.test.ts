@@ -211,6 +211,7 @@ Deno.test("AuthorizedMessageImpl.delete()", async () => {
     session,
     {},
     undefined,
+    undefined,
     true,
   );
   await repository.addMessage(
