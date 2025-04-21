@@ -20,6 +20,8 @@ To be released.
      -  Added `CustomEmojiFromFile` interface.
      -  Added `CustomEmoji` type.
      -  Added `DeferredCustomEmoji` type.
+     -  The `text` tagged template literal function now accepts `Emoji` objects
+        (provided by Fedify).
 
  -  Added emoji reaction support.
 
