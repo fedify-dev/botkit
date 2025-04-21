@@ -630,6 +630,16 @@ const reaction = await message.react(emojis.noBlob);
 await reaction.unreact();  // [!code highlight]
 ~~~~
 
+> [!NOTE]
+> Some ActivityPub implementations like Mastodon do not support emoji reactions,
+> so even if you call the `~Message.react()` method to messages from those
+> implementations, they will ignore the reactions.
+
+> [!NOTE]
+> Some ActivityPub implementations like Misskey do not allow an actor to leave
+> multiple reactions to the same message.  In that case, only one reaction
+> will be shown, and the other reactions will be ignored.
+
 
 Replying to a message
 ---------------------
