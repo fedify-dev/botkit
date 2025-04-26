@@ -76,6 +76,7 @@ export {
   Announce,
   Create,
   KvRepository,
+  MemoryCachedRepository,
   MemoryRepository,
   type Repository,
 } from "./repository.ts";

@@ -6,6 +6,8 @@ Version 0.3.0
 
 To be released.
 
+ -  Added `MemoryCachedRepository` class.
+
 
 Version 0.2.0
 -------------

@@ -762,3 +762,191 @@ export class MemoryRepository implements Repository {
     return Promise.resolve(this.followees[followeeId.href]);
   }
 }
+
+/**
+ * A repository decorator that adds an in-memory cache layer on top of another
+ * repository. This is useful for improving performance by reducing the number
+ * of accesses to the underlying persistent storage, but it increases memory
+ * usage. The cache is not persistent and will be lost when the process exits.
+ *
+ * Note: List operations like `getMessages` and `getFollowers`, and count
+ * operations like `countMessages` and `countFollowers` are not cached and
+ * always delegate to the underlying repository.
+ */
+export class MemoryCachedRepository implements Repository {
+  private underlying: Repository;
+  private cache: MemoryRepository;
+
+  /**
+   * Creates a new memory-cached repository.
+   * @param underlying The underlying repository to cache.
+   * @param cache An optional `MemoryRepository` instance to use as the cache.
+   *              If not provided, a new one will be created internally.
+   */
+  constructor(underlying: Repository, cache?: MemoryRepository) {
+    this.underlying = underlying;
+    this.cache = cache ?? new MemoryRepository();
+  }
+
+  async setKeyPairs(keyPairs: CryptoKeyPair[]): Promise<void> {
+    await this.underlying.setKeyPairs(keyPairs);
+    await this.cache.setKeyPairs(keyPairs);
+  }
+
+  async getKeyPairs(): Promise<CryptoKeyPair[] | undefined> {
+    let keyPairs = await this.cache.getKeyPairs();
+    if (keyPairs === undefined) {
+      keyPairs = await this.underlying.getKeyPairs();
+      if (keyPairs !== undefined) await this.cache.setKeyPairs(keyPairs);
+    }
+    return keyPairs;
+  }
+
+  async addMessage(id: Uuid, activity: Create | Announce): Promise<void> {
+    await this.underlying.addMessage(id, activity);
+    await this.cache.addMessage(id, activity);
+  }
+
+  async updateMessage(
+    id: Uuid,
+    updater: (
+      existing: Create | Announce,
+    ) => Create | Announce | undefined | Promise<Create | Announce | undefined>,
+  ): Promise<boolean> {
+    // Apply update to underlying first
+    const updated = await this.underlying.updateMessage(id, updater);
+    if (updated) {
+      // If successful, fetch the updated message and update the cache
+      const updatedMessage = await this.underlying.getMessage(id);
+      if (updatedMessage) {
+        await this.cache.addMessage(id, updatedMessage); // Use addMessage which acts like set
+      } else {
+        // Should not happen if updateMessage returned true, but handle defensively
+        await this.cache.removeMessage(id);
+      }
+    }
+    return updated;
+  }
+
+  async removeMessage(id: Uuid): Promise<Create | Announce | undefined> {
+    const removedActivity = await this.underlying.removeMessage(id);
+    if (removedActivity !== undefined) {
+      await this.cache.removeMessage(id);
+    }
+    return removedActivity;
+  }
+
+  // getMessages is not cached due to complexity with options
+  getMessages(
+    options?: RepositoryGetMessagesOptions,
+  ): AsyncIterable<Create | Announce> {
+    return this.underlying.getMessages(options);
+  }
+
+  async getMessage(id: Uuid): Promise<Create | Announce | undefined> {
+    let message = await this.cache.getMessage(id);
+    if (message === undefined) {
+      message = await this.underlying.getMessage(id);
+      if (message !== undefined) {
+        await this.cache.addMessage(id, message); // Use addMessage which acts like set
+      }
+    }
+    return message;
+  }
+
+  // countMessages is not cached
+  countMessages(): Promise<number> {
+    return this.underlying.countMessages();
+  }
+
+  async addFollower(followId: URL, follower: Actor): Promise<void> {
+    await this.underlying.addFollower(followId, follower);
+    await this.cache.addFollower(followId, follower);
+  }
+
+  async removeFollower(
+    followId: URL,
+    followerId: URL,
+  ): Promise<Actor | undefined> {
+    const removedFollower = await this.underlying.removeFollower(
+      followId,
+      followerId,
+    );
+    if (removedFollower !== undefined) {
+      await this.cache.removeFollower(followId, followerId);
+    }
+    return removedFollower;
+  }
+
+  async hasFollower(followerId: URL): Promise<boolean> {
+    // Check cache first for potentially faster response
+    if (await this.cache.hasFollower(followerId)) {
+      return true;
+    }
+    // If not in cache, check underlying and update cache if found
+    const exists = await this.underlying.hasFollower(followerId);
+    // Note: We don't automatically add to cache here, as we don't have the Actor object
+    // It will be cached if addFollower is called or if getFollowers iterates over it (though getFollowers isn't cached)
+    return exists;
+  }
+
+  // getFollowers is not cached due to complexity with options
+  getFollowers(options?: RepositoryGetFollowersOptions): AsyncIterable<Actor> {
+    // We could potentially cache followers as they are iterated,
+    // but for simplicity, delegate directly for now.
+    return this.underlying.getFollowers(options);
+  }
+
+  // countFollowers is not cached
+  countFollowers(): Promise<number> {
+    return this.underlying.countFollowers();
+  }
+
+  async addSentFollow(id: Uuid, follow: Follow): Promise<void> {
+    await this.underlying.addSentFollow(id, follow);
+    await this.cache.addSentFollow(id, follow);
+  }
+
+  async removeSentFollow(id: Uuid): Promise<Follow | undefined> {
+    const removedFollow = await this.underlying.removeSentFollow(id);
+    if (removedFollow !== undefined) {
+      await this.cache.removeSentFollow(id);
+    }
+    return removedFollow;
+  }
+
+  async getSentFollow(id: Uuid): Promise<Follow | undefined> {
+    let follow = await this.cache.getSentFollow(id);
+    if (follow === undefined) {
+      follow = await this.underlying.getSentFollow(id);
+      if (follow !== undefined) {
+        await this.cache.addSentFollow(id, follow);
+      }
+    }
+    return follow;
+  }
+
+  async addFollowee(followeeId: URL, follow: Follow): Promise<void> {
+    await this.underlying.addFollowee(followeeId, follow);
+    await this.cache.addFollowee(followeeId, follow);
+  }
+
+  async removeFollowee(followeeId: URL): Promise<Follow | undefined> {
+    const removedFollow = await this.underlying.removeFollowee(followeeId);
+    if (removedFollow !== undefined) {
+      await this.cache.removeFollowee(followeeId);
+    }
+    return removedFollow;
+  }
+
+  async getFollowee(followeeId: URL): Promise<Follow | undefined> {
+    let follow = await this.cache.getFollowee(followeeId);
+    if (follow === undefined) {
+      follow = await this.underlying.getFollowee(followeeId);
+      if (follow !== undefined) {
+        await this.cache.addFollowee(followeeId, follow);
+      }
+    }
+    return follow;
+  }
+}

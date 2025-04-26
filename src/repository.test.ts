@@ -28,6 +28,7 @@ import { assertEquals } from "@std/assert/equals";
 import { assertFalse } from "@std/assert/false";
 import {
   KvRepository,
+  MemoryCachedRepository,
   MemoryRepository,
   type Repository,
 } from "./repository.ts";
@@ -40,9 +41,14 @@ function createMemoryRepository(): Repository {
   return new MemoryRepository();
 }
 
+function createMemoryCachedRepository(): Repository {
+  return new MemoryCachedRepository(createKvRepository());
+}
+
 const factories: Record<string, () => Repository> = {
   KvRepository: createKvRepository,
   MemoryRepository: createMemoryRepository,
+  MemoryCachedRepository: createMemoryCachedRepository,
 };
 
 const keyPairs: CryptoKeyPair[] = [

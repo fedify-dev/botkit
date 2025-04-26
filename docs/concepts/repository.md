@@ -98,6 +98,31 @@ nodes. No setup is required, making it easy to get started.
 > efficient because it doesn't have to go through the [`KvStore`] interface.
 
 
+`MemoryCachedRepository`
+------------------------
+
+*This API is available since BotKit 0.3.0.*
+
+The `MemoryCachedRepository` is a repository decorator that adds an in-memory
+cache layer on top of another repository. This is useful for improving
+performance by reducing the number of accesses to the underlying persistent
+storage, but it increases memory usage. The cache is not persistent and will
+be lost when the process exits.
+
+It takes an existing `Repository` instance (like `KvRepository` or even
+another `MemoryCachedRepository`) and wraps it. Write operations are performed
+on both the underlying repository and the cache. Read operations first check
+the cache; if the data is found, it's returned directly. Otherwise, the data
+is fetched from the underlying repository, stored in the cache, and then
+returned.
+
+> [!NOTE]
+> List operations like `getMessages` and `getFollowers`, and count operations
+> like `countMessages` and `countFollowers` are not cached due to the
+> complexity of handling various filtering and pagination options. These
+> operations always delegate directly to the underlying repository.
+
+
 Implementing a custom repository
 --------------------------------
 
