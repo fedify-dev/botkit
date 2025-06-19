@@ -7,6 +7,7 @@ Version 0.3.0
 To be released.
 
  -  Added `MemoryCachedRepository` class.
+ -  Upgraded Fedify to 1.6.1.
 
 
 Version 0.2.0
