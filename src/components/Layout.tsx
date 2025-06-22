@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
-/** @jsxImportSource @hono/hono/jsx */
-import type { JSX } from "@hono/hono/jsx/jsx-runtime";
+/** @jsxImportSource hono/jsx */
+import type { JSX } from "hono/jsx/jsx-runtime";
 import type { BotImpl } from "../bot-impl.ts";
 
 export interface LayoutProps extends JSX.ElementChildrenAttribute {

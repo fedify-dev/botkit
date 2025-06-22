@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
-/** @jsxImportSource @hono/hono/jsx */
+/** @jsxImportSource hono/jsx */
 import type { Context } from "@fedify/fedify/federation";
 import {
   type Announce,
@@ -26,8 +26,8 @@ import {
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify/vocab";
-import { Hono } from "@hono/hono";
 import { unescape } from "@std/html/entities";
+import { Hono } from "hono";
 import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
