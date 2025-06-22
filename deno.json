@@ -27,9 +27,9 @@
     "@std/assert": "jsr:@std/assert@^1.0.12",
     "@std/html": "jsr:@std/html@^1.0.3",
     "@std/media-types": "jsr:@std/media-types@^1.1.0",
-    "@std/uuid": "jsr:@std/uuid@^1.0.6",
     "hono": "jsr:@hono/hono@^4.8.2",
     "markdown-it": "npm:markdown-it@^14.1.0",
+    "uuid": "npm:uuid@^11.1.0",
     "xss": "npm:xss@^1.0.15"
   },
   "lock": false,

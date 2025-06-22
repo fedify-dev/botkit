@@ -40,7 +40,7 @@ import {
 import type { LanguageTag } from "@phensley/language-tag";
 import { unescape } from "@std/html/entities";
 import { parseMediaType } from "@std/media-types/parse-media-type";
-import { generate as uuidv7 } from "@std/uuid/unstable-v7";
+import { v7 as uuidv7 } from "uuid";
 import { FilterXSS, getDefaultWhiteList } from "xss";
 import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type {
@@ -147,7 +147,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
     options: MessageShareOptions = {},
   ): Promise<AuthorizedSharedMessage<T, TContextData>> {
     const published = new Date();
-    const id = uuidv7(+published) as Uuid;
+    const id = uuidv7({ msecs: +published }) as Uuid;
     const visibility = options.visibility ?? this.visibility;
     const originalActor = this.actor.id == null ? [] : [this.actor.id];
     const uri = this.session.context.getObjectUri(Announce, { id });

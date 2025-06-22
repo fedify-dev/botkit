@@ -27,7 +27,7 @@ import {
 import { Follow, Link, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import { escape } from "@std/html/entities";
-import { generate as uuidv7 } from "@std/uuid/unstable-v7";
+import { v7 as uuidv7 } from "uuid";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
 import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
@@ -213,7 +213,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},
   ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     const published = new Date();
-    const id = uuidv7(+published) as Uuid;
+    const id = uuidv7({ msecs: +published }) as Uuid;
     const cls = "class" in options ? options.class : Note;
     const visibility = options.visibility ?? "public";
     let contentHtml = "";

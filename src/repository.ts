@@ -24,7 +24,6 @@ import {
   isActor,
   Object,
 } from "@fedify/fedify/vocab";
-import { extractTimestamp } from "@std/uuid/unstable-v7";
 export type { KvKey, KvStore } from "@fedify/fedify/federation";
 export { Announce, Create } from "@fedify/fedify/vocab";
 
@@ -597,6 +596,22 @@ export class KvRepository implements Repository {
 interface KeyPair {
   private: JsonWebKey;
   public: JsonWebKey;
+}
+
+/**
+ * Extracts the timestamp from a UUIDv7.
+ * @param uuid The UUIDv7 string to extract the timestamp from.
+ * @return The timestamp in milliseconds since the Unix epoch.
+ * @internal
+ */
+function extractTimestamp(uuid: string): number {
+  // UUIDv7 format: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+  // The timestamp is in the first 6 bytes (48 bits) of the UUID.
+  if (uuid.length !== 36 || uuid[14] !== "7") {
+    throw new TypeError("Invalid UUIDv7 format.");
+  }
+  const timestampHex = uuid.slice(0, 8) + uuid.slice(9, 13);
+  return parseInt(timestampHex, 16);
 }
 
 /**
