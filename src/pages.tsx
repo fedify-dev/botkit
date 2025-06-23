@@ -26,8 +26,8 @@ import {
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify/vocab";
-import { unescape } from "@std/html/entities";
 import { Hono } from "hono";
+import { decode } from "html-entities";
 import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
@@ -267,7 +267,7 @@ app.get("/message/:id", async (c) => {
   if (title == null) {
     title = message.summary ?? message.content;
     if (title != null) {
-      title = unescape(textXss.process(title.toString()));
+      title = decode(textXss.process(title.toString()));
     }
   }
   return c.html(
@@ -349,7 +349,7 @@ app.get("/feed.xml", async (c) => {
         if (title == null) {
           title = post.summary ?? post.content;
           if (title != null) {
-            title = unescape(textXss.process(title.toString()));
+            title = decode(textXss.process(title.toString()));
           }
         }
         return (

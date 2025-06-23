@@ -258,7 +258,7 @@ Deno.test({
     )}.`;
     assertEquals(
       (await Array.fromAsync(t7.getHtml(session))).join(""),
-      '<p>Here&#39;s a link: <a href="https://fedify.dev/" target="_blank">' +
+      '<p>Here&apos;s a link: <a href="https://fedify.dev/" target="_blank">' +
         "https://fedify.dev/</a>.</p>",
     );
     assertEquals(await Array.fromAsync(t7.getTags(session)), []);
@@ -269,7 +269,7 @@ Deno.test({
 ${"First line.\nSecond line."}`;
     assertEquals(
       (await Array.fromAsync(t8.getHtml(session))).join(""),
-      "<p>Here&#39;s a multiline text:</p><p>First line.<br>Second line.</p>",
+      "<p>Here&apos;s a multiline text:</p><p>First line.<br>Second line.</p>",
     );
     assertEquals(await Array.fromAsync(t8.getTags(session)), []);
     assertEquals(t8.getCachedObjects(), []);
@@ -742,3 +742,5 @@ Deno.test("customEmoji()", async () => {
   // Test getCachedObjects()
   assertEquals(t.getCachedObjects(), []); // TemplatedText itself doesn't cache, relies on children
 });
+
+// cSpell: ignore apos

@@ -38,8 +38,8 @@ import {
   Update,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
-import { unescape } from "@std/html/entities";
 import { parseMediaType } from "@std/media-types/parse-media-type";
+import { decode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import { FilterXSS, getDefaultWhiteList } from "xss";
 import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
@@ -425,7 +425,7 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
         const objects = await Promise.all(promises);
         mentionedActors = objects.filter(isActor);
         this.html = contentHtml;
-        this.text = unescape(textXss.process(contentHtml));
+        this.text = decode(textXss.process(contentHtml));
         existingMentions = this.mentions;
         this.mentions = mentionedActors;
         this.hashtags = hashtags;
@@ -738,7 +738,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
     language: raw.content instanceof LanguageString
       ? raw.content.language
       : undefined,
-    text: unescape(text),
+    text: decode(text),
     html,
     replyTarget,
     quoteTarget,

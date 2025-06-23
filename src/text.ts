@@ -28,7 +28,7 @@ import {
   mention as mentionPlugin,
   toFullHandle,
 } from "@fedify/markdown-it-mention";
-import { escape } from "@std/html/entities";
+import { encode } from "html-entities";
 import MarkdownIt from "markdown-it";
 import type { DeferredCustomEmoji } from "./emoji.ts";
 import type { Session } from "./session.ts";
@@ -153,7 +153,7 @@ export class TemplatedText<TContextData>
             paraState = "opened";
           }
           if (l > 0) yield "<br>";
-          yield escape(line);
+          yield encode(line);
           l++;
         }
         p++;
@@ -241,7 +241,7 @@ export class PlainText<TContextData> implements Text<"inline", TContextData> {
     let first = true;
     for (const line of this.text.split("\n")) {
       if (!first) yield "<br>";
-      yield escape(line);
+      yield encode(line);
       first = false;
     }
   }
@@ -325,18 +325,18 @@ export class MentionText<TContextData> implements Text<"inline", TContextData> {
       ? actor.url.href
       : actor.url;
     if (url == null) {
-      yield escape(label);
+      yield encode(label);
       return;
     }
     yield '<a href="';
-    yield escape(url.href);
+    yield encode(url.href);
     yield '" translate="no" class="h-card u-url mention" target="_blank">';
     if (label.startsWith("@")) {
       yield "@<span>";
-      yield escape(label.substring(1));
+      yield encode(label.substring(1));
       yield "</span>";
     } else {
-      yield escape(label);
+      yield encode(label);
     }
     yield "</a>";
   }
@@ -472,9 +472,9 @@ export class HashtagText<TContextData> implements Text<"inline", TContextData> {
 
   async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
     yield '<a href="';
-    yield escape(session.context.origin);
+    yield encode(session.context.origin);
     yield "/tags/";
-    yield escape(encodeURIComponent(this.#tag.toLowerCase()));
+    yield encode(encodeURIComponent(this.#tag.toLowerCase()));
     yield '" class="mention hashtag" rel="tag" target="_blank">#<span>';
     yield this.#tag;
     yield "</span></a>";
@@ -620,7 +620,7 @@ export class LinkText<TContextData> implements Text<"inline", TContextData> {
 
   async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
     yield '<a href="';
-    yield escape(this.#href.href);
+    yield encode(this.#href.href);
     yield '" target="_blank">';
     yield* this.#label.getHtml(session);
     yield "</a>";
@@ -749,7 +749,7 @@ export class CustomEmojiText<TContextData>
     const emoji = this.getEmoji(session);
     if (emoji.name == null) return;
     yield "\u200b"; // zero-width space for segmentation
-    yield escape(emoji.name.toString());
+    yield encode(emoji.name.toString());
     yield "\u200b";
   }
 

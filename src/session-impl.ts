@@ -26,7 +26,7 @@ import {
 } from "@fedify/fedify";
 import { Follow, Link, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
-import { escape } from "@std/html/entities";
+import { encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
@@ -231,8 +231,8 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       let url = options.quoteTarget.raw.url ?? options.quoteTarget.id;
       if (url instanceof Link) url = url.href ?? options.quoteTarget.id;
       contentHtml += `\n\n<p class="quote-inline"><br>RE: <a href="${
-        escape(url.href)
-      }">${escape(url.href)}</a></p>`;
+        encode(url.href)
+      }">${encode(url.href)}</a></p>`;
       tags.push(
         new Link({
           mediaType:
