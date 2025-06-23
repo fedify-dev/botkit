@@ -13,11 +13,11 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { assert } from "@std/assert/assert";
-import { assertFalse } from "@std/assert/false";
+import assert from "node:assert";
+import { test } from "node:test";
 import { emoji, isEmoji } from "./emoji.ts";
 
-Deno.test("isEmoji() with valid emojis", () => {
+test("isEmoji() with valid emojis", () => {
   const validEmojis = [
     "😀", // simple emoji
     "👍", // thumbs up
@@ -31,14 +31,14 @@ Deno.test("isEmoji() with valid emojis", () => {
   ];
 
   for (const emoji of validEmojis) {
-    assert(
+    assert.ok(
       isEmoji(emoji),
       `Expected '${emoji}' to be recognized as an emoji`,
     );
   }
 });
 
-Deno.test("isEmoji() with invalid inputs", () => {
+test("isEmoji() with invalid inputs", () => {
   const invalidInputs = [
     // Multiple emojis
     "😀😀",
@@ -63,14 +63,15 @@ Deno.test("isEmoji() with invalid inputs", () => {
   ];
 
   for (const input of invalidInputs) {
-    assertFalse(
+    assert.strictEqual(
       isEmoji(input),
+      false,
       `Expected '${input}' not to be recognized as an emoji`,
     );
   }
 });
 
-Deno.test("isEmoji() with additional edge cases", () => {
+test("isEmoji() with additional edge cases", () => {
   const edgeCaseEmojis = [
     "5️⃣", // key cap sequence
     "❤️", // emoji with presentation variation selector
@@ -85,14 +86,14 @@ Deno.test("isEmoji() with additional edge cases", () => {
   ];
 
   for (const emoji of edgeCaseEmojis) {
-    assert(
+    assert.ok(
       isEmoji(emoji),
       `Expected '${emoji}' to be recognized as an emoji`,
     );
   }
 });
 
-Deno.test("isEmoji() with tricky invalid inputs", () => {
+test("isEmoji() with tricky invalid inputs", () => {
   const trickyInvalidInputs = [
     " 😀", // emoji with leading space
     "😀 ", // emoji with trailing space
@@ -106,13 +107,15 @@ Deno.test("isEmoji() with tricky invalid inputs", () => {
   ];
 
   for (const input of trickyInvalidInputs) {
-    assertFalse(
+    assert.strictEqual(
       isEmoji(input),
+      false,
       `Expected '${input}' not to be recognized as an emoji`,
     );
   }
 });
-Deno.test("emoji() tagged template function with valid emojis", () => {
+
+test("emoji() tagged template function with valid emojis", () => {
   const validEmojis = [
     emoji`😀`, // simple emoji
     emoji`👍`, // thumbs up
@@ -125,18 +128,18 @@ Deno.test("emoji() tagged template function with valid emojis", () => {
   ];
 
   for (const emojiValue of validEmojis) {
-    assert(isEmoji(emojiValue));
+    assert.ok(isEmoji(emojiValue));
   }
 });
 
-Deno.test("emoji() tagged template function with interpolation", () => {
+test("emoji() tagged template function with interpolation", () => {
   const rocket = "🚀";
   const result = emoji`${rocket}`;
-  assert(isEmoji(result));
-  assert(result === "🚀");
+  assert.ok(isEmoji(result));
+  assert.strictEqual(result, "🚀");
 });
 
-Deno.test("emoji() throws with invalid inputs", () => {
+test("emoji() throws with invalid inputs", () => {
   const invalidInputs = [
     () => emoji`😀😀`, // multiple emojis
     () => emoji`hi😀`, // mixed content
@@ -149,10 +152,10 @@ Deno.test("emoji() throws with invalid inputs", () => {
   for (const fn of invalidInputs) {
     try {
       fn();
-      assert(false, "Expected function to throw TypeError");
+      assert.fail("Expected function to throw TypeError");
     } catch (error) {
-      assert(error instanceof TypeError);
-      assert(error.message.startsWith("Invalid emoji:"));
+      assert.ok(error instanceof TypeError);
+      assert.ok(error.message.startsWith("Invalid emoji:"));
     }
   }
 });

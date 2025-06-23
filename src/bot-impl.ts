@@ -53,9 +53,10 @@ import {
   Service,
   Undo,
 } from "@fedify/fedify/vocab";
-import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import { getLogger } from "@logtape/logtape";
 import mimeDb from "mime-db";
+import fs from "node:fs/promises";
+import { getXForwardedRequest } from "x-forwarded-fetch";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import {
@@ -954,17 +955,20 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       if (customEmoji == null || !("file" in customEmoji)) {
         return new Response("Not Found", { status: 404 });
       }
-      let file: Deno.FsFile;
+      let file: fs.FileHandle;
       try {
-        file = await Deno.open(customEmoji.file);
+        file = await fs.open(customEmoji.file, "r");
       } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
+        if (
+          typeof error === "object" && error != null && "code" in error &&
+          error.code === "ENOENT"
+        ) {
           return new Response("Not Found", { status: 404 });
         }
         throw error;
       }
       const fileInfo = await file.stat();
-      return new Response(file.readable, {
+      return new Response(file.readableWebStream(), {
         headers: {
           "Content-Type": customEmoji.type,
           "Content-Length": fileInfo.size.toString(),
@@ -988,6 +992,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if ("url" in data) {
       url = new URL(data.url);
     } else {
+      // @ts-ignore: data.type satisfies keyof typeof mimeDb
       const t = mimeDb[data.type];
       url = new URL(
         `/emojis/${name}${

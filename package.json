@@ -1,0 +1,138 @@
+{
+  "name": "@fedify/botkit",
+  "version": "0.3.0",
+  "description": "A framework for creating ActivityPub bots",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Hong Minhee",
+    "email": "hong@minhee.org",
+    "url": "https://hongminhee.org/"
+  },
+  "homepage": "https://botkit.fedify.dev/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fedify-dev/botkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fedify-dev/botkit/issues"
+  },
+  "funding": [
+    "https://opencollective.com/fedify",
+    "https://github.com/sponsors/dahlia"
+  ],
+  "engines": {
+    "deno": ">=2.0.0",
+    "node": ">=22.0.0",
+    "bun": ">=1.1.0"
+  },
+  "type": "module",
+  "module": "./dist/mod.js",
+  "main": "./dist/mod.cjs",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/mod.d.ts",
+        "require": "./dist/mod.d.cts"
+      },
+      "import": "./dist/mod.js",
+      "require": "./dist/mod.cjs"
+    },
+    "./bot": {
+      "types": {
+        "import": "./dist/bot.d.ts",
+        "require": "./dist/bot.d.cts"
+      },
+      "import": "./dist/bot.js",
+      "require": "./dist/bot.cjs"
+    },
+    "./emoji": {
+      "types": {
+        "import": "./dist/emoji.d.ts",
+        "require": "./dist/emoji.d.cts"
+      },
+      "import": "./dist/emoji.js",
+      "require": "./dist/emoji.cjs"
+    },
+    "./events": {
+      "types": {
+        "import": "./dist/events.d.ts",
+        "require": "./dist/events.d.cts"
+      },
+      "import": "./dist/events.js",
+      "require": "./dist/events.cjs"
+    },
+    "./follow": {
+      "types": {
+        "import": "./dist/follow.d.ts",
+        "require": "./dist/follow.d.cts"
+      },
+      "import": "./dist/follow.js",
+      "require": "./dist/follow.cjs"
+    },
+    "./message": {
+      "types": {
+        "import": "./dist/message.d.ts",
+        "require": "./dist/message.d.cts"
+      },
+      "import": "./dist/message.js",
+      "require": "./dist/message.cjs"
+    },
+    "./reaction": {
+      "types": {
+        "import": "./dist/reaction.d.ts",
+        "require": "./dist/reaction.d.cts"
+      },
+      "import": "./dist/reaction.js",
+      "require": "./dist/reaction.cjs"
+    },
+    "./session": {
+      "types": {
+        "import": "./dist/session.d.ts",
+        "require": "./dist/session.d.cts"
+      },
+      "import": "./dist/session.js",
+      "require": "./dist/session.cjs"
+    },
+    "./text": {
+      "types": {
+        "import": "./dist/text.d.ts",
+        "require": "./dist/text.d.cts"
+      },
+      "import": "./dist/text.js",
+      "require": "./dist/text.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "@fedify/fedify": "^1.6.1",
+    "@fedify/markdown-it-hashtag": "^0.3.0",
+    "@fedify/markdown-it-mention": "^0.3.0",
+    "@js-temporal/polyfill": "^0.5.1",
+    "@logtape/logtape": "^1.0.0",
+    "@phensley/language-tag": "^1.12.2",
+    "hono": "^4.8.2",
+    "html-entities": "^2.6.0",
+    "markdown-it": "^14.1.0",
+    "mime-db": "^1.54.0",
+    "uuid": "^11.1.0",
+    "x-forwarded-fetch": "^0.2.0",
+    "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "tsdown": "^0.12.8"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepack": "tsdown",
+    "prepublish": "deno task check && tsdown",
+    "test": "tsdown && cd dist/ && node --test"
+  }
+}

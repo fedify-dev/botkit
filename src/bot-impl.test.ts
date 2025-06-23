@@ -38,11 +38,8 @@ import {
   Service,
   Undo,
 } from "@fedify/fedify/vocab";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
-import { assertFalse } from "@std/assert/false";
-import { assertInstanceOf } from "@std/assert/instance-of";
-import { assertThrows } from "@std/assert/throws";
+import assert from "node:assert";
+import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
 import { parseSemVer } from "./bot.ts";
 import type { CustomEmoji } from "./emoji.ts";
@@ -54,17 +51,17 @@ import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import { mention, strong, text } from "./text.ts";
 
-Deno.test("BotImpl.getActorSummary()", async (t) => {
-  await t.step("without summary", async () => {
+describe("BotImpl.getActorSummary()", () => {
+  test("without summary", async () => {
     const bot = new BotImpl<void>({
       kv: new MemoryKvStore(),
       username: "bot",
     });
     const session = bot.getSession("https://example.com");
-    assertEquals(await bot.getActorSummary(session), null);
+    assert.deepStrictEqual(await bot.getActorSummary(session), null);
   });
 
-  await t.step("with summary", async () => {
+  test("with summary", async () => {
     const actor = new Person({
       id: new URL("https://example.com/actor/john"),
       preferredUsername: "john",
@@ -87,12 +84,12 @@ Deno.test("BotImpl.getActorSummary()", async (t) => {
         'class="h-card u-url mention" target="_blank">@<span>' +
         "john@example.com</span></a>.</p>",
     };
-    assertEquals(await bot.getActorSummary(session), expected);
-    assertEquals(await bot.getActorSummary(session), expected);
+    assert.deepStrictEqual(await bot.getActorSummary(session), expected);
+    assert.deepStrictEqual(await bot.getActorSummary(session), expected);
   });
 });
 
-Deno.test("BotImpl.getActorProperties()", async () => {
+test("BotImpl.getActorProperties()", async () => {
   const actor = new Person({
     id: new URL("https://example.com/actor/john"),
     preferredUsername: "john",
@@ -125,8 +122,8 @@ Deno.test("BotImpl.getActorProperties()", async () => {
       }),
     ],
   };
-  assertEquals(await bot.getActorProperties(session), expected);
-  assertEquals(await bot.getActorProperties(session), expected);
+  assert.deepStrictEqual(await bot.getActorProperties(session), expected);
+  assert.deepStrictEqual(await bot.getActorProperties(session), expected);
 });
 
 interface KeyPair {
@@ -134,7 +131,7 @@ interface KeyPair {
   public: JsonWebKey;
 }
 
-Deno.test("BotImpl.dispatchActor()", async () => {
+test("BotImpl.dispatchActor()", async () => {
   const mentionActor = new Person({
     id: new URL("https://example.com/actor/john"),
     preferredUsername: "john",
@@ -158,13 +155,13 @@ Deno.test("BotImpl.dispatchActor()", async () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(await bot.dispatchActor(ctx, "non-existent"), null);
+  assert.deepStrictEqual(await bot.dispatchActor(ctx, "non-existent"), null);
   const actor = await bot.dispatchActor(ctx, "bot");
-  assertInstanceOf(actor, Service);
-  assertEquals(actor.id, new URL("https://example.com/ap/actor/bot"));
-  assertEquals(actor.preferredUsername, "test");
-  assertEquals(actor.name, "Test Bot");
-  assertEquals(
+  assert.ok(actor instanceof Service);
+  assert.deepStrictEqual(actor.id, new URL("https://example.com/ap/actor/bot"));
+  assert.deepStrictEqual(actor.preferredUsername, "test");
+  assert.deepStrictEqual(actor.name, "Test Bot");
+  assert.deepStrictEqual(
     actor.summary,
     "<p>A summary with a mention: " +
       '<a href="https://example.com/actor/john" translate="no" ' +
@@ -172,68 +169,71 @@ Deno.test("BotImpl.dispatchActor()", async () => {
       "</span></a>.</p>",
   );
   const attachments = await Array.fromAsync(actor.getAttachments());
-  assertEquals(attachments.length, 3);
-  assertInstanceOf(attachments[0], PropertyValue);
-  assertEquals(attachments[0].name, "Foo");
-  assertEquals(attachments[0].value, "<strong>bar</strong>");
-  assertInstanceOf(attachments[1], PropertyValue);
-  assertEquals(attachments[1].name, "Baz");
-  assertEquals(
+  assert.deepStrictEqual(attachments.length, 3);
+  assert.ok(attachments[0] instanceof PropertyValue);
+  assert.deepStrictEqual(attachments[0].name, "Foo");
+  assert.deepStrictEqual(attachments[0].value, "<strong>bar</strong>");
+  assert.ok(attachments[1] instanceof PropertyValue);
+  assert.deepStrictEqual(attachments[1].name, "Baz");
+  assert.deepStrictEqual(
     attachments[1].value,
     '<a href="https://example.com/actor/john" translate="no" ' +
       'class="h-card u-url mention" target="_blank">@<span>' +
       "john@example.com</span></a>",
   );
-  assertInstanceOf(attachments[2], PropertyValue);
-  assertEquals(attachments[2].name, "Qux");
-  assertEquals(attachments[2].value, "<p>quux</p>");
+  assert.ok(attachments[2] instanceof PropertyValue);
+  assert.deepStrictEqual(attachments[2].name, "Qux");
+  assert.deepStrictEqual(attachments[2].value, "<p>quux</p>");
   const tags = await Array.fromAsync(actor.getTags());
-  assertEquals(tags.length, 1);
-  assertInstanceOf(tags[0], Mention);
-  assertEquals(tags[0].href, new URL("https://example.com/actor/john"));
-  assertEquals(tags[0].name, "@john@example.com");
+  assert.deepStrictEqual(tags.length, 1);
+  assert.ok(tags[0] instanceof Mention);
+  assert.deepStrictEqual(
+    tags[0].href,
+    new URL("https://example.com/actor/john"),
+  );
+  assert.deepStrictEqual(tags[0].name, "@john@example.com");
   const icon = await actor.getIcon();
-  assertInstanceOf(icon, Image);
-  assertEquals(icon.url, new URL("https://example.com/icon.png"));
+  assert.ok(icon instanceof Image);
+  assert.deepStrictEqual(icon.url, new URL("https://example.com/icon.png"));
   const image = await actor.getImage();
-  assertInstanceOf(image, Image);
-  assertEquals(image.url, new URL("https://example.com/image.png"));
-  assertEquals(
+  assert.ok(image instanceof Image);
+  assert.deepStrictEqual(image.url, new URL("https://example.com/image.png"));
+  assert.deepStrictEqual(
     actor.inboxId,
     new URL("https://example.com/ap/actor/bot/inbox"),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     actor.endpoints?.sharedInbox,
     new URL("https://example.com/ap/inbox"),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     actor.followersId,
     new URL("https://example.com/ap/actor/bot/followers"),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     actor.outboxId,
     new URL("https://example.com/ap/actor/bot/outbox"),
   );
   const publicKey = await actor.getPublicKey();
-  assert(publicKey != null);
-  assertEquals(publicKey.ownerId, actor.id);
-  assert(publicKey.publicKey != null);
+  assert.ok(publicKey != null);
+  assert.deepStrictEqual(publicKey.ownerId, actor.id);
+  assert.ok(publicKey.publicKey != null);
   const keys = await repository.getKeyPairs();
-  assert(keys != null);
-  assertEquals(publicKey.publicKey, keys[0].publicKey);
+  assert.ok(keys != null);
+  assert.deepStrictEqual(publicKey.publicKey, keys[0].publicKey);
   const assertionMethods = await Array.fromAsync(actor.getAssertionMethods());
-  assertEquals(assertionMethods.length, 2);
-  assertEquals(
+  assert.deepStrictEqual(assertionMethods.length, 2);
+  assert.deepStrictEqual(
     assertionMethods.map((mk) => mk.controllerId),
     [actor.id, actor.id],
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await Promise.all(assertionMethods.map((mk) => mk.publicKey)),
     keys.map((k) => k.publicKey),
   );
 });
 
-Deno.test("BotImpl.mapHandle()", () => {
+test("BotImpl.mapHandle()", () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "username",
@@ -242,11 +242,11 @@ Deno.test("BotImpl.mapHandle()", () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(bot.mapHandle(ctx, "non-existent"), null);
-  assertEquals(bot.mapHandle(ctx, "username"), "bot");
+  assert.deepStrictEqual(bot.mapHandle(ctx, "non-existent"), null);
+  assert.deepStrictEqual(bot.mapHandle(ctx, "username"), "bot");
 });
 
-Deno.test("BotImpl.dispatchActorKeyPairs()", async () => {
+test("BotImpl.dispatchActorKeyPairs()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -257,17 +257,20 @@ Deno.test("BotImpl.dispatchActorKeyPairs()", async () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(await bot.dispatchActorKeyPairs(ctx, "non-existent"), []);
+  assert.deepStrictEqual(
+    await bot.dispatchActorKeyPairs(ctx, "non-existent"),
+    [],
+  );
   // Generation:
   const keyPairs = await bot.dispatchActorKeyPairs(ctx, "bot");
   const storedKeyPairs = await repository.getKeyPairs();
-  assertEquals(keyPairs, storedKeyPairs);
+  assert.deepStrictEqual(keyPairs, storedKeyPairs);
   // Retrieval:
   const keyPairs2 = await bot.dispatchActorKeyPairs(ctx, "bot");
-  assertEquals(keyPairs2, storedKeyPairs);
+  assert.deepStrictEqual(keyPairs2, storedKeyPairs);
 });
 
-Deno.test("BotImpl.dispatchFollowers()", async () => {
+test("BotImpl.dispatchFollowers()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -279,10 +282,16 @@ Deno.test("BotImpl.dispatchFollowers()", async () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(await bot.dispatchFollowers(ctx, "non-existent", null), null);
-  assertEquals(await bot.dispatchFollowers(ctx, "non-existent", ""), null);
+  assert.deepStrictEqual(
+    await bot.dispatchFollowers(ctx, "non-existent", null),
+    null,
+  );
+  assert.deepStrictEqual(
+    await bot.dispatchFollowers(ctx, "non-existent", ""),
+    null,
+  );
   const empty = await bot.dispatchFollowers(ctx, "bot", null);
-  assertEquals(empty, { items: [], nextCursor: null });
+  assert.deepStrictEqual(empty, { items: [], nextCursor: null });
 
   await repository.addFollower(
     new URL("https://example.com/actor/1#follow"),
@@ -309,52 +318,64 @@ Deno.test("BotImpl.dispatchFollowers()", async () => {
     }),
   );
   const full = await bot.dispatchFollowers(ctx, "bot", null);
-  assert(full != null);
-  assertEquals(full.nextCursor, null);
-  assertEquals(full.items.length, 3);
+  assert.ok(full != null);
+  assert.deepStrictEqual(full.nextCursor, null);
+  assert.deepStrictEqual(full.items.length, 3);
   const items = full.items.toSorted((a, b) =>
     (a.id?.href ?? "").localeCompare(b.id?.href ?? "")
   );
-  assertInstanceOf(items[0], Person);
-  assertEquals(items[0].id, new URL("https://example.com/actor/1"));
-  assertInstanceOf(items[1], Person);
-  assertEquals(items[1].id, new URL("https://example.com/actor/2"));
-  assertInstanceOf(items[2], Person);
-  assertEquals(items[2].id, new URL("https://example.com/actor/3"));
+  assert.ok(items[0] instanceof Person);
+  assert.deepStrictEqual(items[0].id, new URL("https://example.com/actor/1"));
+  assert.ok(items[1] instanceof Person);
+  assert.deepStrictEqual(items[1].id, new URL("https://example.com/actor/2"));
+  assert.ok(items[2] instanceof Person);
+  assert.deepStrictEqual(items[2].id, new URL("https://example.com/actor/3"));
 
   const firstPage = await bot.dispatchFollowers(ctx, "bot", "0");
-  assert(firstPage != null);
-  assertEquals(firstPage.nextCursor, "2");
-  assertEquals(firstPage.items.length, 2);
-  assertInstanceOf(firstPage.items[0], Person);
-  assertEquals(firstPage.items[0].id, new URL("https://example.com/actor/3"));
-  assertInstanceOf(firstPage.items[1], Person);
-  assertEquals(firstPage.items[1].id, new URL("https://example.com/actor/2"));
+  assert.ok(firstPage != null);
+  assert.deepStrictEqual(firstPage.nextCursor, "2");
+  assert.deepStrictEqual(firstPage.items.length, 2);
+  assert.ok(firstPage.items[0] instanceof Person);
+  assert.deepStrictEqual(
+    firstPage.items[0].id,
+    new URL("https://example.com/actor/3"),
+  );
+  assert.ok(firstPage.items[1] instanceof Person);
+  assert.deepStrictEqual(
+    firstPage.items[1].id,
+    new URL("https://example.com/actor/2"),
+  );
 
   const lastPage = await bot.dispatchFollowers(
     ctx,
     "bot",
     "2",
   );
-  assert(lastPage != null);
-  assertEquals(lastPage.nextCursor, null);
-  assertEquals(lastPage.items.length, 1);
-  assertInstanceOf(lastPage.items[0], Person);
-  assertEquals(lastPage.items[0].id, new URL("https://example.com/actor/1"));
+  assert.ok(lastPage != null);
+  assert.deepStrictEqual(lastPage.nextCursor, null);
+  assert.deepStrictEqual(lastPage.items.length, 1);
+  assert.ok(lastPage.items[0] instanceof Person);
+  assert.deepStrictEqual(
+    lastPage.items[0].id,
+    new URL("https://example.com/actor/1"),
+  );
 });
 
-Deno.test("BotImpl.getFollowersFirstCursor()", () => {
+test("BotImpl.getFollowersFirstCursor()", () => {
   const kv = new MemoryKvStore();
   const bot = new BotImpl<void>({ kv, username: "bot", collectionWindow: 2 });
   const ctx = bot.federation.createContext(
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(bot.getFollowersFirstCursor(ctx, "non-existent"), null);
-  assertEquals(bot.getFollowersFirstCursor(ctx, "bot"), "0");
+  assert.deepStrictEqual(
+    bot.getFollowersFirstCursor(ctx, "non-existent"),
+    null,
+  );
+  assert.deepStrictEqual(bot.getFollowersFirstCursor(ctx, "bot"), "0");
 });
 
-Deno.test("BotImpl.countFollowers()", async () => {
+test("BotImpl.countFollowers()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -365,8 +386,8 @@ Deno.test("BotImpl.countFollowers()", async () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(await bot.countFollowers(ctx, "non-existent"), null);
-  assertEquals(await bot.countFollowers(ctx, "bot"), 0);
+  assert.deepStrictEqual(await bot.countFollowers(ctx, "non-existent"), null);
+  assert.deepStrictEqual(await bot.countFollowers(ctx, "bot"), 0);
   await repository.addFollower(
     new URL("https://example.com/actor/1#follow"),
     new Person({
@@ -391,11 +412,11 @@ Deno.test("BotImpl.countFollowers()", async () => {
       inbox: new URL("https://example.com/actor/3/inbox"),
     }),
   );
-  assertEquals(await bot.countFollowers(ctx, "non-existent"), null);
-  assertEquals(await bot.countFollowers(ctx, "bot"), 3);
+  assert.deepStrictEqual(await bot.countFollowers(ctx, "non-existent"), null);
+  assert.deepStrictEqual(await bot.countFollowers(ctx, "bot"), 3);
 });
 
-Deno.test("BotImpl.getPermissionChecker()", async () => {
+test("BotImpl.getPermissionChecker()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -424,10 +445,10 @@ Deno.test("BotImpl.getPermissionChecker()", async () => {
     to: new URL("https://example.com/ap/actor/mentioned"),
   });
   const anonymous = await bot.getPermissionChecker(ctx);
-  assertEquals(anonymous(publicPost), true);
-  assertEquals(anonymous(unlistedPost), true);
-  assertEquals(anonymous(followersPost), false);
-  assertEquals(anonymous(directPost), false);
+  assert.deepStrictEqual(anonymous(publicPost), true);
+  assert.deepStrictEqual(anonymous(unlistedPost), true);
+  assert.deepStrictEqual(anonymous(followersPost), false);
+  assert.deepStrictEqual(anonymous(directPost), false);
 
   const actor = new Person({ id: new URL("https://example.com/actor/john") });
   const ctx2 = bot.federation.createContext(
@@ -436,10 +457,10 @@ Deno.test("BotImpl.getPermissionChecker()", async () => {
   );
   ctx2.getSignedKeyOwner = () => Promise.resolve(actor);
   const nonFollower = await bot.getPermissionChecker(ctx2);
-  assertEquals(nonFollower(publicPost), true);
-  assertEquals(nonFollower(unlistedPost), true);
-  assertEquals(nonFollower(followersPost), false);
-  assertEquals(nonFollower(directPost), false);
+  assert.deepStrictEqual(nonFollower(publicPost), true);
+  assert.deepStrictEqual(nonFollower(unlistedPost), true);
+  assert.deepStrictEqual(nonFollower(followersPost), false);
+  assert.deepStrictEqual(nonFollower(directPost), false);
 
   await repository.addFollower(
     new URL("https://example.com/actor/john#follow"),
@@ -454,10 +475,10 @@ Deno.test("BotImpl.getPermissionChecker()", async () => {
   );
   ctx3.getSignedKeyOwner = () => Promise.resolve(actor);
   const follower = await bot.getPermissionChecker(ctx3);
-  assertEquals(follower(publicPost), true);
-  assertEquals(follower(unlistedPost), true);
-  assertEquals(follower(followersPost), true);
-  assertEquals(follower(directPost), false);
+  assert.deepStrictEqual(follower(publicPost), true);
+  assert.deepStrictEqual(follower(unlistedPost), true);
+  assert.deepStrictEqual(follower(followersPost), true);
+  assert.deepStrictEqual(follower(directPost), false);
 
   const mentionedActor = new Person({
     id: new URL("https://example.com/ap/actor/mentioned"),
@@ -468,13 +489,13 @@ Deno.test("BotImpl.getPermissionChecker()", async () => {
   );
   ctx4.getSignedKeyOwner = () => Promise.resolve(mentionedActor);
   const mentioned = await bot.getPermissionChecker(ctx4);
-  assertEquals(mentioned(publicPost), true);
-  assertEquals(mentioned(unlistedPost), true);
-  assertEquals(mentioned(followersPost), true);
-  assertEquals(mentioned(directPost), true);
+  assert.deepStrictEqual(mentioned(publicPost), true);
+  assert.deepStrictEqual(mentioned(unlistedPost), true);
+  assert.deepStrictEqual(mentioned(followersPost), true);
+  assert.deepStrictEqual(mentioned(directPost), true);
 });
 
-Deno.test("BotImpl.dispatchOutbox()", async () => {
+test("BotImpl.dispatchOutbox()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -486,13 +507,19 @@ Deno.test("BotImpl.dispatchOutbox()", async () => {
     new Request("https://example.com/"),
     undefined,
   );
-  assertEquals(await bot.dispatchOutbox(ctx, "non-existent", null), null);
-  assertEquals(await bot.dispatchOutbox(ctx, "non-existent", ""), null);
-  assertEquals(await bot.dispatchOutbox(ctx, "bot", null), {
+  assert.deepStrictEqual(
+    await bot.dispatchOutbox(ctx, "non-existent", null),
+    null,
+  );
+  assert.deepStrictEqual(
+    await bot.dispatchOutbox(ctx, "non-existent", ""),
+    null,
+  );
+  assert.deepStrictEqual(await bot.dispatchOutbox(ctx, "bot", null), {
     items: [],
     nextCursor: null,
   });
-  assertEquals(await bot.dispatchOutbox(ctx, "bot", ""), {
+  assert.deepStrictEqual(await bot.dispatchOutbox(ctx, "bot", ""), {
     items: [],
     nextCursor: null,
   });
@@ -555,14 +582,20 @@ Deno.test("BotImpl.dispatchOutbox()", async () => {
       published: Temporal.Instant.from("2025-01-03T00:00:00Z"),
     }),
   );
-  assertEquals(await bot.dispatchOutbox(ctx, "non-existent", null), null);
-  assertEquals(await bot.dispatchOutbox(ctx, "non-existent", ""), null);
+  assert.deepStrictEqual(
+    await bot.dispatchOutbox(ctx, "non-existent", null),
+    null,
+  );
+  assert.deepStrictEqual(
+    await bot.dispatchOutbox(ctx, "non-existent", ""),
+    null,
+  );
   const anonymous1 = await bot.dispatchOutbox(ctx, "bot", "");
-  assert(anonymous1 != null);
-  assertEquals(anonymous1.nextCursor, "2025-01-01T00:00:00Z");
-  assertEquals(anonymous1.items.length, 1);
-  assertInstanceOf(anonymous1.items[0], Create);
-  assertEquals(
+  assert.ok(anonymous1 != null);
+  assert.deepStrictEqual(anonymous1.nextCursor, "2025-01-01T00:00:00Z");
+  assert.deepStrictEqual(anonymous1.items.length, 1);
+  assert.ok(anonymous1.items[0] instanceof Create);
+  assert.deepStrictEqual(
     anonymous1.items[0].id,
     new URL(
       "https://example.com/ap/actor/bot/create/46442170-836d-4a0d-9142-f31242abe2f9",
@@ -574,11 +607,11 @@ Deno.test("BotImpl.dispatchOutbox()", async () => {
     "bot",
     "2025-01-01T00:00:00Z",
   );
-  assert(anonymous2 != null);
-  assertEquals(anonymous2.nextCursor, null);
-  assertEquals(anonymous2.items.length, 1);
-  assertInstanceOf(anonymous2.items[0], Create);
-  assertEquals(
+  assert.ok(anonymous2 != null);
+  assert.deepStrictEqual(anonymous2.nextCursor, null);
+  assert.deepStrictEqual(anonymous2.items.length, 1);
+  assert.ok(anonymous2.items[0] instanceof Create);
+  assert.deepStrictEqual(
     anonymous2.items[0].id,
     new URL(
       "https://example.com/ap/actor/bot/create/78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -594,25 +627,25 @@ Deno.test("BotImpl.dispatchOutbox()", async () => {
   });
   ctx2.getSignedKeyOwner = () => Promise.resolve(actor);
   const mentioned = await bot.dispatchOutbox(ctx2, "bot", null);
-  assert(mentioned != null);
-  assertEquals(mentioned.nextCursor, null);
-  assertEquals(mentioned.items.length, 3);
-  assertInstanceOf(mentioned.items[0], Create);
-  assertEquals(
+  assert.ok(mentioned != null);
+  assert.deepStrictEqual(mentioned.nextCursor, null);
+  assert.deepStrictEqual(mentioned.items.length, 3);
+  assert.ok(mentioned.items[0] instanceof Create);
+  assert.deepStrictEqual(
     mentioned.items[0].id,
     new URL(
       "https://example.com/ap/actor/bot/create/8386a4c7-06f8-409f-ad72-2bba43e83363",
     ),
   );
-  assertInstanceOf(mentioned.items[1], Create);
-  assertEquals(
+  assert.ok(mentioned.items[1] instanceof Create);
+  assert.deepStrictEqual(
     mentioned.items[1].id,
     new URL(
       "https://example.com/ap/actor/bot/create/46442170-836d-4a0d-9142-f31242abe2f9",
     ),
   );
-  assertInstanceOf(mentioned.items[2], Create);
-  assertEquals(
+  assert.ok(mentioned.items[2] instanceof Create);
+  assert.deepStrictEqual(
     mentioned.items[2].id,
     new URL(
       "https://example.com/ap/actor/bot/create/78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -620,17 +653,17 @@ Deno.test("BotImpl.dispatchOutbox()", async () => {
   );
 });
 
-Deno.test("BotImpl.getOutboxFirstCursor()", () => {
+test("BotImpl.getOutboxFirstCursor()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const ctx = bot.federation.createContext(
     new URL("https://example.com/"),
     undefined,
   );
-  assertEquals(bot.getOutboxFirstCursor(ctx, "non-existent"), null);
-  assertEquals(bot.getOutboxFirstCursor(ctx, "bot"), "");
+  assert.deepStrictEqual(bot.getOutboxFirstCursor(ctx, "non-existent"), null);
+  assert.deepStrictEqual(bot.getOutboxFirstCursor(ctx, "bot"), "");
 });
 
-Deno.test("BotImpl.countOutbox()", async () => {
+test("BotImpl.countOutbox()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -641,8 +674,8 @@ Deno.test("BotImpl.countOutbox()", async () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(await bot.countOutbox(ctx, "non-existent"), null);
-  assertEquals(await bot.countOutbox(ctx, "bot"), 0);
+  assert.deepStrictEqual(await bot.countOutbox(ctx, "non-existent"), null);
+  assert.deepStrictEqual(await bot.countOutbox(ctx, "bot"), 0);
 
   await repository.addMessage(
     "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -696,11 +729,11 @@ Deno.test("BotImpl.countOutbox()", async () => {
       }),
     }),
   );
-  assertEquals(await bot.countOutbox(ctx, "non-existent"), null);
-  assertEquals(await bot.countOutbox(ctx, "bot"), 3);
+  assert.deepStrictEqual(await bot.countOutbox(ctx, "non-existent"), null);
+  assert.deepStrictEqual(await bot.countOutbox(ctx, "bot"), 3);
 });
 
-Deno.test("BotImpl.dispatchFollow()", async () => {
+test("BotImpl.dispatchFollow()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -711,7 +744,7 @@ Deno.test("BotImpl.dispatchFollow()", async () => {
     new Request("https://example.com/"),
     undefined,
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchFollow(ctx, { id: crypto.randomUUID() }),
     null,
   );
@@ -730,19 +763,28 @@ Deno.test("BotImpl.dispatchFollow()", async () => {
   const follow = await bot.dispatchFollow(ctx, {
     id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
   });
-  assertInstanceOf(follow, Follow);
-  assertEquals(
+  assert.ok(follow instanceof Follow);
+  assert.deepStrictEqual(
     follow.id,
     new URL(
       "https://example.com/ap/follow/b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a",
     ),
   );
-  assertEquals(follow.actorId, new URL("https://example.com/ap/actor/bot"));
-  assertEquals(follow.objectId, new URL("https://example.com/ap/actor/john"));
-  assertEquals(follow.toId, new URL("https://example.com/ap/actor/john"));
+  assert.deepStrictEqual(
+    follow.actorId,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  assert.deepStrictEqual(
+    follow.objectId,
+    new URL("https://example.com/ap/actor/john"),
+  );
+  assert.deepStrictEqual(
+    follow.toId,
+    new URL("https://example.com/ap/actor/john"),
+  );
 });
 
-Deno.test("BotImpl.authorizeFollow()", async () => {
+test("BotImpl.authorizeFollow()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -764,7 +806,7 @@ Deno.test("BotImpl.authorizeFollow()", async () => {
       to: new URL("https://example.com/ap/actor/john"),
     }),
   );
-  assert(
+  assert.ok(
     await bot.authorizeFollow(
       ctx,
       { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
@@ -772,7 +814,7 @@ Deno.test("BotImpl.authorizeFollow()", async () => {
       new Person({ id: new URL("https://example.com/ap/actor/john") }),
     ),
   );
-  assert(
+  assert.ok(
     await bot.authorizeFollow(
       ctx,
       { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
@@ -780,25 +822,27 @@ Deno.test("BotImpl.authorizeFollow()", async () => {
       await new SessionImpl(bot, ctx).getActor(),
     ),
   );
-  assertFalse(
+  assert.deepStrictEqual(
     await bot.authorizeFollow(
       ctx,
       { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
       new CryptographicKey({}),
       new Person({ id: new URL("https://example.com/ap/actor/alice") }),
     ),
+    false,
   );
-  assertFalse(
+  assert.deepStrictEqual(
     await bot.authorizeFollow(
       ctx,
       { id: crypto.randomUUID() },
       new CryptographicKey({}),
       new Person({ id: new URL("https://example.com/ap/actor/john") }),
     ),
+    false,
   );
 });
 
-Deno.test("BotImpl.dispatchCreate()", async () => {
+test("BotImpl.dispatchCreate()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -809,7 +853,10 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
     new Request("https://example.com/"),
     undefined,
   );
-  assertEquals(await bot.dispatchCreate(ctx, { id: "non-existent" }), null);
+  assert.deepStrictEqual(
+    await bot.dispatchCreate(ctx, { id: "non-existent" }),
+    null,
+  );
 
   await repository.addMessage(
     "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -832,8 +879,8 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
   const create = await bot.dispatchCreate(ctx, {
     id: "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
   });
-  assertInstanceOf(create, Create);
-  assertEquals(
+  assert.ok(create instanceof Create);
+  assert.deepStrictEqual(
     create.id,
     new URL(
       "https://example.com/ap/actor/bot/create/78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -847,7 +894,7 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
     id: new URL("https://example.com/ap/actor/john"),
   });
   ctx2.getSignedKeyOwner = () => Promise.resolve(actor);
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchCreate(ctx2, {
       id: "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
     }),
@@ -870,7 +917,7 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
       }),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchCreate(ctx, {
       id: "8386a4c7-06f8-409f-ad72-2bba43e83363",
     }),
@@ -879,8 +926,8 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
   const create2 = await bot.dispatchCreate(ctx2, {
     id: "8386a4c7-06f8-409f-ad72-2bba43e83363",
   });
-  assertInstanceOf(create2, Create);
-  assertEquals(
+  assert.ok(create2 instanceof Create);
+  assert.deepStrictEqual(
     create2.id,
     new URL(
       "https://example.com/ap/actor/bot/create/8386a4c7-06f8-409f-ad72-2bba43e83363",
@@ -899,7 +946,7 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
       object: new URL("https://example.com/ap/actor/bot/note/2"),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchCreate(ctx, {
       id: "ce8081ac-f238-484b-9a70-5d8a4b66d829",
     }),
@@ -907,7 +954,7 @@ Deno.test("BotImpl.dispatchCreate()", async () => {
   );
 });
 
-Deno.test("BotImpl.dispatchMessage()", async () => {
+test("BotImpl.dispatchMessage()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -918,7 +965,10 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
     new Request("https://example.com/"),
     undefined,
   );
-  assertEquals(await bot.dispatchMessage(Note, ctx, "non-existent"), null);
+  assert.deepStrictEqual(
+    await bot.dispatchMessage(Note, ctx, "non-existent"),
+    null,
+  );
 
   await repository.addMessage(
     "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
@@ -943,8 +993,11 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
     ctx,
     "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
   );
-  assertInstanceOf(note, Note);
-  assertEquals(note.id, new URL("https://example.com/ap/actor/bot/note/1"));
+  assert.ok(note instanceof Note);
+  assert.deepStrictEqual(
+    note.id,
+    new URL("https://example.com/ap/actor/bot/note/1"),
+  );
 
   const ctx2 = bot.federation.createContext(
     new Request("https://example.com/"),
@@ -954,7 +1007,7 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
     id: new URL("https://example.com/ap/actor/john"),
   });
   ctx2.getSignedKeyOwner = () => Promise.resolve(actor);
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchMessage(
       Note,
       ctx2,
@@ -963,7 +1016,7 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
     note,
   );
 
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchMessage(
       Article,
       ctx,
@@ -988,7 +1041,7 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
       }),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchMessage(
       Note,
       ctx,
@@ -1001,8 +1054,11 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
     ctx2,
     "8386a4c7-06f8-409f-ad72-2bba43e83363",
   );
-  assertInstanceOf(note2, Note);
-  assertEquals(note2.id, new URL("https://example.com/ap/actor/bot/note/3"));
+  assert.ok(note2 instanceof Note);
+  assert.deepStrictEqual(
+    note2.id,
+    new URL("https://example.com/ap/actor/bot/note/3"),
+  );
 
   await repository.addMessage(
     "ce8081ac-f238-484b-9a70-5d8a4b66d829",
@@ -1016,7 +1072,7 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
       object: new URL("https://example.com/ap/actor/bot/note/2"),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchMessage(
       Note,
       ctx,
@@ -1026,7 +1082,7 @@ Deno.test("BotImpl.dispatchMessage()", async () => {
   );
 });
 
-Deno.test("BotImpl.dispatchAnnounce()", async () => {
+test("BotImpl.dispatchAnnounce()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1037,7 +1093,10 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
     new Request("https://example.com/"),
     undefined,
   );
-  assertEquals(await bot.dispatchAnnounce(ctx, { id: "non-existent" }), null);
+  assert.deepStrictEqual(
+    await bot.dispatchAnnounce(ctx, { id: "non-existent" }),
+    null,
+  );
 
   await repository.addMessage(
     "ce8081ac-f238-484b-9a70-5d8a4b66d829",
@@ -1054,8 +1113,8 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
   const announce = await bot.dispatchAnnounce(ctx, {
     id: "ce8081ac-f238-484b-9a70-5d8a4b66d829",
   });
-  assertInstanceOf(announce, Announce);
-  assertEquals(
+  assert.ok(announce instanceof Announce);
+  assert.deepStrictEqual(
     announce.id,
     new URL(
       "https://example.com/ap/actor/bot/announce/ce8081ac-f238-484b-9a70-5d8a4b66d829",
@@ -1080,7 +1139,7 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
       }),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchAnnounce(ctx, {
       id: "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
     }),
@@ -1098,7 +1157,7 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
       object: new URL("https://example.com/ap/actor/bot/note/2"),
     }),
   );
-  assertEquals(
+  assert.deepStrictEqual(
     await bot.dispatchAnnounce(ctx, {
       id: "d4a7ef9b-682c-4de9-b23c-87747d6725cb",
     }),
@@ -1115,8 +1174,8 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
   const announce2 = await bot.dispatchAnnounce(ctx2, {
     id: "d4a7ef9b-682c-4de9-b23c-87747d6725cb",
   });
-  assertInstanceOf(announce2, Announce);
-  assertEquals(
+  assert.ok(announce2 instanceof Announce);
+  assert.deepStrictEqual(
     announce2.id,
     new URL(
       "https://example.com/ap/actor/bot/announce/d4a7ef9b-682c-4de9-b23c-87747d6725cb",
@@ -1124,7 +1183,7 @@ Deno.test("BotImpl.dispatchAnnounce()", async () => {
   );
 });
 
-Deno.test("BotImpl.dispatchSharedKey()", () => {
+test("BotImpl.dispatchSharedKey()", () => {
   const identifier = crypto.randomUUID();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1132,11 +1191,11 @@ Deno.test("BotImpl.dispatchSharedKey()", () => {
     identifier,
   });
   const ctx = bot.federation.createContext(new URL("https://example.com"));
-  assertEquals(bot.dispatchSharedKey(ctx), { identifier });
+  assert.deepStrictEqual(bot.dispatchSharedKey(ctx), { identifier });
 });
 
 for (const policy of ["accept", "reject", "manual"] as const) {
-  Deno.test(`BotImpl.onFollowed() [followerPolicy: ${policy}]`, async (t) => {
+  test(`BotImpl.onFollowed() [followerPolicy: ${policy}]`, async (t) => {
     const repository = new MemoryRepository();
     const bot = new BotImpl<void>({
       kv: new MemoryKvStore(),
@@ -1148,23 +1207,23 @@ for (const policy of ["accept", "reject", "manual"] as const) {
     bot.onFollow = (session, fr) => void (followRequests.push([session, fr]));
     const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
-    await t.step("without actor", async () => {
+    await t.test("without actor", async () => {
       const followWithoutActor = new Follow({
         id: new URL("https://example.com/ap/actor/john/follows/bot"),
         object: new URL("https://example.com/ap/actor/bot"),
       });
       await bot.onFollowed(ctx, followWithoutActor);
-      assertEquals(await repository.countFollowers(), 0);
+      assert.deepStrictEqual(await repository.countFollowers(), 0);
     });
 
-    await t.step("with wrong actor", async () => {
+    await t.test("with wrong actor", async () => {
       const followWithWrongActor = new Follow({
         id: new URL("https://example.com/ap/actor/bot/follows/bot"),
         actor: new URL("https://example.com/ap/actor/bot"),
         object: new URL("https://example.com/ap/actor/bot"),
       });
       await bot.onFollowed(ctx, followWithWrongActor);
-      assertEquals(await repository.countFollowers(), 0);
+      assert.deepStrictEqual(await repository.countFollowers(), 0);
     });
 
     const actor = new Person({
@@ -1172,17 +1231,17 @@ for (const policy of ["accept", "reject", "manual"] as const) {
       preferredUsername: "john",
     });
 
-    await t.step("with wrong recipient", async () => {
+    await t.test("with wrong recipient", async () => {
       const followWithWrongRecipient = new Follow({
         id: new URL("https://example.com/ap/actor/john/follows/bot"),
         actor,
         object: new URL("https://example.com/ap/actor/non-existent"),
       });
       await bot.onFollowed(ctx, followWithWrongRecipient);
-      assertEquals(await repository.countFollowers(), 0);
+      assert.deepStrictEqual(await repository.countFollowers(), 0);
     });
 
-    await t.step("with correct follow", async () => {
+    await t.test("with correct follow", async () => {
       const follow = new Follow({
         id: new URL("https://example.com/ap/actor/john/follows/bot"),
         actor,
@@ -1190,8 +1249,8 @@ for (const policy of ["accept", "reject", "manual"] as const) {
       });
       await bot.onFollowed(ctx, follow);
       if (policy === "accept") {
-        assertEquals(await repository.countFollowers(), 1);
-        assert(
+        assert.deepStrictEqual(await repository.countFollowers(), 1);
+        assert.ok(
           await repository.hasFollower(
             new URL("https://example.com/ap/actor/john"),
           ),
@@ -1199,48 +1258,48 @@ for (const policy of ["accept", "reject", "manual"] as const) {
         const [storedFollower] = await Array.fromAsync(
           repository.getFollowers(),
         );
-        assertInstanceOf(storedFollower, Person);
-        assertEquals(storedFollower.id, actor.id);
-        assertEquals(ctx.sentActivities.length, 1);
+        assert.ok(storedFollower instanceof Person);
+        assert.deepStrictEqual(storedFollower.id, actor.id);
+        assert.deepStrictEqual(ctx.sentActivities.length, 1);
         const { activity, recipients } = ctx.sentActivities[0];
-        assertInstanceOf(activity, Accept);
-        assertEquals(
+        assert.ok(activity instanceof Accept);
+        assert.deepStrictEqual(
           activity.actorId,
           new URL("https://example.com/ap/actor/bot"),
         );
-        assertEquals(activity.objectId, follow.id);
-        assertEquals(recipients.length, 1);
-        assertEquals(recipients[0], actor);
-        assertEquals(ctx.forwardedRecipients, []);
-        assertEquals(followRequests.length, 1);
+        assert.deepStrictEqual(activity.objectId, follow.id);
+        assert.deepStrictEqual(recipients.length, 1);
+        assert.deepStrictEqual(recipients[0], actor);
+        assert.deepStrictEqual(ctx.forwardedRecipients, []);
+        assert.deepStrictEqual(followRequests.length, 1);
       } else {
-        assertEquals(await repository.countFollowers(), 0);
+        assert.deepStrictEqual(await repository.countFollowers(), 0);
         if (policy === "reject") {
-          assertEquals(ctx.sentActivities.length, 1);
+          assert.deepStrictEqual(ctx.sentActivities.length, 1);
           const { activity, recipients } = ctx.sentActivities[0];
-          assertInstanceOf(activity, Reject);
-          assertEquals(
+          assert.ok(activity instanceof Reject);
+          assert.deepStrictEqual(
             activity.actorId,
             new URL("https://example.com/ap/actor/bot"),
           );
-          assertEquals(activity.objectId, follow.id);
-          assertEquals(recipients.length, 1);
-          assertEquals(recipients[0], actor);
-          assertEquals(ctx.forwardedRecipients, []);
+          assert.deepStrictEqual(activity.objectId, follow.id);
+          assert.deepStrictEqual(recipients.length, 1);
+          assert.deepStrictEqual(recipients[0], actor);
+          assert.deepStrictEqual(ctx.forwardedRecipients, []);
         } else {
-          assertEquals(ctx.sentActivities, []);
+          assert.deepStrictEqual(ctx.sentActivities, []);
         }
       }
       const [session, followRequest] = followRequests[0];
-      assertEquals(session.bot, bot);
-      assertEquals(session.context, ctx);
-      assertInstanceOf(followRequest.follower, Person);
-      assertEquals(followRequest.follower.id, actor.id);
+      assert.deepStrictEqual(session.bot, bot);
+      assert.deepStrictEqual(session.context, ctx);
+      assert.ok(followRequest.follower instanceof Person);
+      assert.deepStrictEqual(followRequest.follower.id, actor.id);
     });
   });
 }
 
-Deno.test("BotImpl.onUnfollowed()", async (t) => {
+test("BotImpl.onUnfollowed()", async (t) => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1260,17 +1319,20 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
   );
 
   async function assertNoEffect() {
-    assertEquals(await repository.countFollowers(), 1);
+    assert.deepStrictEqual(await repository.countFollowers(), 1);
     const [follower] = await Array.fromAsync(repository.getFollowers());
-    assertInstanceOf(follower, Person);
-    assertEquals(follower.id, new URL("https://example.com/ap/actor/john"));
-    assertEquals(follower.preferredUsername, "john");
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
-    assertEquals(unfollowed, []);
+    assert.ok(follower instanceof Person);
+    assert.deepStrictEqual(
+      follower.id,
+      new URL("https://example.com/ap/actor/john"),
+    );
+    assert.deepStrictEqual(follower.preferredUsername, "john");
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(unfollowed, []);
   }
 
-  await t.step("without Follow object", async () => {
+  await t.test("without Follow object", async () => {
     const undo = new Undo({
       actor: new URL("https://example.com/ap/actor/john"),
     });
@@ -1278,7 +1340,7 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
     await assertNoEffect();
   });
 
-  await t.step("without Follow.id", async () => {
+  await t.test("without Follow.id", async () => {
     const undo = new Undo({
       actor: new URL("https://example.com/ap/actor/john"),
       object: new Follow({}),
@@ -1287,7 +1349,7 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
     await assertNoEffect();
   });
 
-  await t.step("with non-existent Follow.id", async () => {
+  await t.test("with non-existent Follow.id", async () => {
     const undo = new Undo({
       actor: new URL("https://example.com/ap/actor/john"),
       object: new Follow({
@@ -1298,7 +1360,7 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
     await assertNoEffect();
   });
 
-  await t.step("with incorrect Follow.actorId", async () => {
+  await t.test("with incorrect Follow.actorId", async () => {
     const undo = new Undo({
       actor: new URL("https://example.com/ap/actor/wrong-actor"),
       object: new Follow({
@@ -1309,7 +1371,7 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
     await assertNoEffect();
   });
 
-  await t.step("with correct Follow object", async () => {
+  await t.test("with correct Follow object", async () => {
     const undo = new Undo({
       actor: new Person({
         id: new URL("https://example.com/ap/actor/john"),
@@ -1320,19 +1382,22 @@ Deno.test("BotImpl.onUnfollowed()", async (t) => {
       }),
     });
     await bot.onUnfollowed(ctx, undo);
-    assertEquals(await repository.countFollowers(), 0);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
-    assertEquals(unfollowed.length, 1);
+    assert.deepStrictEqual(await repository.countFollowers(), 0);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(unfollowed.length, 1);
     const [session, follower] = unfollowed[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(follower, Person);
-    assertEquals(follower.id, new URL("https://example.com/ap/actor/john"));
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(follower instanceof Person);
+    assert.deepStrictEqual(
+      follower.id,
+      new URL("https://example.com/ap/actor/john"),
+    );
   });
 });
 
-Deno.test("BotImpl.onFollowAccepted()", async (t) => {
+test("BotImpl.onFollowAccepted()", async (t) => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1344,17 +1409,17 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
     void (accepted.push([session, actor]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
-  await t.step("without object", async () => {
+  await t.test("without object", async () => {
     await bot.onFollowAccepted(
       ctx,
       new Accept({
         actor: new URL("https://example.com/ap/actor/john"),
       }),
     );
-    assertEquals(accepted, []);
+    assert.deepStrictEqual(accepted, []);
   });
 
-  await t.step("with invalid object URI", async () => {
+  await t.test("with invalid object URI", async () => {
     await bot.onFollowAccepted(
       ctx,
       new Accept({
@@ -1362,10 +1427,10 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
         object: new URL("https://example.com/"),
       }),
     );
-    assertEquals(accepted, []);
+    assert.deepStrictEqual(accepted, []);
   });
 
-  await t.step("with non-existent object", async () => {
+  await t.test("with non-existent object", async () => {
     await bot.onFollowAccepted(
       ctx,
       new Accept({
@@ -1373,10 +1438,10 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
         object: new URL(`https://example.com/ap/follow/${crypto.randomUUID()}`),
       }),
     );
-    assertEquals(accepted, []);
+    assert.deepStrictEqual(accepted, []);
   });
 
-  await t.step("with non-actor", async () => {
+  await t.test("with non-actor", async () => {
     await repository.addSentFollow(
       "2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
       new Follow({
@@ -1396,10 +1461,10 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
         ),
       }),
     );
-    assertEquals(accepted, []);
+    assert.deepStrictEqual(accepted, []);
   });
 
-  await t.step("with actor without URI", async () => {
+  await t.test("with actor without URI", async () => {
     await repository.addSentFollow(
       "a99ff3bf-72a2-412b-83b9-cba894d38805",
       new Follow({
@@ -1421,10 +1486,10 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
         ),
       }),
     );
-    assertEquals(accepted, []);
+    assert.deepStrictEqual(accepted, []);
   });
 
-  await t.step("with actor", async () => {
+  await t.test("with actor", async () => {
     await repository.addSentFollow(
       "3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
       new Follow({
@@ -1447,28 +1512,31 @@ Deno.test("BotImpl.onFollowAccepted()", async (t) => {
         ),
       }),
     );
-    assertEquals(accepted.length, 1);
+    assert.deepStrictEqual(accepted.length, 1);
     const [session, actor] = accepted[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(actor, Person);
-    assertEquals(actor.id, new URL("https://example.com/ap/actor/john"));
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(actor instanceof Person);
+    assert.deepStrictEqual(
+      actor.id,
+      new URL("https://example.com/ap/actor/john"),
+    );
     const follow = await repository.getFollowee(
       new URL("https://example.com/ap/actor/john"),
     );
-    assert(follow != null);
-    assertInstanceOf(follow, Follow);
-    assertEquals(
+    assert.ok(follow != null);
+    assert.ok(follow instanceof Follow);
+    assert.deepStrictEqual(
       follow.id,
       new URL(
         "https://example.com/ap/follow/3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
       ),
     );
-    assertEquals(follow.objectId, actor.id);
+    assert.deepStrictEqual(follow.objectId, actor.id);
   });
 });
 
-Deno.test("BotImpl.onFollowRejected()", async (t) => {
+test("BotImpl.onFollowRejected()", async (t) => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1480,17 +1548,17 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
     void (rejected.push([session, actor]));
   const ctx = createMockInboxContext(bot, "https://example.com", "bot");
 
-  await t.step("without object", async () => {
+  await t.test("without object", async () => {
     await bot.onFollowRejected(
       ctx,
       new Reject({
         actor: new URL("https://example.com/ap/actor/john"),
       }),
     );
-    assertEquals(rejected, []);
+    assert.deepStrictEqual(rejected, []);
   });
 
-  await t.step("with invalid object URI", async () => {
+  await t.test("with invalid object URI", async () => {
     await bot.onFollowRejected(
       ctx,
       new Reject({
@@ -1498,10 +1566,10 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
         object: new URL("https://example.com/"),
       }),
     );
-    assertEquals(rejected, []);
+    assert.deepStrictEqual(rejected, []);
   });
 
-  await t.step("with non-existent object", async () => {
+  await t.test("with non-existent object", async () => {
     await bot.onFollowRejected(
       ctx,
       new Reject({
@@ -1509,10 +1577,10 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
         object: new URL(`https://example.com/ap/follow/${crypto.randomUUID()}`),
       }),
     );
-    assertEquals(rejected, []);
+    assert.deepStrictEqual(rejected, []);
   });
 
-  await t.step("with non-actor", async () => {
+  await t.test("with non-actor", async () => {
     await repository.addSentFollow(
       "2ca58e2a-a34a-43e6-81af-c4f21ffed0c5",
       new Follow({
@@ -1532,10 +1600,10 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
         ),
       }),
     );
-    assertEquals(rejected, []);
+    assert.deepStrictEqual(rejected, []);
   });
 
-  await t.step("with actor without URI", async () => {
+  await t.test("with actor without URI", async () => {
     await repository.addSentFollow(
       "a99ff3bf-72a2-412b-83b9-cba894d38805",
       new Follow({
@@ -1557,10 +1625,10 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
         ),
       }),
     );
-    assertEquals(rejected, []);
+    assert.deepStrictEqual(rejected, []);
   });
 
-  await t.step("with actor", async () => {
+  await t.test("with actor", async () => {
     await repository.addSentFollow(
       "3bca0b8e-503a-47ea-ad69-6b7c29369fbd",
       new Follow({
@@ -1583,20 +1651,23 @@ Deno.test("BotImpl.onFollowRejected()", async (t) => {
         ),
       }),
     );
-    assertEquals(rejected.length, 1);
+    assert.deepStrictEqual(rejected.length, 1);
     const [session, actor] = rejected[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(actor, Person);
-    assertEquals(actor.id, new URL("https://example.com/ap/actor/john"));
-    assertEquals(
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(actor instanceof Person);
+    assert.deepStrictEqual(
+      actor.id,
+      new URL("https://example.com/ap/actor/john"),
+    );
+    assert.deepStrictEqual(
       await repository.getSentFollow("3bca0b8e-503a-47ea-ad69-6b7c29369fbd"),
       undefined,
     );
   });
 });
 
-Deno.test("BotImpl.onCreated()", async (t) => {
+test("BotImpl.onCreated()", async (t) => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -1611,29 +1682,29 @@ Deno.test("BotImpl.onCreated()", async (t) => {
   let messaged: [Session<void>, Message<MessageClass, void>][] = [];
   bot.onMessage = (session, msg) => void (messaged.push([session, msg]));
 
-  await t.step("without object", async () => {
+  await t.test("without object", async () => {
     const createWithoutObject = new Create({
       actor: new URL("https://example.com/ap/actor/john"),
     });
     await bot.onCreated(ctx, createWithoutObject);
-    assertEquals(replied, []);
-    assertEquals(mentioned, []);
-    assertEquals(messaged, []);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(replied, []);
+    assert.deepStrictEqual(mentioned, []);
+    assert.deepStrictEqual(messaged, []);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
   });
 
-  await t.step("with non-message object", async () => {
+  await t.test("with non-message object", async () => {
     const createWithNonMessageObject = new Create({
       actor: new URL("https://example.com/ap/actor/john"),
       object: new Place({}),
     });
     await bot.onCreated(ctx, createWithNonMessageObject);
-    assertEquals(replied, []);
-    assertEquals(mentioned, []);
-    assertEquals(messaged, []);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(replied, []);
+    assert.deepStrictEqual(mentioned, []);
+    assert.deepStrictEqual(messaged, []);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
   });
 
   await repository.addMessage(
@@ -1657,7 +1728,7 @@ Deno.test("BotImpl.onCreated()", async (t) => {
     }),
   );
 
-  await t.step("on reply", async () => {
+  await t.test("on reply", async () => {
     const create = new Create({
       id: new URL(
         "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
@@ -1682,30 +1753,30 @@ Deno.test("BotImpl.onCreated()", async (t) => {
       }),
     });
     await bot.onCreated(ctx, create);
-    assertEquals(replied.length, 1);
+    assert.deepStrictEqual(replied.length, 1);
     const [session, msg] = replied[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(msg.raw, Note);
-    assertEquals(msg.raw.id, create.objectId);
-    assert(msg.replyTarget != null);
-    assertEquals(
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(msg.raw instanceof Note);
+    assert.deepStrictEqual(msg.raw.id, create.objectId);
+    assert.ok(msg.replyTarget != null);
+    assert.deepStrictEqual(
       msg.replyTarget.id,
       new URL(
         "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
       ),
     );
-    assertEquals(mentioned, []);
-    assertEquals(messaged, replied);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, ["followers"]);
+    assert.deepStrictEqual(mentioned, []);
+    assert.deepStrictEqual(messaged, replied);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, ["followers"]);
   });
 
-  replied = [];
-  messaged = [];
-  ctx.forwardedRecipients = [];
+  await t.test("on mention", async () => {
+    replied = [];
+    messaged = [];
+    ctx.forwardedRecipients = [];
 
-  await t.step("on mention", async () => {
     const create = new Create({
       id: new URL(
         "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
@@ -1734,28 +1805,28 @@ Deno.test("BotImpl.onCreated()", async (t) => {
       }),
     });
     await bot.onCreated(ctx, create);
-    assertEquals(replied, []);
-    assertEquals(mentioned.length, 1);
+    assert.deepStrictEqual(replied, []);
+    assert.deepStrictEqual(mentioned.length, 1);
     const [session, msg] = mentioned[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(msg.raw, Note);
-    assertEquals(msg.raw.id, create.objectId);
-    assertEquals(msg.mentions.length, 1);
-    assertEquals(
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(msg.raw instanceof Note);
+    assert.deepStrictEqual(msg.raw.id, create.objectId);
+    assert.deepStrictEqual(msg.mentions.length, 1);
+    assert.deepStrictEqual(
       msg.mentions[0].id,
       new URL("https://example.com/ap/actor/bot"),
     );
-    assertEquals(messaged, mentioned);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(messaged, mentioned);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
   });
 
-  mentioned = [];
-  messaged = [];
-  ctx.forwardedRecipients = [];
+  await t.test("on quote", async () => {
+    mentioned = [];
+    messaged = [];
+    ctx.forwardedRecipients = [];
 
-  await t.step("on quote", async () => {
     const create = new Create({
       id: new URL(
         "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
@@ -1784,31 +1855,31 @@ Deno.test("BotImpl.onCreated()", async (t) => {
 
     await bot.onCreated(ctx, create);
 
-    assertEquals(quoted.length, 1);
+    assert.deepStrictEqual(quoted.length, 1);
     const [session, msg] = quoted[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(msg.raw, Note);
-    assertEquals(msg.raw.id, create.objectId);
-    assert(msg.quoteTarget != null);
-    assertEquals(
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(msg.raw instanceof Note);
+    assert.deepStrictEqual(msg.raw.id, create.objectId);
+    assert.ok(msg.quoteTarget != null);
+    assert.deepStrictEqual(
       msg.quoteTarget.id,
       new URL(
         "https://example.com/ap/note/a6358f1b-c978-49d3-8065-37a1df6168de",
       ),
     );
-    assertEquals(replied, []);
-    assertEquals(mentioned, []);
-    assertEquals(messaged, quoted);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, ["followers"]);
+    assert.deepStrictEqual(replied, []);
+    assert.deepStrictEqual(mentioned, []);
+    assert.deepStrictEqual(messaged, quoted);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, ["followers"]);
 
     quoted = [];
     messaged = [];
     ctx.forwardedRecipients = [];
   });
 
-  await t.step("on message", async () => {
+  await t.test("on message", async () => {
     const create = new Create({
       id: new URL(
         "https://example.com/ap/create/9cfd7129-4cf0-4505-90d8-3cac2dc42434",
@@ -1830,22 +1901,22 @@ Deno.test("BotImpl.onCreated()", async (t) => {
       }),
     });
     await bot.onCreated(ctx, create);
-    assertEquals(replied, []);
-    assertEquals(mentioned, []);
-    assertEquals(messaged.length, 1);
+    assert.deepStrictEqual(replied, []);
+    assert.deepStrictEqual(mentioned, []);
+    assert.deepStrictEqual(messaged.length, 1);
     const [session, msg] = messaged[0];
-    assertEquals(session.bot, bot);
-    assertEquals(session.context, ctx);
-    assertInstanceOf(msg.raw, Note);
-    assertEquals(msg.raw.id, create.objectId);
-    assertEquals(ctx.sentActivities, []);
-    assertEquals(ctx.forwardedRecipients, []);
+    assert.deepStrictEqual(session.bot, bot);
+    assert.deepStrictEqual(session.context, ctx);
+    assert.ok(msg.raw instanceof Note);
+    assert.deepStrictEqual(msg.raw.id, create.objectId);
+    assert.deepStrictEqual(ctx.sentActivities, []);
+    assert.deepStrictEqual(ctx.forwardedRecipients, []);
   });
 
   messaged = [];
 });
 
-Deno.test("BotImpl.onAnnounced()", async () => {
+test("BotImpl.onAnnounced()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -1868,20 +1939,20 @@ Deno.test("BotImpl.onAnnounced()", async () => {
     }),
   });
   await bot.onAnnounced(ctx, announce);
-  assertEquals(shares.length, 1);
+  assert.deepStrictEqual(shares.length, 1);
   const [session, sharedMessage] = shares[0];
-  assertEquals(session.bot, bot);
-  assertEquals(session.context, ctx);
-  assertEquals(sharedMessage.raw, announce);
-  assertEquals(sharedMessage.id, announce.id);
-  assertEquals(sharedMessage.actor.id, announce.actorId);
-  assertEquals(sharedMessage.visibility, "public");
-  assertEquals(sharedMessage.original.id, announce.objectId);
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session.bot, bot);
+  assert.deepStrictEqual(session.context, ctx);
+  assert.deepStrictEqual(sharedMessage.raw, announce);
+  assert.deepStrictEqual(sharedMessage.id, announce.id);
+  assert.deepStrictEqual(sharedMessage.actor.id, announce.actorId);
+  assert.deepStrictEqual(sharedMessage.visibility, "public");
+  assert.deepStrictEqual(sharedMessage.original.id, announce.objectId);
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 });
 
-Deno.test("BotImpl.onLiked()", async () => {
+test("BotImpl.onLiked()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -1901,19 +1972,19 @@ Deno.test("BotImpl.onLiked()", async () => {
     }),
   });
   await bot.onLiked(ctx, rawLike);
-  assertEquals(likes.length, 1);
+  assert.deepStrictEqual(likes.length, 1);
   const [session, like] = likes[0];
-  assertEquals(session.bot, bot);
-  assertEquals(session.context, ctx);
-  assertEquals(like.raw, rawLike);
-  assertEquals(like.id, rawLike.id);
-  assertEquals(like.actor.id, rawLike.actorId);
-  assertEquals(like.message.id, rawLike.objectId);
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session.bot, bot);
+  assert.deepStrictEqual(session.context, ctx);
+  assert.deepStrictEqual(like.raw, rawLike);
+  assert.deepStrictEqual(like.id, rawLike.id);
+  assert.deepStrictEqual(like.actor.id, rawLike.actorId);
+  assert.deepStrictEqual(like.message.id, rawLike.objectId);
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 });
 
-Deno.test("BotImpl.onUnliked()", async () => {
+test("BotImpl.onUnliked()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -1938,26 +2009,26 @@ Deno.test("BotImpl.onUnliked()", async () => {
     object: rawLike,
   });
   await bot.onUnliked(ctx, undo);
-  assertEquals(likes.length, 1);
+  assert.deepStrictEqual(likes.length, 1);
   const [session, like] = likes[0];
-  assertEquals(session.bot, bot);
-  assertEquals(session.context, ctx);
-  assertEquals(like.raw, rawLike);
-  assertEquals(like.id, rawLike.id);
-  assertEquals(like.actor.id, rawLike.actorId);
-  assertEquals(like.message.id, rawLike.objectId);
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session.bot, bot);
+  assert.deepStrictEqual(session.context, ctx);
+  assert.deepStrictEqual(like.raw, rawLike);
+  assert.deepStrictEqual(like.id, rawLike.id);
+  assert.deepStrictEqual(like.actor.id, rawLike.actorId);
+  assert.deepStrictEqual(like.message.id, rawLike.objectId);
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 
   likes.pop();
   const invalidUndo = undo.clone({
     actor: new URL("https://example.com/ap/actor/another"),
   });
   await bot.onUnliked(ctx, invalidUndo);
-  assertEquals(likes, []);
+  assert.deepStrictEqual(likes, []);
 });
 
-Deno.test("BotImpl.onReacted()", async () => {
+test("BotImpl.onReacted()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -1992,18 +2063,18 @@ Deno.test("BotImpl.onReacted()", async () => {
   });
 
   await bot.onReacted(ctx, rawLike);
-  assertEquals(reactions.length, 1);
+  assert.deepStrictEqual(reactions.length, 1);
   const [session, reaction] = reactions[0];
-  assertEquals(session.bot, bot);
-  assertEquals(session.context, ctx);
-  assertEquals(reaction.raw, rawLike);
-  assertEquals(reaction.id, rawLike.id);
-  assertEquals(reaction.actor.id, rawLike.actorId);
-  assertEquals(reaction.message.id, rawLike.objectId);
-  assertInstanceOf(reaction.emoji, Emoji);
-  assertEquals(reaction.emoji.name, ":heart:");
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session.bot, bot);
+  assert.deepStrictEqual(session.context, ctx);
+  assert.deepStrictEqual(reaction.raw, rawLike);
+  assert.deepStrictEqual(reaction.id, rawLike.id);
+  assert.deepStrictEqual(reaction.actor.id, rawLike.actorId);
+  assert.deepStrictEqual(reaction.message.id, rawLike.objectId);
+  assert.ok(reaction.emoji instanceof Emoji);
+  assert.deepStrictEqual(reaction.emoji.name, ":heart:");
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 
   // Test with EmojiReact
   reactions.pop();
@@ -2031,21 +2102,21 @@ Deno.test("BotImpl.onReacted()", async () => {
   });
 
   await bot.onReacted(ctx, emojiReact);
-  assertEquals(reactions.length, 1);
+  assert.deepStrictEqual(reactions.length, 1);
   const [session2, reaction2] = reactions[0];
-  assertEquals(session2.bot, bot);
-  assertEquals(session2.context, ctx);
-  assertEquals(reaction2.raw, emojiReact);
-  assertEquals(reaction2.id, emojiReact.id);
-  assertEquals(reaction2.actor.id, emojiReact.actorId);
-  assertEquals(reaction2.message.id, emojiReact.objectId);
-  assertInstanceOf(reaction2.emoji, Emoji);
-  assertEquals(reaction2.emoji.name, ":thumbsup:");
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session2.bot, bot);
+  assert.deepStrictEqual(session2.context, ctx);
+  assert.deepStrictEqual(reaction2.raw, emojiReact);
+  assert.deepStrictEqual(reaction2.id, emojiReact.id);
+  assert.deepStrictEqual(reaction2.actor.id, emojiReact.actorId);
+  assert.deepStrictEqual(reaction2.message.id, emojiReact.objectId);
+  assert.ok(reaction2.emoji instanceof Emoji);
+  assert.deepStrictEqual(reaction2.emoji.name, ":thumbsup:");
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 });
 
-Deno.test("BotImpl.onUnreacted()", async () => {
+test("BotImpl.onUnreacted()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -2086,18 +2157,18 @@ Deno.test("BotImpl.onUnreacted()", async () => {
   });
 
   await bot.onUnreacted(ctx, undo);
-  assertEquals(reactions.length, 1);
+  assert.deepStrictEqual(reactions.length, 1);
   const [session, reaction] = reactions[0];
-  assertEquals(session.bot, bot);
-  assertEquals(session.context, ctx);
-  assertEquals(reaction.raw, rawLike);
-  assertEquals(reaction.id, rawLike.id);
-  assertEquals(reaction.actor.id, rawLike.actorId);
-  assertEquals(reaction.message.id, rawLike.objectId);
-  assertInstanceOf(reaction.emoji, Emoji);
-  assertEquals(reaction.emoji.name, ":heart:");
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session.bot, bot);
+  assert.deepStrictEqual(session.context, ctx);
+  assert.deepStrictEqual(reaction.raw, rawLike);
+  assert.deepStrictEqual(reaction.id, rawLike.id);
+  assert.deepStrictEqual(reaction.actor.id, rawLike.actorId);
+  assert.deepStrictEqual(reaction.message.id, rawLike.objectId);
+  assert.ok(reaction.emoji instanceof Emoji);
+  assert.deepStrictEqual(reaction.emoji.name, ":heart:");
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 
   // Test with EmojiReact
   reactions.pop();
@@ -2131,18 +2202,18 @@ Deno.test("BotImpl.onUnreacted()", async () => {
   });
 
   await bot.onUnreacted(ctx, undoEmojiReact);
-  assertEquals(reactions.length, 1);
+  assert.deepStrictEqual(reactions.length, 1);
   const [session2, reaction2] = reactions[0];
-  assertEquals(session2.bot, bot);
-  assertEquals(session2.context, ctx);
-  assertEquals(reaction2.raw, emojiReact);
-  assertEquals(reaction2.id, emojiReact.id);
-  assertEquals(reaction2.actor.id, emojiReact.actorId);
-  assertEquals(reaction2.message.id, emojiReact.objectId);
-  assertInstanceOf(reaction2.emoji, Emoji);
-  assertEquals(reaction2.emoji.name, ":thumbsup:");
-  assertEquals(ctx.sentActivities, []);
-  assertEquals(ctx.forwardedRecipients, []);
+  assert.deepStrictEqual(session2.bot, bot);
+  assert.deepStrictEqual(session2.context, ctx);
+  assert.deepStrictEqual(reaction2.raw, emojiReact);
+  assert.deepStrictEqual(reaction2.id, emojiReact.id);
+  assert.deepStrictEqual(reaction2.actor.id, emojiReact.actorId);
+  assert.deepStrictEqual(reaction2.message.id, emojiReact.objectId);
+  assert.ok(reaction2.emoji instanceof Emoji);
+  assert.deepStrictEqual(reaction2.emoji.name, ":thumbsup:");
+  assert.deepStrictEqual(ctx.sentActivities, []);
+  assert.deepStrictEqual(ctx.forwardedRecipients, []);
 
   // Test with mismatched actor
   reactions.pop();
@@ -2150,7 +2221,7 @@ Deno.test("BotImpl.onUnreacted()", async () => {
     actor: new URL("https://example.com/ap/actor/another"),
   });
   await bot.onUnreacted(ctx, invalidUndo);
-  assertEquals(reactions, []);
+  assert.deepStrictEqual(reactions, []);
 
   // Test with non-reaction object
   reactions.pop();
@@ -2160,10 +2231,10 @@ Deno.test("BotImpl.onUnreacted()", async () => {
     object: new Note({}),
   });
   await bot.onUnreacted(ctx, nonReactionUndo);
-  assertEquals(reactions, []);
+  assert.deepStrictEqual(reactions, []);
 });
 
-Deno.test("BotImpl.dispatchNodeInfo()", () => {
+test("BotImpl.dispatchNodeInfo()", () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -2178,7 +2249,7 @@ Deno.test("BotImpl.dispatchNodeInfo()", () => {
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(bot.dispatchNodeInfo(ctx), {
+  assert.deepStrictEqual(bot.dispatchNodeInfo(ctx), {
     software: {
       name: "test",
       version: parseSemVer("1.2.3"),
@@ -2201,7 +2272,7 @@ Deno.test("BotImpl.dispatchNodeInfo()", () => {
   });
 });
 
-Deno.test("BotImpl.fetch()", async () => {
+test("BotImpl.fetch()", async () => {
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -2216,7 +2287,7 @@ Deno.test("BotImpl.fetch()", async () => {
     },
   );
   const response = await bot.fetch(request);
-  assertEquals(response.status, 404);
+  assert.deepStrictEqual(response.status, 404);
 
   const botBehindProxy = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -2224,38 +2295,37 @@ Deno.test("BotImpl.fetch()", async () => {
     behindProxy: true,
   });
   const response2 = await botBehindProxy.fetch(request);
-  assertEquals(response2.status, 200);
+  assert.deepStrictEqual(response2.status, 200);
 });
 
-// Test BotImpl.addCustomEmoji() and BotImpl.addCustomEmojis()
-Deno.test("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", async (t) => {
+describe("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
 
-  await t.step("addCustomEmoji()", () => {
+  test("addCustomEmoji()", () => {
     const emojiData: CustomEmoji = {
       type: "image/png",
       url: "https://example.com/emoji.png",
     };
     const deferredEmoji = bot.addCustomEmoji("testEmoji", emojiData);
-    assertEquals(typeof deferredEmoji, "function");
-    assertEquals(bot.customEmojis["testEmoji"], emojiData);
+    assert.deepStrictEqual(typeof deferredEmoji, "function");
+    assert.deepStrictEqual(bot.customEmojis["testEmoji"], emojiData);
 
     // Test invalid name
-    assertThrows(
+    assert.throws(
       () => bot.addCustomEmoji("invalid name", emojiData),
       TypeError,
       "Invalid custom emoji name",
     );
 
     // Test duplicate name
-    assertThrows(
+    assert.throws(
       () => bot.addCustomEmoji("testEmoji", emojiData),
       TypeError,
       "Duplicate custom emoji name",
     );
 
     // Test unsupported media type
-    assertThrows(
+    assert.throws(
       () =>
         bot.addCustomEmoji("invalidType", {
           // @ts-expect-error: Intended type error for testing runtime check
@@ -2267,20 +2337,20 @@ Deno.test("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", async (t) => {
     );
   });
 
-  await t.step("addCustomEmojis()", () => {
+  test("addCustomEmojis()", () => {
     const emojisData = {
       emoji1: { type: "image/png", url: "https://example.com/emoji1.png" },
       emoji2: { type: "image/gif", file: "/path/to/emoji2.gif" },
     } as const;
     const deferredEmojis = bot.addCustomEmojis(emojisData);
 
-    assertEquals(typeof deferredEmojis["emoji1"], "function");
-    assertEquals(typeof deferredEmojis["emoji2"], "function");
-    assertEquals(bot.customEmojis["emoji1"], emojisData.emoji1);
-    assertEquals(bot.customEmojis["emoji2"], emojisData.emoji2);
+    assert.deepStrictEqual(typeof deferredEmojis["emoji1"], "function");
+    assert.deepStrictEqual(typeof deferredEmojis["emoji2"], "function");
+    assert.deepStrictEqual(bot.customEmojis["emoji1"], emojisData.emoji1);
+    assert.deepStrictEqual(bot.customEmojis["emoji2"], emojisData.emoji2);
 
     // Test duplicate name within the batch
-    assertThrows(
+    assert.throws(
       () =>
         bot.addCustomEmojis({
           emoji1: { type: "image/png", url: "https://example.com/dup1.png" },
@@ -2291,8 +2361,7 @@ Deno.test("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", async (t) => {
   });
 });
 
-// Test BotImpl.getEmoji()
-Deno.test("BotImpl.getEmoji()", async () => {
+test("BotImpl.getEmoji()", async () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const ctx = bot.federation.createContext(
     new URL("https://example.com"),
@@ -2306,16 +2375,16 @@ Deno.test("BotImpl.getEmoji()", async () => {
   };
   bot.customEmojis["remoteEmoji"] = remoteEmojiData;
   const remoteEmoji = bot.getEmoji(ctx, "remoteEmoji", remoteEmojiData);
-  assertInstanceOf(remoteEmoji, Emoji);
-  assertEquals(
+  assert.ok(remoteEmoji instanceof Emoji);
+  assert.deepStrictEqual(
     remoteEmoji.id,
     new URL("https://example.com/ap/emoji/remoteEmoji"),
   );
-  assertEquals(remoteEmoji.name, ":remoteEmoji:");
+  assert.deepStrictEqual(remoteEmoji.name, ":remoteEmoji:");
   const icon = await remoteEmoji.getIcon();
-  assertInstanceOf(icon, Image);
-  assertEquals(icon.mediaType, "image/png");
-  assertEquals(icon.url?.href, "https://remote.com/emoji.png");
+  assert.ok(icon instanceof Image);
+  assert.deepStrictEqual(icon.mediaType, "image/png");
+  assert.deepStrictEqual(icon.url?.href, "https://remote.com/emoji.png");
 
   // Test with local file
   const localEmojiData: CustomEmoji = {
@@ -2324,16 +2393,16 @@ Deno.test("BotImpl.getEmoji()", async () => {
   };
   bot.customEmojis["localEmoji"] = localEmojiData;
   const localEmoji = bot.getEmoji(ctx, "localEmoji", localEmojiData);
-  assertInstanceOf(localEmoji, Emoji);
-  assertEquals(
+  assert.ok(localEmoji instanceof Emoji);
+  assert.deepStrictEqual(
     localEmoji.id,
     new URL("https://example.com/ap/emoji/localEmoji"),
   );
-  assertEquals(localEmoji.name, ":localEmoji:");
+  assert.deepStrictEqual(localEmoji.name, ":localEmoji:");
   const icon2 = await localEmoji.getIcon();
-  assertInstanceOf(icon2, Image);
-  assertEquals(icon2.mediaType, "image/gif");
-  assertEquals(
+  assert.ok(icon2 instanceof Image);
+  assert.deepStrictEqual(icon2.mediaType, "image/gif");
+  assert.deepStrictEqual(
     icon2.url?.href,
     "https://example.com/emojis/localEmoji.gif",
   );
@@ -2350,16 +2419,16 @@ Deno.test("BotImpl.getEmoji()", async () => {
     localEmojiDataNoExt,
   );
   const icon3 = await localEmojiNoExt.getIcon();
-  assertInstanceOf(icon3, Image);
-  assertEquals(icon3.mediaType, "image/webp");
-  assertEquals(
+  assert.ok(icon3 instanceof Image);
+  assert.deepStrictEqual(icon3.mediaType, "image/webp");
+  assert.deepStrictEqual(
     icon3.url?.href,
     "https://example.com/emojis/localEmojiNoExt.webp",
   );
 });
 
 // Test BotImpl.dispatchEmoji()
-Deno.test("BotImpl.dispatchEmoji()", () => {
+test("BotImpl.dispatchEmoji()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const ctx = bot.federation.createContext(
     new URL("https://example.com"),
@@ -2373,23 +2442,29 @@ Deno.test("BotImpl.dispatchEmoji()", () => {
 
   // Test dispatching an existing emoji
   const emoji = bot.dispatchEmoji(ctx, { name: "testEmoji" });
-  assertInstanceOf(emoji, Emoji);
-  assertEquals(emoji.id, new URL("https://example.com/ap/emoji/testEmoji"));
-  assertEquals(emoji.name, ":testEmoji:");
+  assert.ok(emoji instanceof Emoji);
+  assert.deepStrictEqual(
+    emoji.id,
+    new URL("https://example.com/ap/emoji/testEmoji"),
+  );
+  assert.deepStrictEqual(emoji.name, ":testEmoji:");
 
   // Test dispatching a non-existent emoji
   const nonExistent = bot.dispatchEmoji(ctx, { name: "nonExistent" });
-  assertEquals(nonExistent, null);
+  assert.deepStrictEqual(nonExistent, null);
 });
 
-Deno.test("BotImpl.getFollowersFirstCursor()", () => {
+test("BotImpl.getFollowersFirstCursor()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const ctx = bot.federation.createContext(
     new URL("https://example.com"),
     undefined,
   );
-  assertEquals(bot.getFollowersFirstCursor(ctx, "non-existent"), null);
-  assertEquals(bot.getFollowersFirstCursor(ctx, "bot"), "0");
+  assert.deepStrictEqual(
+    bot.getFollowersFirstCursor(ctx, "non-existent"),
+    null,
+  );
+  assert.deepStrictEqual(bot.getFollowersFirstCursor(ctx, "bot"), "0");
 });
 
 interface SentActivity {

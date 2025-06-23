@@ -21,12 +21,8 @@ import {
 import { getDocumentLoader } from "@fedify/fedify/runtime";
 import { importJwk } from "@fedify/fedify/sig";
 import { Emoji, Hashtag, Image, Mention, Person } from "@fedify/fedify/vocab";
-import {
-  assert,
-  assertEquals,
-  assertFalse,
-  assertInstanceOf,
-} from "@std/assert";
+import assert from "node:assert";
+import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
 import type { BotWithVoidContextData } from "./bot.ts";
 import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
@@ -161,410 +157,452 @@ const bot: BotWithVoidContextData = {
   },
 };
 
-Deno.test("isText()", () => {
+test("isText()", () => {
   const t = text`Hello, World`;
-  assert(isText(t));
+  assert.ok(isText(t));
   const t2 = em("Hello, World");
-  assert(isText(t2));
-  assertFalse(isText("Hello, World"));
+  assert.ok(isText(t2));
+  assert.deepStrictEqual(isText("Hello, World"), false);
 });
 
-Deno.test("mentions()", async () => {
+test("mentions()", async () => {
   const session = bot.getSession("https://example.com");
   const actor = new URL("https://hollo.social/@fedify");
   const actor2 = new URL("https://example.com/users/john");
   const actor3 = new Person({ id: actor });
   const t: Text<"block", void> = text`Hello, world!`;
-  assertFalse(await mentions(session, t, actor));
-  assertFalse(await mentions(session, t, actor2));
-  assertFalse(await mentions(session, t, actor3));
+  assert.deepStrictEqual(await mentions(session, t, actor), false);
+  assert.deepStrictEqual(await mentions(session, t, actor2), false);
+  assert.deepStrictEqual(await mentions(session, t, actor3), false);
 
   const m: Text<"inline", void> = mention(actor);
-  assert(await mentions(session, m, actor));
-  assertFalse(await mentions(session, m, actor2));
-  assert(await mentions(session, m, actor3));
+  assert.ok(await mentions(session, m, actor));
+  assert.deepStrictEqual(await mentions(session, m, actor2), false);
+  assert.ok(await mentions(session, m, actor3));
 });
 
-Deno.test({
-  name: "text`...`",
-  permissions: {},
-  async fn() {
-    const session = bot.getSession("https://example.com");
-    const t: Text<"block", void> = text`Hello, <${123}>`;
-    assertEquals(
-      (await Array.fromAsync(t.getHtml(session))).join(""),
-      "<p>Hello, &lt;123&gt;</p>",
-    );
-    assertEquals(await Array.fromAsync(t.getTags(session)), []);
-    assertEquals(t.getCachedObjects(), []);
+test("text`...`", async () => {
+  const session = bot.getSession("https://example.com");
+  const t: Text<"block", void> = text`Hello, <${123}>`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    "<p>Hello, &lt;123&gt;</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t.getTags(session)), []);
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 
-    const t2: Text<"block", void> = text`Hello, ${em("World")}`;
-    assertEquals(
-      (await Array.fromAsync(t2.getHtml(session))).join(""),
-      "<p>Hello, <em>World</em></p>",
-    );
-    assertEquals(await Array.fromAsync(t2.getTags(session)), []);
-    assertEquals(t2.getCachedObjects(), []);
+  const t2: Text<"block", void> = text`Hello, ${em("World")}`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t2.getHtml(session))).join(""),
+    "<p>Hello, <em>World</em></p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t2.getTags(session)), []);
+  assert.deepStrictEqual(t2.getCachedObjects(), []);
 
-    const actor = new Person({
+  const actor = new Person({
+    id: new URL("https://example.com/users/john"),
+    preferredUsername: "john",
+    url: new URL("https://example.com/@john"),
+  });
+  const t3: Text<"block", void> = text`Hello, ${mention(actor)}`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t3.getHtml(session))).join(""),
+    '<p>Hello, <a href="https://example.com/@john" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
+      "</span></a></p>",
+  );
+  const tags3 = await Array.fromAsync(t3.getTags(session));
+  assert.deepStrictEqual(tags3.length, 1);
+  assert.ok(tags3[0] instanceof Mention);
+  assert.deepStrictEqual(tags3[0].name, "@john@example.com");
+  assert.deepStrictEqual(
+    tags3[0].href,
+    new URL("https://example.com/users/john"),
+  );
+  const cache3 = t3.getCachedObjects();
+  assert.deepStrictEqual(cache3.length, 1);
+  assert.ok(cache3[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache3[0].id,
+    new URL("https://example.com/users/john"),
+  );
+
+  const t4: Text<"block", void> = text`Hello\nworld!`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t4.getHtml(session))).join(""),
+    "<p>Hello<br>world!</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t4.getTags(session)), []);
+  assert.deepStrictEqual(t4.getCachedObjects(), []);
+
+  const t5: Text<"block", void> =
+    text`Hello\nworld!\n\nGoodbye!\n\t\n \nHello!`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t5.getHtml(session))).join(""),
+    "<p>Hello<br>world!</p><p>Goodbye!</p><p>Hello!</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t5.getTags(session)), []);
+  assert.deepStrictEqual(t5.getCachedObjects(), []);
+
+  const t6: Text<"block", void> = text`\n\n\nHello\nworld\n\n\nGoodbye!\n`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t6.getHtml(session))).join(""),
+    "<p>Hello<br>world</p><p>Goodbye!</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t6.getTags(session)), []);
+  assert.deepStrictEqual(t6.getCachedObjects(), []);
+
+  const t7: Text<"block", void> = text`Here's a link: ${new URL(
+    "https://fedify.dev/",
+  )}.`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t7.getHtml(session))).join(""),
+    '<p>Here&apos;s a link: <a href="https://fedify.dev/" target="_blank">' +
+      "https://fedify.dev/</a>.</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t7.getTags(session)), []);
+  assert.deepStrictEqual(t7.getCachedObjects(), []);
+
+  const t8: Text<"block", void> = text`Here's a multiline text:
+    
+${"First line.\nSecond line."}`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t8.getHtml(session))).join(""),
+    "<p>Here&apos;s a multiline text:</p><p>First line.<br>Second line.</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t8.getTags(session)), []);
+  assert.deepStrictEqual(t8.getCachedObjects(), []);
+
+  const t9: Text<"block", void> =
+    text`Interpolating blocks: ${text`Hello\nworld!`} ... and ... ${text`Goodbye!`}`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t9.getHtml(session))).join(""),
+    "<p>Interpolating blocks: </p><p>Hello<br>world!</p><p> ... and ... </p><p>Goodbye!</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t9.getTags(session)), []);
+  assert.deepStrictEqual(t9.getCachedObjects(), []);
+
+  const t10: Text<"block", void> =
+    text`Interpolating blocks:\n\n${text`Hello\nworld!`}\n\n... and ...\n\n${text`Goodbye!`}`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t10.getHtml(session))).join(""),
+    "<p>Interpolating blocks:</p><p>Hello<br>world!</p><p>... and ...</p><p>Goodbye!</p>",
+  );
+  assert.deepStrictEqual(await Array.fromAsync(t10.getTags(session)), []);
+  assert.deepStrictEqual(t10.getCachedObjects(), []);
+});
+
+test("mention()", async () => {
+  const session = bot.getSession("https://example.com");
+  const m: Text<"inline", void> = mention(
+    new Person({
       id: new URL("https://example.com/users/john"),
       preferredUsername: "john",
       url: new URL("https://example.com/@john"),
-    });
-    const t3: Text<"block", void> = text`Hello, ${mention(actor)}`;
-    assertEquals(
-      (await Array.fromAsync(t3.getHtml(session))).join(""),
-      '<p>Hello, <a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
-        "</span></a></p>",
-    );
-    const tags3 = await Array.fromAsync(t3.getTags(session));
-    assertEquals(tags3.length, 1);
-    assertInstanceOf(tags3[0], Mention);
-    assertEquals(tags3[0].name, "@john@example.com");
-    assertEquals(tags3[0].href, new URL("https://example.com/users/john"));
-    const cache3 = t3.getCachedObjects();
-    assertEquals(cache3.length, 1);
-    assertInstanceOf(cache3[0], Person);
-    assertEquals(cache3[0].id, new URL("https://example.com/users/john"));
+    }),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m.getHtml(session))).join(""),
+    '<a href="https://example.com/@john" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
+      "</span></a>",
+  );
+  const tags = await Array.fromAsync(m.getTags(session));
+  assert.deepStrictEqual(tags.length, 1);
+  assert.ok(tags[0] instanceof Mention);
+  assert.deepStrictEqual(tags[0].name, "@john@example.com");
+  assert.deepStrictEqual(
+    tags[0].href,
+    new URL("https://example.com/users/john"),
+  );
+  const cache = m.getCachedObjects();
+  assert.deepStrictEqual(cache.length, 1);
+  assert.ok(cache[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache[0].id,
+    new URL("https://example.com/users/john"),
+  );
 
-    const t4: Text<"block", void> = text`Hello\nworld!`;
-    assertEquals(
-      (await Array.fromAsync(t4.getHtml(session))).join(""),
-      "<p>Hello<br>world!</p>",
-    );
-    assertEquals(await Array.fromAsync(t4.getTags(session)), []);
-    assertEquals(t4.getCachedObjects(), []);
+  const m2: Text<"inline", void> = mention(
+    "Jane Doe",
+    new URL("https://example.com/@jane"),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m2.getHtml(session))).join(""),
+    '<a href="https://example.com/@jane" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">Jane Doe</a>',
+  );
+  const tags2 = await Array.fromAsync(m2.getTags(session));
+  assert.deepStrictEqual(tags2.length, 1);
+  assert.ok(tags2[0] instanceof Mention);
+  assert.deepStrictEqual(tags2[0].name, "Jane Doe");
+  assert.deepStrictEqual(tags2[0].href, new URL("https://example.com/@jane"));
+  const cache2 = m2.getCachedObjects();
+  assert.deepStrictEqual(cache2.length, 1);
+  assert.ok(cache2[0] instanceof Person);
+  assert.deepStrictEqual(cache2[0].id, new URL("https://example.com/@jane"));
 
-    const t5: Text<"block", void> =
-      text`Hello\nworld!\n\nGoodbye!\n\t\n \nHello!`;
-    assertEquals(
-      (await Array.fromAsync(t5.getHtml(session))).join(""),
-      "<p>Hello<br>world!</p><p>Goodbye!</p><p>Hello!</p>",
-    );
-    assertEquals(await Array.fromAsync(t5.getTags(session)), []);
-    assertEquals(t5.getCachedObjects(), []);
+  const m3: Text<"inline", void> = mention(
+    "John Doe",
+    new Person({
+      id: new URL("https://example.com/users/john"),
+      preferredUsername: "john",
+      url: new URL("https://example.com/@john"),
+    }),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m3.getHtml(session))).join(""),
+    '<a href="https://example.com/@john" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">John Doe</a>',
+  );
+  const tags3 = await Array.fromAsync(m3.getTags(session));
+  assert.deepStrictEqual(tags3.length, 1);
+  assert.ok(tags3[0] instanceof Mention);
+  assert.deepStrictEqual(tags3[0].name, "John Doe");
+  assert.deepStrictEqual(
+    tags3[0].href,
+    new URL("https://example.com/users/john"),
+  );
+  const cache3 = m3.getCachedObjects();
+  assert.deepStrictEqual(cache3.length, 1);
+  assert.ok(cache3[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache3[0].id,
+    new URL("https://example.com/users/john"),
+  );
 
-    const t6: Text<"block", void> = text`\n\n\nHello\nworld\n\n\nGoodbye!\n`;
-    assertEquals(
-      (await Array.fromAsync(t6.getHtml(session))).join(""),
-      "<p>Hello<br>world</p><p>Goodbye!</p>",
-    );
-    assertEquals(await Array.fromAsync(t6.getTags(session)), []);
-    assertEquals(t6.getCachedObjects(), []);
+  const m4: Text<"inline", void> = mention("@fedify@hollo.social");
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m4.getHtml(session))).join(""),
+    '<a href="https://hollo.social/@fedify" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "fedify@hollo.social</span></a>",
+  );
+  const tags4 = await Array.fromAsync(m4.getTags(session));
+  assert.deepStrictEqual(tags4.length, 1);
+  assert.ok(tags4[0] instanceof Mention);
+  assert.deepStrictEqual(tags4[0].name, "@fedify@hollo.social");
+  assert.deepStrictEqual(
+    tags4[0].href,
+    new URL("https://hollo.social/@fedify"),
+  );
+  const cache4 = m4.getCachedObjects();
+  assert.deepStrictEqual(cache4.length, 1);
+  assert.ok(cache4[0] instanceof Person);
+  assert.deepStrictEqual(cache4[0].id, new URL("https://hollo.social/@fedify"));
 
-    const t7: Text<"block", void> = text`Here's a link: ${new URL(
-      "https://fedify.dev/",
-    )}.`;
-    assertEquals(
-      (await Array.fromAsync(t7.getHtml(session))).join(""),
-      '<p>Here&apos;s a link: <a href="https://fedify.dev/" target="_blank">' +
-        "https://fedify.dev/</a>.</p>",
-    );
-    assertEquals(await Array.fromAsync(t7.getTags(session)), []);
-    assertEquals(t7.getCachedObjects(), []);
+  const m5: Text<"inline", void> = mention(
+    new URL("https://hollo.social/@fedify"),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m5.getHtml(session))).join(""),
+    '<a href="https://hollo.social/@fedify" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "fedify@hollo.social</span></a>",
+  );
+  const tags5 = await Array.fromAsync(m5.getTags(session));
+  assert.deepStrictEqual(tags5.length, 1);
+  assert.ok(tags5[0] instanceof Mention);
+  assert.deepStrictEqual(tags5[0].name, "@fedify@hollo.social");
+  assert.deepStrictEqual(
+    tags5[0].href,
+    new URL("https://hollo.social/@fedify"),
+  );
+  const cache5 = m5.getCachedObjects();
+  assert.deepStrictEqual(cache5.length, 1);
+  assert.ok(cache5[0] instanceof Person);
+  assert.deepStrictEqual(cache5[0].id, new URL("https://hollo.social/@fedify"));
 
-    const t8: Text<"block", void> = text`Here's a multiline text:
-    
-${"First line.\nSecond line."}`;
-    assertEquals(
-      (await Array.fromAsync(t8.getHtml(session))).join(""),
-      "<p>Here&apos;s a multiline text:</p><p>First line.<br>Second line.</p>",
-    );
-    assertEquals(await Array.fromAsync(t8.getTags(session)), []);
-    assertEquals(t8.getCachedObjects(), []);
+  const m6: Text<"inline", void> = mention("@bot@example.com");
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m6.getHtml(session))).join(""),
+    '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "bot@example.com</span></a>",
+  );
+  const tags6 = await Array.fromAsync(m6.getTags(session));
+  assert.deepStrictEqual(tags6.length, 1);
+  assert.ok(tags6[0] instanceof Mention);
+  assert.deepStrictEqual(tags6[0].name, "@bot@example.com");
+  assert.deepStrictEqual(
+    tags6[0].href,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  const cache6 = m6.getCachedObjects();
+  assert.deepStrictEqual(cache6.length, 1);
+  assert.ok(cache6[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache6[0].id,
+    new URL("https://example.com/ap/actor/bot"),
+  );
 
-    const t9: Text<"block", void> =
-      text`Interpolating blocks: ${text`Hello\nworld!`} ... and ... ${text`Goodbye!`}`;
-    assertEquals(
-      (await Array.fromAsync(t9.getHtml(session))).join(""),
-      "<p>Interpolating blocks: </p><p>Hello<br>world!</p><p> ... and ... </p><p>Goodbye!</p>",
-    );
-    assertEquals(await Array.fromAsync(t9.getTags(session)), []);
-    assertEquals(t9.getCachedObjects(), []);
+  const m7: Text<"inline", void> = mention(
+    "Example",
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m7.getHtml(session))).join(""),
+    '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">Example</a>',
+  );
+  const tags7 = await Array.fromAsync(m7.getTags(session));
+  assert.deepStrictEqual(tags7.length, 1);
+  assert.ok(tags7[0] instanceof Mention);
+  assert.deepStrictEqual(tags7[0].name, "Example");
+  assert.deepStrictEqual(
+    tags7[0].href,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  const cache7 = m7.getCachedObjects();
+  assert.deepStrictEqual(cache7.length, 1);
+  assert.ok(cache7[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache7[0].id,
+    new URL("https://example.com/ap/actor/bot"),
+  );
 
-    const t10: Text<"block", void> =
-      text`Interpolating blocks:\n\n${text`Hello\nworld!`}\n\n... and ...\n\n${text`Goodbye!`}`;
-    assertEquals(
-      (await Array.fromAsync(t10.getHtml(session))).join(""),
-      "<p>Interpolating blocks:</p><p>Hello<br>world!</p><p>... and ...</p><p>Goodbye!</p>",
-    );
-    assertEquals(await Array.fromAsync(t10.getTags(session)), []);
-    assertEquals(t10.getCachedObjects(), []);
-  },
+  const m8: Text<"inline", void> = mention(
+    new Person({
+      id: new URL("https://example.com/ap/actor/bot"),
+      preferredUsername: "bot",
+    }),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m8.getHtml(session))).join(""),
+    '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "bot@example.com</span></a>",
+  );
+  const tags8 = await Array.fromAsync(m8.getTags(session));
+  assert.deepStrictEqual(tags8.length, 1);
+  assert.ok(tags8[0] instanceof Mention);
+  assert.deepStrictEqual(tags8[0].name, "@bot@example.com");
+  assert.deepStrictEqual(
+    tags8[0].href,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  const cache8 = m8.getCachedObjects();
+  assert.deepStrictEqual(cache8.length, 1);
+  assert.ok(cache8[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache8[0].id,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+
+  const m9: Text<"inline", void> = mention(
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  assert.deepStrictEqual(
+    (await Array.fromAsync(m9.getHtml(session))).join(""),
+    '<a href="https://example.com/ap/actor/bot" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "bot@example.com</span></a>",
+  );
+  const tags9 = await Array.fromAsync(m9.getTags(session));
+  assert.deepStrictEqual(tags9.length, 1);
+  assert.ok(tags9[0] instanceof Mention);
+  assert.deepStrictEqual(tags9[0].name, "@bot@example.com");
+  assert.deepStrictEqual(
+    tags9[0].href,
+    new URL("https://example.com/ap/actor/bot"),
+  );
+  const cache9 = m9.getCachedObjects();
+  assert.deepStrictEqual(cache9.length, 1);
+  assert.ok(cache9[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache9[0].id,
+    new URL("https://example.com/ap/actor/bot"),
+  );
 });
 
-Deno.test({
-  name: "mention()",
-  sanitizeResources: false,
-  permissions: { net: ["hollo.social"] },
-  async fn() {
-    const session = bot.getSession("https://example.com");
-    const m: Text<"inline", void> = mention(
-      new Person({
-        id: new URL("https://example.com/users/john"),
-        preferredUsername: "john",
-        url: new URL("https://example.com/@john"),
-      }),
-    );
-    assertEquals(
-      (await Array.fromAsync(m.getHtml(session))).join(""),
-      '<a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>john@example.com' +
-        "</span></a>",
-    );
-    const tags = await Array.fromAsync(m.getTags(session));
-    assertEquals(tags.length, 1);
-    assertInstanceOf(tags[0], Mention);
-    assertEquals(tags[0].name, "@john@example.com");
-    assertEquals(tags[0].href, new URL("https://example.com/users/john"));
-    const cache = m.getCachedObjects();
-    assertEquals(cache.length, 1);
-    assertInstanceOf(cache[0], Person);
-    assertEquals(cache[0].id, new URL("https://example.com/users/john"));
-
-    const m2: Text<"inline", void> = mention(
-      "Jane Doe",
-      new URL("https://example.com/@jane"),
-    );
-    assertEquals(
-      (await Array.fromAsync(m2.getHtml(session))).join(""),
-      '<a href="https://example.com/@jane" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">Jane Doe</a>',
-    );
-    const tags2 = await Array.fromAsync(m2.getTags(session));
-    assertEquals(tags2.length, 1);
-    assertInstanceOf(tags2[0], Mention);
-    assertEquals(tags2[0].name, "Jane Doe");
-    assertEquals(tags2[0].href, new URL("https://example.com/@jane"));
-    const cache2 = m2.getCachedObjects();
-    assertEquals(cache2.length, 1);
-    assertInstanceOf(cache2[0], Person);
-    assertEquals(cache2[0].id, new URL("https://example.com/@jane"));
-
-    const m3: Text<"inline", void> = mention(
-      "John Doe",
-      new Person({
-        id: new URL("https://example.com/users/john"),
-        preferredUsername: "john",
-        url: new URL("https://example.com/@john"),
-      }),
-    );
-    assertEquals(
-      (await Array.fromAsync(m3.getHtml(session))).join(""),
-      '<a href="https://example.com/@john" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">John Doe</a>',
-    );
-    const tags3 = await Array.fromAsync(m3.getTags(session));
-    assertEquals(tags3.length, 1);
-    assertInstanceOf(tags3[0], Mention);
-    assertEquals(tags3[0].name, "John Doe");
-    assertEquals(tags3[0].href, new URL("https://example.com/users/john"));
-    const cache3 = m3.getCachedObjects();
-    assertEquals(cache3.length, 1);
-    assertInstanceOf(cache3[0], Person);
-    assertEquals(cache3[0].id, new URL("https://example.com/users/john"));
-
-    const m4: Text<"inline", void> = mention("@fedify@hollo.social");
-    assertEquals(
-      (await Array.fromAsync(m4.getHtml(session))).join(""),
-      '<a href="https://hollo.social/@fedify" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>' +
-        "fedify@hollo.social</span></a>",
-    );
-    const tags4 = await Array.fromAsync(m4.getTags(session));
-    assertEquals(tags4.length, 1);
-    assertInstanceOf(tags4[0], Mention);
-    assertEquals(tags4[0].name, "@fedify@hollo.social");
-    assertEquals(tags4[0].href, new URL("https://hollo.social/@fedify"));
-    const cache4 = m4.getCachedObjects();
-    assertEquals(cache4.length, 1);
-    assertInstanceOf(cache4[0], Person);
-    assertEquals(cache4[0].id, new URL("https://hollo.social/@fedify"));
-
-    const m5: Text<"inline", void> = mention(
-      new URL("https://hollo.social/@fedify"),
-    );
-    assertEquals(
-      (await Array.fromAsync(m5.getHtml(session))).join(""),
-      '<a href="https://hollo.social/@fedify" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>' +
-        "fedify@hollo.social</span></a>",
-    );
-    const tags5 = await Array.fromAsync(m5.getTags(session));
-    assertEquals(tags5.length, 1);
-    assertInstanceOf(tags5[0], Mention);
-    assertEquals(tags5[0].name, "@fedify@hollo.social");
-    assertEquals(tags5[0].href, new URL("https://hollo.social/@fedify"));
-    const cache5 = m5.getCachedObjects();
-    assertEquals(cache5.length, 1);
-    assertInstanceOf(cache5[0], Person);
-    assertEquals(cache5[0].id, new URL("https://hollo.social/@fedify"));
-
-    const m6: Text<"inline", void> = mention("@bot@example.com");
-    assertEquals(
-      (await Array.fromAsync(m6.getHtml(session))).join(""),
-      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>' +
-        "bot@example.com</span></a>",
-    );
-    const tags6 = await Array.fromAsync(m6.getTags(session));
-    assertEquals(tags6.length, 1);
-    assertInstanceOf(tags6[0], Mention);
-    assertEquals(tags6[0].name, "@bot@example.com");
-    assertEquals(tags6[0].href, new URL("https://example.com/ap/actor/bot"));
-    const cache6 = m6.getCachedObjects();
-    assertEquals(cache6.length, 1);
-    assertInstanceOf(cache6[0], Person);
-    assertEquals(cache6[0].id, new URL("https://example.com/ap/actor/bot"));
-
-    const m7: Text<"inline", void> = mention(
-      "Example",
-      new URL("https://example.com/ap/actor/bot"),
-    );
-    assertEquals(
-      (await Array.fromAsync(m7.getHtml(session))).join(""),
-      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">Example</a>',
-    );
-    const tags7 = await Array.fromAsync(m7.getTags(session));
-    assertEquals(tags7.length, 1);
-    assertInstanceOf(tags7[0], Mention);
-    assertEquals(tags7[0].name, "Example");
-    assertEquals(tags7[0].href, new URL("https://example.com/ap/actor/bot"));
-    const cache7 = m7.getCachedObjects();
-    assertEquals(cache7.length, 1);
-    assertInstanceOf(cache7[0], Person);
-    assertEquals(cache7[0].id, new URL("https://example.com/ap/actor/bot"));
-
-    const m8: Text<"inline", void> = mention(
-      new Person({
-        id: new URL("https://example.com/ap/actor/bot"),
-        preferredUsername: "bot",
-      }),
-    );
-    assertEquals(
-      (await Array.fromAsync(m8.getHtml(session))).join(""),
-      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>' +
-        "bot@example.com</span></a>",
-    );
-    const tags8 = await Array.fromAsync(m8.getTags(session));
-    assertEquals(tags8.length, 1);
-    assertInstanceOf(tags8[0], Mention);
-    assertEquals(tags8[0].name, "@bot@example.com");
-    assertEquals(tags8[0].href, new URL("https://example.com/ap/actor/bot"));
-    const cache8 = m8.getCachedObjects();
-    assertEquals(cache8.length, 1);
-    assertInstanceOf(cache8[0], Person);
-    assertEquals(cache8[0].id, new URL("https://example.com/ap/actor/bot"));
-
-    const m9: Text<"inline", void> = mention(
-      new URL("https://example.com/ap/actor/bot"),
-    );
-    assertEquals(
-      (await Array.fromAsync(m9.getHtml(session))).join(""),
-      '<a href="https://example.com/ap/actor/bot" translate="no" ' +
-        'class="h-card u-url mention" target="_blank">@<span>' +
-        "bot@example.com</span></a>",
-    );
-    const tags9 = await Array.fromAsync(m9.getTags(session));
-    assertEquals(tags9.length, 1);
-    assertInstanceOf(tags9[0], Mention);
-    assertEquals(tags9[0].name, "@bot@example.com");
-    assertEquals(tags9[0].href, new URL("https://example.com/ap/actor/bot"));
-    const cache9 = m9.getCachedObjects();
-    assertEquals(cache9.length, 1);
-    assertInstanceOf(cache9[0], Person);
-    assertEquals(cache9[0].id, new URL("https://example.com/ap/actor/bot"));
-  },
-});
-
-Deno.test("hashtag()", async () => {
+test("hashtag()", async () => {
   const session = bot.getSession("https://example.com");
   const t: Text<"inline", void> = hashtag("Fediverse");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     '<a href="https://example.com/tags/fediverse" class="mention hashtag" ' +
       'rel="tag" target="_blank">#<span>Fediverse</span></a>',
   );
   const tags = await Array.fromAsync(t.getTags(session));
-  assertEquals(tags.length, 1);
-  assertInstanceOf(tags[0], Hashtag);
-  assertEquals(tags[0].name, "#fediverse");
-  assertEquals(tags[0].href, new URL("https://example.com/tags/fediverse"));
-  assertEquals(t.getCachedObjects(), []);
+  assert.deepStrictEqual(tags.length, 1);
+  assert.ok(tags[0] instanceof Hashtag);
+  assert.deepStrictEqual(tags[0].name, "#fediverse");
+  assert.deepStrictEqual(
+    tags[0].href,
+    new URL("https://example.com/tags/fediverse"),
+  );
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 });
 
-Deno.test("em()", async () => {
+test("em()", async () => {
   const session = bot.getSession("https://example.com");
   const t: Text<"inline", void> = em("Hello, World");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<em>Hello, World</em>",
   );
-  assertEquals(await Array.fromAsync(t.getTags(session)), []);
-  assertEquals(t.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t.getTags(session)), []);
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 });
 
-Deno.test("strong()", async () => {
+test("strong()", async () => {
   const session = bot.getSession("https://example.com");
   const t: Text<"inline", void> = strong("Hello, World");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<strong>Hello, World</strong>",
   );
-  assertEquals(await Array.fromAsync(t.getTags(session)), []);
-  assertEquals(t.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t.getTags(session)), []);
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 });
 
-Deno.test("link()", async () => {
+test("link()", async () => {
   const session = bot.getSession("https://example.com");
   const t: Text<"inline", void> = link(em("label"), "https://example.com/");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank"><em>label</em></a>',
   );
-  assertEquals(await Array.fromAsync(t.getTags(session)), []);
-  assertEquals(t.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t.getTags(session)), []);
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 
   const t2: Text<"inline", void> = link("label", "https://example.com/");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t2.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank">label</a>',
   );
-  assertEquals(await Array.fromAsync(t2.getTags(session)), []);
-  assertEquals(t2.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t2.getTags(session)), []);
+  assert.deepStrictEqual(t2.getCachedObjects(), []);
 
   const t3: Text<"inline", void> = link("https://example.com/");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t3.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank">https://example.com/</a>',
   );
-  assertEquals(await Array.fromAsync(t3.getTags(session)), []);
-  assertEquals(t3.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t3.getTags(session)), []);
+  assert.deepStrictEqual(t3.getCachedObjects(), []);
 
   const t4: Text<"inline", void> = link(em("label"), "https://example.com/");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t4.getHtml(session))).join(""),
     '<a href="https://example.com/" target="_blank"><em>label</em></a>',
   );
-  assertEquals(await Array.fromAsync(t4.getTags(session)), []);
-  assertEquals(t4.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t4.getTags(session)), []);
+  assert.deepStrictEqual(t4.getCachedObjects(), []);
 });
 
-Deno.test("code()", async () => {
+test("code()", async () => {
   const session = bot.getSession("https://example.com");
   const t: Text<"inline", void> = code("a + b");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<code>a + b</code>",
   );
-  assertEquals(await Array.fromAsync(t.getTags(session)), []);
-  assertEquals(t.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t.getTags(session)), []);
+  assert.deepStrictEqual(t.getCachedObjects(), []);
 });
 
-Deno.test("markdown()", async () => {
+test("markdown()", async () => {
   const session = bot.getSession("https://example.com");
   const md = `Here's a Markdown text.
 
@@ -574,7 +612,7 @@ Deno.test("markdown()", async () => {
 - I can mention @fedify@hollo.social.
 - I can tag #Hashtag.`;
   const t: Text<"block", void> = markdown(md);
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<p>Here's a Markdown text.</p>\n<ul>\n" +
       "<li>I can have a list.</li>\n" +
@@ -588,48 +626,56 @@ Deno.test("markdown()", async () => {
       "</ul>\n",
   );
   const tags = await Array.fromAsync(t.getTags(session));
-  assertEquals(tags.length, 2);
-  assertInstanceOf(tags[0], Mention);
-  assertEquals(tags[0].name, "@fedify@hollo.social");
-  assertEquals(tags[0].href, new URL("https://hollo.social/@fedify"));
-  assertInstanceOf(tags[1], Hashtag);
-  assertEquals(tags[1].name, "#hashtag");
-  assertEquals(tags[1].href, new URL("https://example.com/tags/hashtag"));
+  assert.deepStrictEqual(tags.length, 2);
+  assert.ok(tags[0] instanceof Mention);
+  assert.deepStrictEqual(tags[0].name, "@fedify@hollo.social");
+  assert.deepStrictEqual(tags[0].href, new URL("https://hollo.social/@fedify"));
+  assert.ok(tags[1] instanceof Hashtag);
+  assert.deepStrictEqual(tags[1].name, "#hashtag");
+  assert.deepStrictEqual(
+    tags[1].href,
+    new URL("https://example.com/tags/hashtag"),
+  );
   const cache = t.getCachedObjects();
-  assertEquals(cache.length, 1);
-  assertInstanceOf(cache[0], Person);
-  assertEquals(cache[0].id, new URL("https://hollo.social/@fedify"));
+  assert.deepStrictEqual(cache.length, 1);
+  assert.ok(cache[0] instanceof Person);
+  assert.deepStrictEqual(cache[0].id, new URL("https://hollo.social/@fedify"));
 
   const t2: Text<"block", void> = markdown("@fedify@hollo.social", {
     mentions: false,
   });
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t2.getHtml(session))).join(""),
     "<p>@fedify@hollo.social</p>\n",
   );
-  assertEquals(await Array.fromAsync(t2.getTags(session)), []);
-  assertEquals(t2.getCachedObjects(), []);
+  assert.deepStrictEqual(await Array.fromAsync(t2.getTags(session)), []);
+  assert.deepStrictEqual(t2.getCachedObjects(), []);
 
   const t3: Text<"block", void> = markdown("@bot@example.com");
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t3.getHtml(session))).join(""),
     '<p><a  translate="no" class="h-card u-url mention" target="_blank" href="https://example.com/ap/actor/bot">' +
       '<span class="at">@</span><span class="user">bot</span>' +
       '<span class="at">@</span><span class="domain">example.com</span></a></p>\n',
   );
   const tags3 = await Array.fromAsync(t3.getTags(session));
-  assertEquals(tags3.length, 1);
-  assertInstanceOf(tags3[0], Mention);
-  assertEquals(tags3[0].name, "@bot@example.com");
-  assertEquals(tags3[0].href, new URL("https://example.com/ap/actor/bot"));
+  assert.deepStrictEqual(tags3.length, 1);
+  assert.ok(tags3[0] instanceof Mention);
+  assert.deepStrictEqual(tags3[0].name, "@bot@example.com");
+  assert.deepStrictEqual(
+    tags3[0].href,
+    new URL("https://example.com/ap/actor/bot"),
+  );
   const cache3 = t3.getCachedObjects();
-  assertEquals(cache3.length, 1);
-  assertInstanceOf(cache3[0], Person);
-  assertEquals(cache3[0].id, new URL("https://example.com/ap/actor/bot"));
+  assert.deepStrictEqual(cache3.length, 1);
+  assert.ok(cache3[0] instanceof Person);
+  assert.deepStrictEqual(
+    cache3[0].id,
+    new URL("https://example.com/ap/actor/bot"),
+  );
 });
 
-// Test customEmoji() and CustomEmojiText
-Deno.test("customEmoji(), CustomEmojiText", async (t) => {
+describe("customEmoji(), CustomEmojiText", () => {
   const localBot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -642,26 +688,32 @@ Deno.test("customEmoji(), CustomEmojiText", async (t) => {
   const deferredEmoji = localBot.addCustomEmoji("testEmoji", emojiData);
   const emojiObject = deferredEmoji(session); // Get the Emoji object
 
-  await t.step("customEmoji() function", () => {
+  test("customEmoji() function", () => {
     const emojiText = customEmoji<void>(deferredEmoji);
-    assertInstanceOf(emojiText, CustomEmojiText<void>);
-    assertEquals(emojiText.getEmoji(session), emojiObject);
+    assert.ok(emojiText instanceof CustomEmojiText);
+    assert.deepStrictEqual(
+      (emojiText as CustomEmojiText<void>).getEmoji(session),
+      emojiObject,
+    );
 
     const emojiTextDirect = customEmoji<void>(emojiObject);
-    assertInstanceOf(emojiTextDirect, CustomEmojiText<void>);
-    assertEquals(emojiTextDirect.getEmoji(session), emojiObject);
+    assert.ok(emojiTextDirect instanceof CustomEmojiText);
+    assert.deepStrictEqual(
+      (emojiTextDirect as CustomEmojiText<void>).getEmoji(session),
+      emojiObject,
+    );
   });
 
-  await t.step("CustomEmojiText.getHtml()", async () => {
+  test("CustomEmojiText.getHtml()", async () => {
     const emojiText = new CustomEmojiText(deferredEmoji);
-    assertEquals(
+    assert.deepStrictEqual(
       (await Array.fromAsync(emojiText.getHtml(session))).join(""),
       "\u200b:testEmoji:\u200b", // Zero-width spaces around name
     );
 
     // Test with Emoji object directly
     const emojiTextDirect = new CustomEmojiText<void>(emojiObject);
-    assertEquals(
+    assert.deepStrictEqual(
       (await Array.fromAsync(emojiTextDirect.getHtml(session))).join(""),
       "\u200b:testEmoji:\u200b",
     );
@@ -672,37 +724,37 @@ Deno.test("customEmoji(), CustomEmojiText", async (t) => {
       icon: new Image({ url: new URL("https://example.com/noname.png") }),
     });
     const emojiTextNoName = new CustomEmojiText<void>(emojiNoName);
-    assertEquals(
+    assert.deepStrictEqual(
       (await Array.fromAsync(emojiTextNoName.getHtml(session))).join(""),
       "",
     );
   });
 
-  await t.step("CustomEmojiText.getTags()", async () => {
+  test("CustomEmojiText.getTags()", async () => {
     const emojiText = new CustomEmojiText(deferredEmoji);
     const tags = await Array.fromAsync(emojiText.getTags(session));
-    assertEquals(tags.length, 1);
-    assertInstanceOf(tags[0], Emoji);
-    assertEquals(tags[0].id, emojiObject.id);
-    assertEquals(tags[0].name, emojiObject.name);
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Emoji);
+    assert.deepStrictEqual(tags[0].id, emojiObject.id);
+    assert.deepStrictEqual(tags[0].name, emojiObject.name);
 
     // Test with Emoji object directly
     const emojiTextDirect = new CustomEmojiText<void>(emojiObject);
     const tagsDirect = await Array.fromAsync(emojiTextDirect.getTags(session));
-    assertEquals(tagsDirect.length, 1);
-    assertEquals(tagsDirect[0], emojiObject);
+    assert.deepStrictEqual(tagsDirect.length, 1);
+    assert.deepStrictEqual(tagsDirect[0], emojiObject);
   });
 
-  await t.step("CustomEmojiText.getCachedObjects()", () => {
+  test("CustomEmojiText.getCachedObjects()", () => {
     const emojiText = new CustomEmojiText(deferredEmoji);
-    assertEquals(emojiText.getCachedObjects(), []); // CustomEmojiText doesn't cache objects itself
+    assert.deepStrictEqual(emojiText.getCachedObjects(), []); // CustomEmojiText doesn't cache objects itself
 
     const emojiTextDirect = new CustomEmojiText(emojiObject);
-    assertEquals(emojiTextDirect.getCachedObjects(), []);
+    assert.deepStrictEqual(emojiTextDirect.getCachedObjects(), []);
   });
 });
 
-Deno.test("customEmoji()", async () => {
+test("customEmoji()", async () => {
   const localBot = new BotImpl<void>({
     kv: new MemoryKvStore(),
     username: "bot",
@@ -726,21 +778,21 @@ Deno.test("customEmoji()", async () => {
   }!`;
 
   // Test getHtml()
-  assertEquals(
+  assert.deepStrictEqual(
     (await Array.fromAsync(t.getHtml(session))).join(""),
     "<p>Hello \u200b:emoji1:\u200b world \u200b:emoji2:\u200b!</p>",
   );
 
   // Test getTags()
   const tags = await Array.fromAsync(t.getTags(session));
-  assertEquals(tags.length, 2);
-  assertInstanceOf(tags[0], Emoji);
-  assertEquals(tags[0].id, emojiObject1.id);
-  assertInstanceOf(tags[1], Emoji);
-  assertEquals(tags[1].id, emojiObject2.id);
+  assert.deepStrictEqual(tags.length, 2);
+  assert.ok(tags[0] instanceof Emoji);
+  assert.deepStrictEqual(tags[0].id, emojiObject1.id);
+  assert.ok(tags[1] instanceof Emoji);
+  assert.deepStrictEqual(tags[1].id, emojiObject2.id);
 
   // Test getCachedObjects()
-  assertEquals(t.getCachedObjects(), []); // TemplatedText itself doesn't cache, relies on children
+  assert.deepStrictEqual(t.getCachedObjects(), []); // TemplatedText itself doesn't cache, relies on children
 });
 
 // cSpell: ignore apos

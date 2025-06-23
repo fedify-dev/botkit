@@ -13,10 +13,11 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { assertEquals } from "@std/assert/equals";
+import assert from "node:assert";
+import { test } from "node:test";
 import { renderCustomEmojis } from "./Message.tsx";
 
-Deno.test("renderCustomEmojis()", () => {
+test("renderCustomEmojis()", () => {
   const emojis = {
     ":smile:": "https://example.com/smile.png",
     ":SmIlE:": "https://example.com/smile2.png",
@@ -25,35 +26,35 @@ Deno.test("renderCustomEmojis()", () => {
   };
 
   // Test basic replacement
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("Hello :smile: world!", emojis),
     'Hello <img src="https://example.com/smile.png" alt=":smile:" style="height: 1em"> world!',
   );
 
   // Test multiple emojis
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("Good morning :smile: :laughing:", emojis),
     'Good morning <img src="https://example.com/smile.png" alt=":smile:" style="height: 1em"> <img src="https://example.com/laughing.gif" alt=":laughing:" style="height: 1em">',
   );
 
   // Test emojis adjacent to text
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("Hi:smile:! How are you:laughing:?", emojis),
     'Hi<img src="https://example.com/smile.png" alt=":smile:" style="height: 1em">! How are you<img src="https://example.com/laughing.gif" alt=":laughing:" style="height: 1em">?',
   );
 
   // Test unknown emojis (should not be replaced)
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("This is an :unknown: emoji.", emojis),
     "This is an :unknown: emoji.",
   );
 
   // Test emojis mixed with HTML tags
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("<p>Hello <b>:smile:</b> world!</p>", emojis),
     '<p>Hello <b><img src="https://example.com/smile.png" alt=":smile:" style="height: 1em"></b> world!</p>',
   );
-  assertEquals(
+  assert.equal(
     renderCustomEmojis(
       'Check <a href="#">this :thumbs_up:</a> link.',
       emojis,
@@ -62,34 +63,34 @@ Deno.test("renderCustomEmojis()", () => {
   );
 
   // Test emojis inside HTML attributes (should not be replaced)
-  assertEquals(
+  assert.equal(
     renderCustomEmojis('<img alt=":smile:" src="pic.jpg">', emojis),
     '<img alt=":smile:" src="pic.jpg">',
   );
 
   // Test case sensitivity
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("Case :SmIlE: test", emojis),
     'Case <img src="https://example.com/smile2.png" alt=":SmIlE:" style="height: 1em"> test',
   );
 
   // Test emojis with underscores
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("Great job :thumbs_up:", emojis),
     'Great job <img src="https://example.com/thumb.webp" alt=":thumbs_up:" style="height: 1em">',
   );
 
   // Test empty input
-  assertEquals(renderCustomEmojis("", emojis), "");
+  assert.equal(renderCustomEmojis("", emojis), "");
 
   // Test input with only HTML
-  assertEquals(
+  assert.equal(
     renderCustomEmojis("<p><b>Hi</b></p>", emojis),
     "<p><b>Hi</b></p>",
   );
 
   // Test input with only emojis
-  assertEquals(
+  assert.equal(
     renderCustomEmojis(":smile::laughing:", emojis),
     '<img src="https://example.com/smile.png" alt=":smile:" style="height: 1em"><img src="https://example.com/laughing.gif" alt=":laughing:" style="height: 1em">',
   );

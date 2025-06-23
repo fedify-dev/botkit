@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nodejs.org)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(deno task:*)",
+      "Bash(deno test:*)"
+    ],
+    "deny": []
+  }
+}

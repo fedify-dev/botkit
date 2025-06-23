@@ -40,7 +40,7 @@ import {
 import type { LanguageTag } from "@phensley/language-tag";
 import { decode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
-import { FilterXSS, getDefaultWhiteList } from "xss";
+import xss from "xss";
 import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type {
   AuthorizedMessage,
@@ -582,14 +582,17 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
   }
 }
 
-const allowList = getDefaultWhiteList();
-const htmlXss = new FilterXSS({
+// @ts-ignore: The `xss` module has `getDefaultWhiteList` function.
+const allowList = xss.getDefaultWhiteList();
+// @ts-ignore: The `xss` module has `FilterXSS` class.
+const htmlXss = new xss.FilterXSS({
   allowList: {
     ...allowList,
     a: [...allowList.a ?? [], "class", "translate"],
   },
 });
-export const textXss = new FilterXSS({
+// @ts-ignore: The `xss` module has `FilterXSS` class.
+export const textXss = new xss.FilterXSS({
   allowList: {},
   stripIgnoreTag: true,
 });

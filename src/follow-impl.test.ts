@@ -13,22 +13,18 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import { Person } from "@fedify/fedify";
 import { MemoryKvStore } from "@fedify/fedify/federation";
 import { Accept, Follow, Reject } from "@fedify/fedify/vocab";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
-import { assertFalse } from "@std/assert/false";
-import { assertInstanceOf } from "@std/assert/instance-of";
-import { assertRejects } from "@std/assert/rejects";
+import assert from "node:assert";
+import { test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
 import { FollowRequestImpl } from "./follow-impl.ts";
 import { MemoryRepository } from "./repository.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
 
-Deno.test("new FollowRequestImpl()", () => {
+test("new FollowRequestImpl()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
   const ctx = createMockContext(bot, "https://example.com");
   const session = new SessionImpl(bot, ctx);
@@ -43,14 +39,14 @@ Deno.test("new FollowRequestImpl()", () => {
     object: session.actorId,
   });
   const followRequest = new FollowRequestImpl(session, follow, follower);
-  assertEquals(followRequest.session, session);
-  assertEquals(followRequest.id, follow.id);
-  assertEquals(followRequest.raw, follow);
-  assertEquals(followRequest.follower, follower);
-  assertEquals(followRequest.state, "pending");
+  assert.deepStrictEqual(followRequest.session, session);
+  assert.deepStrictEqual(followRequest.id, follow.id);
+  assert.deepStrictEqual(followRequest.raw, follow);
+  assert.deepStrictEqual(followRequest.follower, follower);
+  assert.deepStrictEqual(followRequest.state, "pending");
 });
 
-Deno.test("FollowRequestImpl.accept()", async () => {
+test("FollowRequestImpl.accept()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -71,35 +67,38 @@ Deno.test("FollowRequestImpl.accept()", async () => {
   });
   const followRequest = new FollowRequestImpl(session, follow, follower);
   await followRequest.accept();
-  assertEquals(followRequest.state, "accepted");
-  assert(
+  assert.deepStrictEqual(followRequest.state, "accepted");
+  assert.ok(
     await repository.hasFollower(new URL("https://example.com/ap/actor/john")),
   );
   const [storedFollower] = await Array.fromAsync(repository.getFollowers());
-  assert(storedFollower != null);
-  assertEquals(storedFollower.id, follower.id);
-  assertEquals(storedFollower.preferredUsername, follower.preferredUsername);
-  assertEquals(ctx.sentActivities.length, 1);
+  assert.ok(storedFollower != null);
+  assert.deepStrictEqual(storedFollower.id, follower.id);
+  assert.deepStrictEqual(
+    storedFollower.preferredUsername,
+    follower.preferredUsername,
+  );
+  assert.deepStrictEqual(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];
-  assertEquals(recipients, [follower]);
-  assertInstanceOf(activity, Accept);
-  assertEquals(activity.actorId, session.actorId);
-  assertEquals(activity.toId, follower.id);
-  assertEquals(activity.objectId, follow.id);
+  assert.deepStrictEqual(recipients, [follower]);
+  assert.ok(activity instanceof Accept);
+  assert.deepStrictEqual(activity.actorId, session.actorId);
+  assert.deepStrictEqual(activity.toId, follower.id);
+  assert.deepStrictEqual(activity.objectId, follow.id);
 
-  assertRejects(
+  assert.rejects(
     () => followRequest.accept(),
     TypeError,
     "The follow request is not pending.",
   );
-  assertRejects(
+  assert.rejects(
     () => followRequest.reject(),
     TypeError,
     "The follow request is not pending.",
   );
 });
 
-Deno.test("FollowRequestImpl.reject()", async () => {
+test("FollowRequestImpl.reject()", async () => {
   const repository = new MemoryRepository();
   const bot = new BotImpl<void>({
     kv: new MemoryKvStore(),
@@ -120,24 +119,25 @@ Deno.test("FollowRequestImpl.reject()", async () => {
   });
   const followRequest = new FollowRequestImpl(session, follow, follower);
   await followRequest.reject();
-  assertEquals(followRequest.state, "rejected");
-  assertFalse(
+  assert.deepStrictEqual(followRequest.state, "rejected");
+  assert.deepStrictEqual(
     await repository.hasFollower(new URL("https://example.com/ap/actor/john")),
+    false,
   );
-  assertEquals(ctx.sentActivities.length, 1);
+  assert.deepStrictEqual(ctx.sentActivities.length, 1);
   const { recipients, activity } = ctx.sentActivities[0];
-  assertEquals(recipients, [follower]);
-  assertInstanceOf(activity, Reject);
-  assertEquals(activity.actorId, session.actorId);
-  assertEquals(activity.toId, follower.id);
-  assertEquals(activity.objectId, follow.id);
+  assert.deepStrictEqual(recipients, [follower]);
+  assert.ok(activity instanceof Reject);
+  assert.deepStrictEqual(activity.actorId, session.actorId);
+  assert.deepStrictEqual(activity.toId, follower.id);
+  assert.deepStrictEqual(activity.objectId, follow.id);
 
-  assertRejects(
+  assert.rejects(
     () => followRequest.accept(),
     TypeError,
     "The follow request is not pending.",
   );
-  assertRejects(
+  assert.rejects(
     () => followRequest.reject(),
     TypeError,
     "The follow request is not pending.",

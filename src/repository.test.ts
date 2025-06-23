@@ -13,7 +13,6 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import { MemoryKvStore } from "@fedify/fedify/federation";
 import { importJwk } from "@fedify/fedify/sig";
 import {
@@ -23,9 +22,8 @@ import {
   Person,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify/vocab";
-import { assert } from "@std/assert/assert";
-import { assertEquals } from "@std/assert/equals";
-import { assertFalse } from "@std/assert/false";
+import assert from "node:assert";
+import { describe, test } from "node:test";
 import {
   KvRepository,
   MemoryCachedRepository,
@@ -108,34 +106,34 @@ const keyPairs: CryptoKeyPair[] = [
 for (const name in factories) {
   const factory = factories[name];
 
-  Deno.test(name, async (t) => {
+  describe(name, () => {
     const repo = factory();
 
-    await t.step("key pairs", async () => {
-      assertEquals(await repo.getKeyPairs(), undefined);
+    test("key pairs", async () => {
+      assert.deepStrictEqual(await repo.getKeyPairs(), undefined);
       await repo.setKeyPairs(keyPairs);
-      assertEquals(await repo.getKeyPairs(), keyPairs);
+      assert.deepStrictEqual(await repo.getKeyPairs(), keyPairs);
     });
 
-    await t.step("messages", async () => {
-      assertEquals(await repo.countMessages(), 0);
-      assertEquals(
+    test("messages", async () => {
+      assert.deepStrictEqual(await repo.countMessages(), 0);
+      assert.deepStrictEqual(
         await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"),
         undefined,
       );
-      assertEquals(await Array.fromAsync(repo.getMessages()), []);
+      assert.deepStrictEqual(await Array.fromAsync(repo.getMessages()), []);
 
       const messageA = new Create({
         id: new URL(
@@ -236,25 +234,25 @@ for (const name in factories) {
       });
 
       await repo.addMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0", messageA);
-      assertEquals(await repo.countMessages(), 1);
-      assertEquals(
+      assert.deepStrictEqual(await repo.countMessages(), 1);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages())).map((m) => m.toJsonLd()),
         ),
@@ -262,32 +260,32 @@ for (const name in factories) {
       );
 
       await repo.addMessage("0194244f-d800-7873-8993-ef71ccd47306", messageB);
-      assertEquals(await repo.countMessages(), 2);
-      assertEquals(
+      assert.deepStrictEqual(await repo.countMessages(), 2);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"))
           ?.toJsonLd(),
         await messageB.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages())).map((m) => m.toJsonLd()),
         ),
         [await messageB.toJsonLd(), await messageA.toJsonLd()],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages({ order: "oldest" }))).map((
             m,
@@ -297,27 +295,27 @@ for (const name in factories) {
       );
 
       await repo.addMessage("01942976-3400-7f34-872e-2cbf0f9eeac4", messageC);
-      assertEquals(await repo.countMessages(), 3);
-      assertEquals(
+      assert.deepStrictEqual(await repo.countMessages(), 3);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"))
           ?.toJsonLd(),
         await messageB.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages({ order: "newest" }))).map((
             m,
@@ -329,7 +327,7 @@ for (const name in factories) {
           await messageA.toJsonLd(),
         ],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages({ order: "oldest" }))).map((
             m,
@@ -343,28 +341,28 @@ for (const name in factories) {
       );
 
       await repo.addMessage("01942e9c-9000-7480-a553-7a6ce737ce14", messageD);
-      assertEquals(await repo.countMessages(), 4);
-      assertEquals(
+      assert.deepStrictEqual(await repo.countMessages(), 4);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"))
           ?.toJsonLd(),
         await messageB.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"))
           ?.toJsonLd(),
         await messageD.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages())).map((
             m,
@@ -377,7 +375,7 @@ for (const name in factories) {
           await messageA.toJsonLd(),
         ],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(
             repo.getMessages({
@@ -392,7 +390,7 @@ for (const name in factories) {
           await messageC.toJsonLd(),
         ],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(
             repo.getMessages({
@@ -406,7 +404,7 @@ for (const name in factories) {
           await messageB.toJsonLd(),
         ],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(
             repo.getMessages({
@@ -424,28 +422,31 @@ for (const name in factories) {
       const removed = await repo.removeMessage(
         "0194244f-d800-7873-8993-ef71ccd47306",
       );
-      assertEquals(await removed?.toJsonLd(), await messageB.toJsonLd());
-      assertEquals(await repo.countMessages(), 3);
-      assertEquals(
+      assert.deepStrictEqual(
+        await removed?.toJsonLd(),
+        await messageB.toJsonLd(),
+      );
+      assert.deepStrictEqual(await repo.countMessages(), 3);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"))
           ?.toJsonLd(),
         await messageD.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages({ order: "newest" }))).map((
             m,
@@ -457,7 +458,7 @@ for (const name in factories) {
           await messageA.toJsonLd(),
         ],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getMessages({ order: "oldest" }))).map((
             m,
@@ -478,22 +479,22 @@ for (const name in factories) {
             updated: messageC2.updated,
           }),
       );
-      assertEquals(await repo.countMessages(), 3);
-      assertEquals(
+      assert.deepStrictEqual(await repo.countMessages(), 3);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC2.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"))
           ?.toJsonLd(),
         await messageD.toJsonLd(),
@@ -507,24 +508,24 @@ for (const name in factories) {
           return message;
         },
       );
-      assertFalse(updated);
-      assertFalse(updaterCalled);
-      assertEquals(await repo.countMessages(), 3);
-      assertEquals(
+      assert.deepStrictEqual(updated, false);
+      assert.deepStrictEqual(updaterCalled, false);
+      assert.deepStrictEqual(await repo.countMessages(), 3);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC2.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"))
           ?.toJsonLd(),
         await messageD.toJsonLd(),
@@ -534,30 +535,30 @@ for (const name in factories) {
         "01942e9c-9000-7480-a553-7a6ce737ce14",
         (_) => undefined,
       );
-      assertFalse(updated2);
-      assertEquals(await repo.countMessages(), 3);
-      assertEquals(
+      assert.deepStrictEqual(updated2, false);
+      assert.deepStrictEqual(await repo.countMessages(), 3);
+      assert.deepStrictEqual(
         await (await repo.getMessage("01941f29-7c00-7fe8-ab0a-7b593990a3c0"))
           ?.toJsonLd(),
         await messageA.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getMessage("0194244f-d800-7873-8993-ef71ccd47306"),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942976-3400-7f34-872e-2cbf0f9eeac4"))
           ?.toJsonLd(),
         await messageC2.toJsonLd(),
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getMessage("01942e9c-9000-7480-a553-7a6ce737ce14"))
           ?.toJsonLd(),
         await messageD.toJsonLd(),
       );
     });
 
-    await t.step("followers", async () => {
+    test("followers", async () => {
       const followerA = new Person({
         id: new URL("https://example.com/ap/actor/john"),
         preferredUsername: "john",
@@ -573,16 +574,16 @@ for (const name in factories) {
         "https://example.com/ap/follow/8b76286d-5eef-4f02-8a16-080ff2b0e2ca",
       );
 
-      assertEquals(await repo.countFollowers(), 0);
-      assertFalse(await repo.hasFollower(followerA.id!));
-      assertFalse(await repo.hasFollower(followerB.id!));
-      assertEquals(await Array.fromAsync(repo.getFollowers()), []);
+      assert.deepStrictEqual(await repo.countFollowers(), 0);
+      assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
+      assert.deepStrictEqual(await repo.hasFollower(followerB.id!), false);
+      assert.deepStrictEqual(await Array.fromAsync(repo.getFollowers()), []);
 
       await repo.addFollower(followFromA, followerA);
-      assertEquals(await repo.countFollowers(), 1);
-      assert(await repo.hasFollower(followerA.id!));
-      assertFalse(await repo.hasFollower(followerB.id!));
-      assertEquals(
+      assert.deepStrictEqual(await repo.countFollowers(), 1);
+      assert.ok(await repo.hasFollower(followerA.id!));
+      assert.deepStrictEqual(await repo.hasFollower(followerB.id!), false);
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getFollowers())).map((f) => f.toJsonLd()),
         ),
@@ -590,16 +591,16 @@ for (const name in factories) {
       );
 
       await repo.addFollower(followFromB, followerB);
-      assertEquals(await repo.countFollowers(), 2);
-      assert(await repo.hasFollower(followerA.id!));
-      assert(await repo.hasFollower(followerB.id!));
-      assertEquals(
+      assert.deepStrictEqual(await repo.countFollowers(), 2);
+      assert.ok(await repo.hasFollower(followerA.id!));
+      assert.ok(await repo.hasFollower(followerB.id!));
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getFollowers())).map((f) => f.toJsonLd()),
         ),
         [await followerA.toJsonLd(), await followerB.toJsonLd()],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getFollowers({ offset: 1 }))).map((f) =>
             f.toJsonLd()
@@ -607,7 +608,7 @@ for (const name in factories) {
         ),
         [await followerB.toJsonLd()],
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await Promise.all(
           (await Array.fromAsync(repo.getFollowers({ limit: 1 }))).map((f) =>
             f.toJsonLd()
@@ -616,30 +617,30 @@ for (const name in factories) {
         [await followerA.toJsonLd()],
       );
 
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.removeFollower(followFromA, followerB.id!),
         undefined,
       );
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.removeFollower(followFromB, followerA.id!),
         undefined,
       );
-      assertEquals(await repo.countFollowers(), 2);
-      assert(await repo.hasFollower(followerA.id!));
-      assert(await repo.hasFollower(followerB.id!));
+      assert.deepStrictEqual(await repo.countFollowers(), 2);
+      assert.ok(await repo.hasFollower(followerA.id!));
+      assert.ok(await repo.hasFollower(followerB.id!));
 
       await repo.removeFollower(followFromA, followerA.id!);
-      assertEquals(await repo.countFollowers(), 1);
-      assertFalse(await repo.hasFollower(followerA.id!));
-      assert(await repo.hasFollower(followerB.id!));
+      assert.deepStrictEqual(await repo.countFollowers(), 1);
+      assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
+      assert.ok(await repo.hasFollower(followerB.id!));
 
       await repo.removeFollower(followFromB, followerB.id!);
-      assertEquals(await repo.countFollowers(), 0);
-      assertFalse(await repo.hasFollower(followerA.id!));
-      assertFalse(await repo.hasFollower(followerB.id!));
+      assert.deepStrictEqual(await repo.countFollowers(), 0);
+      assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
+      assert.deepStrictEqual(await repo.hasFollower(followerB.id!), false);
     });
 
-    await t.step("sent follows", async () => {
+    test("sent follows", async () => {
       const follow = new Follow({
         id: new URL(
           "https://example.com/ap/follow/03a395a2-353a-4894-afdb-2cab31a7b004",
@@ -648,26 +649,26 @@ for (const name in factories) {
         object: new URL("https://example.com/ap/actor/john"),
       });
 
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getSentFollow("03a395a2-353a-4894-afdb-2cab31a7b004"),
         undefined,
       );
 
       await repo.addSentFollow("03a395a2-353a-4894-afdb-2cab31a7b004", follow);
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getSentFollow("03a395a2-353a-4894-afdb-2cab31a7b004"))
           ?.toJsonLd(),
         await follow.toJsonLd(),
       );
 
       await repo.removeSentFollow("03a395a2-353a-4894-afdb-2cab31a7b004");
-      assertEquals(
+      assert.deepStrictEqual(
         await repo.getSentFollow("03a395a2-353a-4894-afdb-2cab31a7b004"),
         undefined,
       );
     });
 
-    await t.step("followees", async () => {
+    test("followees", async () => {
       const followeeId = new URL("https://example.com/ap/actor/john");
       const follow = new Follow({
         id: new URL(
@@ -677,16 +678,16 @@ for (const name in factories) {
         object: followeeId,
       });
 
-      assertEquals(await repo.getFollowee(followeeId), undefined);
+      assert.deepStrictEqual(await repo.getFollowee(followeeId), undefined);
 
       await repo.addFollowee(followeeId, follow);
-      assertEquals(
+      assert.deepStrictEqual(
         await (await repo.getFollowee(followeeId))?.toJsonLd(),
         await follow.toJsonLd(),
       );
 
       await repo.removeFollowee(followeeId);
-      assertEquals(await repo.getFollowee(followeeId), undefined);
+      assert.deepStrictEqual(await repo.getFollowee(followeeId), undefined);
     });
   });
 }
