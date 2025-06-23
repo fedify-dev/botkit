@@ -25,10 +25,10 @@
     "@logtape/logtape": "jsr:@logtape/logtape@^1.0.0",
     "@phensley/language-tag": "npm:@phensley/language-tag@^1.12.2",
     "@std/assert": "jsr:@std/assert@^1.0.12",
-    "@std/media-types": "jsr:@std/media-types@^1.1.0",
     "hono": "jsr:@hono/hono@^4.8.2",
     "html-entities": "npm:html-entities@^2.6.0",
     "markdown-it": "npm:markdown-it@^14.1.0",
+    "mime-db": "npm:mime-db@^1.54.0",
     "uuid": "npm:uuid@^11.1.0",
     "xss": "npm:xss@^1.0.15"
   },

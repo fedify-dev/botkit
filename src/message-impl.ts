@@ -38,7 +38,6 @@ import {
   Update,
 } from "@fedify/fedify/vocab";
 import type { LanguageTag } from "@phensley/language-tag";
-import { parseMediaType } from "@std/media-types/parse-media-type";
 import { decode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import { FilterXSS, getDefaultWhiteList } from "xss";
@@ -653,19 +652,8 @@ export async function createMessage<T extends MessageClass, TContextData>(
       mentionedActorIds.add(tag.href.href);
     } else if (tag instanceof Hashtag) {
       hashtags.push(tag);
-    } else if (tag instanceof Link) {
-      // FIXME: eliminate this duplication
-      const mediaType = tag.mediaType == null
-        ? null
-        : parseMediaType(tag.mediaType);
-      if (
-        tag.rel === "https://misskey-hub.net/ns#_misskey_quote" ||
-        mediaType?.[0] === "application/activity+json" ||
-        mediaType?.[0] === "application/ld+json" &&
-          mediaType[1]?.profile === "https://www.w3.org/ns/activitystreams"
-      ) {
-        quoteLinks.push(tag);
-      }
+    } else if (tag instanceof Link && isQuoteLink(tag)) {
+      quoteLinks.push(tag);
     }
   }
   const attachments: Document[] = [];
@@ -772,4 +760,22 @@ export function getMessageVisibility(
           recipients.size
     ? "direct"
     : "unknown";
+}
+
+export function isQuoteLink(tag: Link): boolean {
+  if (tag.rel === "https://misskey-hub.net/ns#_misskey_quote") return true;
+  else if (tag.mediaType == null) return false;
+  // FIXME: Properly parse the media type
+  const parsed = tag.mediaType.split(";");
+  const type = parsed[0].trim();
+  if (type === "application/activity+json") return true;
+  const params: Record<string, string> = {};
+  for (let i = 1; i < parsed.length; i++) {
+    const param = parsed[i].trim().split("=");
+    if (param.length === 2) {
+      params[param[0]] = param[1].replace(/"/g, "");
+    }
+  }
+  return type === "application/ld+json" &&
+    params.profile === "https://www.w3.org/ns/activitystreams";
 }

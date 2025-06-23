@@ -55,8 +55,7 @@ import {
 } from "@fedify/fedify/vocab";
 import { getXForwardedRequest } from "@hongminhee/x-forwarded-fetch";
 import { getLogger } from "@logtape/logtape";
-import { extension } from "@std/media-types/extension";
-import { parseMediaType } from "@std/media-types/parse-media-type";
+import mimeDb from "mime-db";
 import metadata from "../deno.json" with { type: "json" };
 import type { Bot, CreateBotOptions, PagesOptions } from "./bot.ts";
 import {
@@ -85,6 +84,7 @@ import {
   createMessage,
   getMessageVisibility,
   isMessageObject,
+  isQuoteLink,
   messageClasses,
 } from "./message-impl.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
@@ -681,19 +681,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     let quoteUrl: URL | null = null;
     // FIXME: eliminate this duplication
     for await (const tag of object.getTags(ctx)) {
-      if (tag instanceof Link) {
-        const mediaType = tag.mediaType == null
-          ? null
-          : parseMediaType(tag.mediaType);
-        if (
-          tag.rel === "https://misskey-hub.net/ns#_misskey_quote" ||
-          mediaType?.[0] === "application/activity+json" ||
-          mediaType?.[0] === "application/ld+json" &&
-            mediaType[1]?.profile === "https://www.w3.org/ns/activitystreams"
-        ) {
-          quoteUrl = tag.href;
-          break;
-        }
+      if (tag instanceof Link && isQuoteLink(tag)) {
+        quoteUrl = tag.href;
+        break;
       }
     }
     if (quoteUrl == null) quoteUrl = object.quoteUrl;
@@ -998,9 +988,13 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     if ("url" in data) {
       url = new URL(data.url);
     } else {
-      const ext = extension(data.type);
+      const t = mimeDb[data.type];
       url = new URL(
-        `/emojis/${name}${ext == null ? "" : `.${ext}`}`,
+        `/emojis/${name}${
+          t == null || t.extensions == null || t.extensions.length < 1
+            ? ""
+            : `.${t.extensions[0]}`
+        }`,
         ctx.origin,
       );
     }
