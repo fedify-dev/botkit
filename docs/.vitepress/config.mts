@@ -85,6 +85,11 @@ export default defineConfig({
         ariaLabel: "JSR",
       },
       {
+        icon: "npm",
+        link: "https://www.npmjs.com/package/@fedify/botkit",
+        ariaLabel: "npm",
+      },
+      {
         icon: "discord",
         link: "https://discord.gg/bhtwpzURwd",
         ariaLabel: "Discord",

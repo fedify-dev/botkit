@@ -320,7 +320,14 @@ Running the bot
 
 After you have instantiated a `Bot` object, you need to connect it to
 the HTTP server to run it.  The `Bot` object comply with the [`fetch()`] API,
-so you can use it as a request handler for the [`deno serve`] command.
+so you can use it as a request handler for the [`deno serve`] command on Deno
+or [srvx] on Node.js.
+
+[`fetch()`]: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+[`deno serve`]: https://docs.deno.com/runtime/reference/cli/serve/
+[srvx]: https://srvx.h3.dev/
+
+### Deno
 
 For example, if you have a `Bot` object named `bot`, and `export` it as
 a default export:
@@ -356,8 +363,53 @@ And your bot will be available at <http://localhost:8000/>.
 > deno serve -A --port=3000 ./bot.ts
 > ~~~~
 
-[`fetch()`]: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-[`deno serve`]: https://docs.deno.com/runtime/reference/cli/serve/
+### Node.js
+
+In Node.js, you should use the [srvx] package to run the bot.  First, you need
+to install the *srvx* package:
+
+::: code-group
+
+~~~~ bash [npm]
+npm add srvx
+~~~~
+
+~~~~ bash [pnpm]
+pnpm add srvx
+~~~~
+
+~~~~ bash [Yarn]
+yarn add srvx
+~~~~
+
+:::
+
+Then, import [`serve()`] function from `srvx` module:
+
+~~~~ typescript [bot.ts]
+import { serve } from "srvx";
+~~~~
+
+Finally, you can run the bot using the [`serve()`] function at the end of
+the *bot.ts* file:
+
+~~~~ typescript [bot.ts]
+const server = serve({
+  ...bot,
+  port: 8000,
+});
+await server.ready();
+console.log(`Bot is running at ${server.url}`);
+~~~~
+
+Then, you can run the bot using the following command:
+
+~~~~ bash
+node --experimental-transform-types ./bot.ts
+~~~~
+
+The above command will start the bot and it will be available at
+<http://localhost:8000/>:
 
 ### Exposing the bot to the public internet
 
@@ -384,16 +436,22 @@ const bot = createBot<void>({
   // Omitted other options for brevity
   behindProxy: BEHIND_PROXY,
 });
-
-export default bot;
 ~~~~
 
 Then, you can use the following command to run the bot with the `BEHIND_PROXY`
 environment variable set to `true`:
 
-~~~~ bash
+::: code-group
+
+~~~~ bash [Deno]
 BEHIND_PROXY=true deno serve -A --port 8000 ./bot.ts
 ~~~~
+
+~~~~ bash [Node.js]
+node --experimental-transform-types ./bot.ts
+~~~~
+
+:::
 
 Then, you can use the tunneling service to expose your bot to the public
 internet, for example, with [`fedify tunnel`]:[^1]

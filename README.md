@@ -4,14 +4,10 @@
 ==================
 
 [![JSR][JSR badge]][JSR]
+[![npm][npm badge]][npm]
 [![GitHub Actions][GitHub Actions badge]][GitHub Actions]
 [![Codecov][Codecov badge]][Codecov]
 [![Fediverse][Fediverse badge]][Fediverse]
-
-> [!NOTE]
-> BotKit is still in early development.  The API may change in the future.
-> Although it currently supports only Deno, it will support Node.js and Bun
-> later.
 
 [BotKit] is a framework for creating [ActivityPub] bots.  It is powered by
 [Fedify], a lower-level library for creating ActivityPub server applications.
@@ -63,6 +59,8 @@ For more information, see the [BotKit docs][BotKit].
 [BotKit]: https://botkit.fedify.dev/
 [JSR]: https://jsr.io/@fedify/botkit
 [JSR badge]: https://jsr.io/badges/@fedify/botkit
+[npm]: https://www.npmjs.com/package/@fedify/botkit
+[npm badge]: https://img.shields.io/npm/v/@fedify/botkit?logo=npm
 [GitHub Actions]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml
 [GitHub Actions badge]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml/badge.svg
 [Codecov]: https://codecov.io/gh/fedify-dev/botkit

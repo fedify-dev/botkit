@@ -6,48 +6,19 @@ description: >-
 Getting started
 ===============
 
-Installing Deno
----------------
-
-> [!NOTE]
-> BotKit currently supports only [Deno].  Once BotKit is more stable, we will
-> support [Node.js] and [Bun].
-
-BotKit is a TypeScript framework written in Deno.  To install BotKit, you need
-to have Deno 2 or higher installed on your machine.  There are [multiple ways to
-install Deno][1], but the easiest way is to use the following command:
-
-::: code-group
-
-~~~~ bash [Linux]
-curl -fsSL https://deno.land/install.sh | sh
-~~~~
-
-~~~~ zsh [macOS]
-curl -fsSL https://deno.land/install.sh | sh
-~~~~
-
-~~~~ powershell [Windows]
-irm https://deno.land/install.ps1 | iex
-~~~~
-
-:::
-
-[Deno]: https://deno.com/
-[Node.js]: https://nodejs.org/
-[Bun]: https://bun.sh/
-[1]: https://docs.deno.com/runtime/getting_started/installation/
-
 
 Installing BotKit
 -----------------
 
-Once you have Deno installed, you need to create a new project for your bot and
-install BotKit as a dependency:
+BotKit is available for both Node.js and Deno.  You can install BotKit
+depending on your environment.
+
+### Deno
+
+You need to create a new project for your bot and install BotKit as
+a dependency:
 
 ~~~~ bash
-mkdir my-bot/
-cd my-bot/
 deno add jsr:@fedify/botkit
 ~~~~
 
@@ -57,13 +28,33 @@ to turn it on in your *deno.json* settings:
 ~~~~ json [deno.json] {5}
 {
   "imports": {
-    "@fedify/botkit": "jsr:@fedify/botkit@0.2.0"
+    "@fedify/botkit": "jsr:@fedify/botkit@0.3.0"
   },
   "unstable": ["temporal"]
 }
 ~~~~
 
 [Temporal]: https://tc39.es/proposal-temporal/docs/
+
+### Node.js
+
+You can install BotKit from npm:
+
+::: code-group
+
+~~~~ bash [npm]
+npm add @fedify/botkit
+~~~~
+
+~~~~ bash [pnpm]
+pnpm add @fedify/botkit
+~~~~
+
+~~~~ bash [Yarn]
+yarn add @fedify/botkit
+~~~~
+
+:::
 
 
 Creating a bot
@@ -148,9 +139,14 @@ bot.onFollow = async (session, follower) => {
 Running the bot
 ---------------
 
-To run the bot, you need to first connect the bot to the HTTP server.  We will
-utilize [`deno serve`] command.  In order to connect the bot to Deno's HTTP
-server, you need to `export` the `bot` instance as a default export in
+To run the bot, you need to first connect the bot to the HTTP server.  There
+are different ways to run the bot depending on the environment you are
+using.  Here, we will show you how to run the bot in Deno and Node.js.
+
+### Deno
+
+We will utilize [`deno serve`] command.  In order to connect the bot to Deno's
+HTTP server, you need to `export` the `bot` instance as a default export in
 the *bot.ts* file:
 
 ~~~~ typescript [bot.ts]
@@ -172,6 +168,61 @@ deno serve: Listening on http://0.0.0.0:8000/
 And your bot will be available at <http://localhost:8000/>.
 
 [`deno serve`]: https://docs.deno.com/runtime/reference/cli/serve/
+
+### Node.js
+
+In Node.js, we will use the [srvx] package to run the bot.  First, you need to
+install the *srvx* package:
+
+::: code-group
+
+~~~~ bash [npm]
+npm add srvx
+~~~~
+
+~~~~ bash [pnpm]
+pnpm add srvx
+~~~~
+
+~~~~ bash [Yarn]
+yarn add srvx
+~~~~
+
+:::
+
+Then, import [`serve()`] function from `srvx` module:
+
+~~~~ typescript [bot.ts]
+import { serve } from "srvx";
+~~~~
+
+Finally, you can run the bot using the [`serve()`] function at the end of
+the *bot.ts* file:
+
+~~~~ typescript [bot.ts]
+const server = serve({
+  ...bot,
+  port: 8000,
+});
+await server.ready();
+console.log(`Bot is running at ${server.url}`);
+~~~~
+
+Then, you can run the bot using the following command:
+
+~~~~ bash
+node --experimental-transform-types ./bot.ts
+~~~~
+
+The above command will start the bot and it will be available at
+<http://localhost:8000/>:
+
+~~~~
+Bot is running at http://localhost:8000/
+~~~~
+
+[srvx]: https://srvx.h3.dev/
+[`serve()`]: https://srvx.h3.dev/guide/server
 
 
 Exposing the bot to the public internet

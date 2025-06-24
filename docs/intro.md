@@ -119,11 +119,7 @@ BotKit currently supports deployment through:
 
  -  [Deno Deploy] for serverless hosting
  -  Docker containers on platforms like Fly.io and Railway
- -  Self-hosted Deno runtime on your own server
-
-> [!NOTE]
-> While Node.js and Bun support are planned for future releases,
-> the current version requires Deno.
+ -  Self-hosted Node.js or Deno runtime on your own server
 
 [Deno Deploy]: https://deno.com/deploy
 
