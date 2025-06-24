@@ -86,6 +86,14 @@
       "import": "./dist/reaction.js",
       "require": "./dist/reaction.cjs"
     },
+    "./repository": {
+      "types": {
+        "import": "./dist/repository.d.ts",
+        "require": "./dist/repository.d.cts"
+      },
+      "import": "./dist/repository.js",
+      "require": "./dist/repository.cjs"
+    },
     "./session": {
       "types": {
         "import": "./dist/session.d.ts",
@@ -112,7 +120,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@fedify/fedify": "^1.6.1",
+    "@fedify/fedify": "catalog:",
     "@fedify/markdown-it-hashtag": "^0.3.0",
     "@fedify/markdown-it-mention": "^0.3.0",
     "@js-temporal/polyfill": "^0.5.1",

@@ -29,11 +29,13 @@ export { Announce, Create } from "@fedify/fedify/vocab";
 
 /**
  * A UUID (universally unique identifier).
+ * @since 0.3.0
  */
 export type Uuid = ReturnType<typeof crypto.randomUUID>;
 
 /**
  * A repository for storing bot data.
+ * @since 0.3.0
  */
 export interface Repository {
   /**
@@ -192,6 +194,7 @@ export interface Repository {
 
 /**
  * Options for getting messages from the repository.
+ * @since 0.3.0
  */
 export interface RepositoryGetMessagesOptions {
   /**
@@ -221,6 +224,7 @@ export interface RepositoryGetMessagesOptions {
 
 /**
  * Options for getting followers from the repository.
+ * @since 0.3.0
  */
 export interface RepositoryGetFollowersOptions {
   /**
@@ -237,6 +241,7 @@ export interface RepositoryGetFollowersOptions {
 
 /**
  * The prefixes for key-value store keys used by the bot.
+ * @since 0.3.0
  */
 export interface KvStoreRepositoryPrefixes {
   /**
@@ -787,6 +792,7 @@ export class MemoryRepository implements Repository {
  * Note: List operations like `getMessages` and `getFollowers`, and count
  * operations like `countMessages` and `countFollowers` are not cached and
  * always delegate to the underlying repository.
+ * @since 0.3.0
  */
 export class MemoryCachedRepository implements Repository {
   private underlying: Repository;

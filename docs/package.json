@@ -1,15 +1,26 @@
 {
-  "dependencies": {
+  "devDependencies": {
+    "@fedify/botkit": "workspace:",
+    "@fedify/fedify": "catalog:",
+    "@fedify/postgres": "^0.3.0",
+    "@fedify/redis": "^0.4.0",
+    "@shikijs/vitepress-twoslash": "^3.7.0",
+    "@types/deno": "^2.3.0",
+    "@types/node": "^24.0.3",
+    "ioredis": "^5.6.1",
     "markdown-it-deflist": "^3.0.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-jsr-ref": "^0.4.1",
+    "postgres": "^3.4.7",
+    "srvx": "^0.8.0",
+    "typescript": "^5.8.3",
     "vitepress": "^1.5.0",
     "vitepress-plugin-group-icons": "^1.3.3",
     "vitepress-plugin-llms": "^1.1.0"
   },
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview"
+    "dev": "cd ../ && pnpm build && cd docs/ && vitepress dev",
+    "build": "cd ../ && pnpm build && cd docs/ && vitepress build",
+    "preview": "cd ../ && pnpm build && cd docs/ && vitepress preview"
   }
 }

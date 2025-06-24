@@ -13,7 +13,10 @@ handlers are properties of the `Bot` instance with the `on` prefix followed by
 the event name.  For example, to handle a mention event, you can set the
 `~Bot.onMention` property of the bot instance:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await message.reply(text`Hi, ${message.actor}!`);
 };
@@ -36,7 +39,10 @@ as the second argument.
 The following is an example of a follow event handler that accepts all follow
 requests and sends a direct message to new followers:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onFollow = async (session, followRequest) => {
   await followRequest.accept();
   await session.publish(
@@ -61,7 +67,10 @@ bot.onFollow = async (session, followRequest) => {
 > option to `"manual"`.  The following example shows how to accept a follow
 > request after an hour:
 >
-> ~~~~ typescript {2-4}
+> ~~~~ typescript {2-4} twoslash
+> import { type Bot, text } from "@fedify/botkit";
+> const bot = {} as unknown as Bot<void>;
+> // ---cut-before---
 > bot.onFollow = async (session, followRequest) => {
 >   setTimeout(async () => {
 >     await followRequest.accept();
@@ -80,7 +89,10 @@ as the second argument.
 The following is an example of an unfollow event handler that sends a direct
 message when someone unfollows your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onUnfollow = async (session, follower) => {
   await session.publish(text`Goodbye, ${follower}!`, {
     visibility: "direct",
@@ -99,7 +111,10 @@ bot's follow request, as the second argument.
 The following is an example of an accept event handler that sends a direct
 message when someone accepts your bot's follow request:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onAcceptFollow = async (session, accepter) => {
   await session.publish(
     text`Thanks for accepting my follow request, ${accepter}!`,
@@ -119,7 +134,10 @@ bot's follow request, as the second argument.
 The following is an example of a reject event handler that sends a direct
 message when someone rejects your bot's follow request:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onRejectFollow = async (session, rejecter) => {
   await session.publish(
     text`I'm sorry to hear that you rejected my follow request, ${rejecter}.`,
@@ -139,7 +157,10 @@ your bot, as the second argument.
 The following is an example of a mention event handler that replies to
 a message that mentions your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await message.reply(text`You called me, ${message.actor}?`);
 };
@@ -156,7 +177,10 @@ as the second argument.
 The following is an example of a reply event handler that sends a second reply
 message when someone replies to your bot's message:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onReply = async (session, reply) => {
   await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 };
@@ -176,7 +200,10 @@ document.
 > The below example shows how to avoid the `~Bot.onMention` event handler from
 > being called when a reply message is received:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { type Bot, text } from "@fedify/botkit";
+> const bot = {} as unknown as Bot<void>;
+> // ---cut-before---
 > bot.onReply = async (session, reply) => {
 >   await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 > };
@@ -191,13 +218,16 @@ document.
 > Or the other way around, you can avoid the `~Bot.onReply` event handler from
 > being called when a reply message mentioning the bot is received:
 >
-> ~~~~ typescript {6}
+> ~~~~ typescript {6} twoslash
+> import { type Bot, text } from "@fedify/botkit";
+> const bot = {} as unknown as Bot<void>;
+> // ---cut-before---
 > bot.onMention = async (session, message) => {
 >   await message.reply(text`You called me, ${message.actor}?`);
 > };
 >
 > bot.onReply = async (session, reply) => {
->   if (!reply.mentions.some(m => m.href.href === session.actorId.href)) {
+>   if (!reply.mentions.some(m => m.id?.href === session.actorId.href)) {
 >     await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 >   }
 > };
@@ -215,7 +245,10 @@ quotes your bot's message, as the second argument.
 The following is an example of a quote event handler that responds to a message
 that quotes one of your bot's posts:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onQuote = async (session, quote) => {
   await quote.reply(text`I see you quoted my post, ${quote.actor}!`);
 };
@@ -237,7 +270,10 @@ represents the received message, as the second argument.
 The following is an example of a message event handler that replies to a
 message that contains the word *BotKit*:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, em, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMessage = async (session, message) => {
   if (message.text.match(/\bbotkit\b/i)) {
     await message.reply(text`You mentioned ${em("BotKit")}!`);
@@ -263,13 +299,16 @@ bot.onMessage = async (session, message) => {
 > The below example shows how to avoid the `~Bot.onMessage` event handler from
 > being called when a mention message is received:
 >
-> ~~~~ typescript {6-8}
+> ~~~~ typescript {6-8} twoslash
+> import { type Bot, em, text } from "@fedify/botkit";
+> const bot = {} as unknown as Bot<void>;
+> // ---cut-before---
 > bot.onMention = async (session, message) => {
 >   await message.reply(text`You called me, ${message.actor}?`);
 > };
 >
 > bot.onMessage = async (session, message) => {
->   if (message.mentions.some(m => m.href.href === session.actorId.href)) {
+>   if (message.mentions.some(m => m.id?.href === session.actorId.href)) {
 >     return;
 >   }
 >   if (message.text.match(/\bbotkit\b/i)) {
@@ -289,7 +328,10 @@ which represents the shared message, as the second argument.
 The following is an example of a shared message event handler that re-shares
 the shared message:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onSharedMessage = async (session, sharedMessage) => {
   await sharedMessage.original.share();
 };
@@ -310,7 +352,10 @@ the like activity, as the second argument.
 The following is an example of a like event handler that sends a direct message
 when someone likes a message on your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onLike = async (session, like) => {
   if (like.message.actor.id?.href !== session.actorId.href) return;
   await session.publish(
@@ -332,7 +377,10 @@ as the second argument.
 The following is an example of an unlike event handler that sends a direct
 message when someone undoes a like activity on a message on your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onUnlike = async (session, like) => {
   if (like.message.actor.id?.href !== session.actorId.href) return;
   await session.publish(
@@ -355,7 +403,10 @@ object, which represents the reaction activity, as the second argument.
 The following is an example of a reaction event handler that sends a direct
 message when someone reacts with an emoji to a message on your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onReact = async (session, reaction) => {
   if (reaction.message.actor.id?.href !== session.actorId.href) return;
   await session.publish(
@@ -379,7 +430,10 @@ undone, as the second argument.
 The following is an example of an unreact event handler that sends a direct
 message when someone removes a heart reaction from a message on your bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onUnreact = async (session, reaction) => {
   if (reaction.message.actor.id?.href !== session.actorId.href) return;
   if (reaction.emoji === "❤️") {

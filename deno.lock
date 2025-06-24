@@ -12,7 +12,6 @@
     "jsr:@logtape/logtape@0.11": "0.11.0",
     "jsr:@logtape/logtape@1": "1.0.0",
     "jsr:@std/html@0.224": "0.224.2",
-    "npm:@fedify/fedify@^1.6.1": "1.6.2",
     "npm:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "npm:@fedify/markdown-it-mention@0.3": "0.3.0",
     "npm:@js-temporal/polyfill@~0.5.1": "0.5.1",
@@ -136,9 +135,6 @@
         "@babel/helper-string-parser",
         "@babel/helper-validator-identifier"
       ]
-    },
-    "@cfworker/json-schema@4.1.1": {
-      "integrity": "sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og=="
     },
     "@digitalbazaar/http-client@3.4.1_ky@0.33.3": {
       "integrity": "sha512-Ahk1N+s7urkgj7WvvUND5f8GiWEPfUw0D41hdElaqLgu8wZScI8gdI0q+qWw5N1d35x7GCRH2uk9mi+Uzo9M3g==",
@@ -295,30 +291,6 @@
     "@fastify/busboy@2.1.1": {
       "integrity": "sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA=="
     },
-    "@fedify/fedify@1.6.2": {
-      "integrity": "sha512-1MXn91B0EqPmkk+0idTAw4fZCpYG1E/6gxs2Brn+iaIEwR4vAvQc3PqHMAKQOK8vfc9R/TBHh5myZRpkoBkVaw==",
-      "dependencies": [
-        "@cfworker/json-schema",
-        "@es-toolkit/es-toolkit@npm:es-toolkit@1.39.4",
-        "@hugoalh/http-header-link",
-        "@js-temporal/polyfill",
-        "@logtape/logtape@0.11.0",
-        "@multiformats/base-x",
-        "@opentelemetry/api",
-        "@opentelemetry/semantic-conventions",
-        "@phensley/language-tag",
-        "asn1js",
-        "byte-encodings",
-        "json-canon",
-        "jsonld",
-        "multicodec",
-        "pkijs",
-        "structured-field-values",
-        "uri-template-router",
-        "url-template",
-        "urlpattern-polyfill"
-      ]
-    },
     "@fedify/markdown-it-hashtag@0.3.0": {
       "integrity": "sha512-DCtfQ1OlFstob382d2iwEi77ezNqDQkUjS664q2r7ZOQQkBExvgvKDkL851tf1XRYp4A425/HO2yGRLZ1u1pSg==",
       "dependencies": [
@@ -330,15 +302,6 @@
       "dependencies": [
         "markdown-it"
       ]
-    },
-    "@hugoalh/http-header-link@1.0.3": {
-      "integrity": "sha512-x4jzzKSzZQY115H/GxUWaAHzT5eqLXt99uSKY7+0O/h3XrV248+CkZA7cA274QahXzWkGQYYug/AF6QUkTnLEw==",
-      "dependencies": [
-        "@hugoalh/is-string-singleline"
-      ]
-    },
-    "@hugoalh/is-string-singleline@1.0.5": {
-      "integrity": "sha512-mFCgmAUK+xnWgst2qxXKSJc3b7sQSZ9z3Chen1fh7TonInMhHYvy3Dk6fpKPXX/rTrs0wCRSrR93Q/9C7Ger8A=="
     },
     "@jridgewell/gen-mapping@0.3.8": {
       "integrity": "sha512-imAbBGkb+ebQyxKgzv5Hu2nmROxoDOXHh80evxdoXNOrvAnVx7zimzc1Oo5h9RlfV4vPXaE2iM5pOFbvOCClWA==",
@@ -369,9 +332,6 @@
       "dependencies": [
         "jsbi"
       ]
-    },
-    "@logtape/logtape@0.11.0": {
-      "integrity": "sha512-CV14Jf+gXCdgICvMZbkUOrVPJ2eBuLFaacEYJ3vI6ohv6n2mVepakxTfuZNhtWYVeIB1EblRRQNkFs/n5vFYqA=="
     },
     "@logtape/logtape@1.0.0": {
       "integrity": "sha512-GOOiaJcHSJQfFt+khrtoxfQ29klDiG8UxrgC+lPt7K6HhwEMQnB47j7V0GQ6F8bnS7JIZgYQmbXb+yGUF2pKhA=="
@@ -581,9 +541,6 @@
     },
     "entities@4.5.0": {
       "integrity": "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="
-    },
-    "es-toolkit@1.39.4": {
-      "integrity": "sha512-hHqQ0yJERMNrJUyYHnf02qDuIxjRnnJlx1CFdR9Ia6tw6jPA7kXmb+tWzc7trJDHwMsc393hZ/m2XMxYXGAfqQ=="
     },
     "event-target-shim@5.0.1": {
       "integrity": "sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ=="
@@ -877,9 +834,6 @@
     "url-template@3.1.1": {
       "integrity": "sha512-4oszoaEKE/mQOtAmdMWqIRHmkxWkUZMnXFnjQ5i01CuRSK3uluxcH1MRVVVWmhlnzT1SCDfKxxficm2G37qzCA=="
     },
-    "urlpattern-polyfill@10.1.0": {
-      "integrity": "sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw=="
-    },
     "uuid@11.1.0": {
       "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==",
       "bin": true
@@ -923,7 +877,6 @@
     ],
     "packageJson": {
       "dependencies": [
-        "npm:@fedify/fedify@^1.6.1",
         "npm:@fedify/markdown-it-hashtag@0.3",
         "npm:@fedify/markdown-it-mention@0.3",
         "npm:@js-temporal/polyfill@~0.5.1",

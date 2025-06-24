@@ -6,7 +6,22 @@ Version 0.3.0
 
 To be released.
 
- -  Added `MemoryCachedRepository` class.
+ -  BotKit now supports Node.js alongside of Deno.  The minimum required
+    version of Node.js is 22.0.0.
+
+ -  Added `@fedify/botkit/repository` module that provides repository
+    implementations for BotKit.
+
+     -  Added `RepositoryGetMessagesOptions` interface.
+     -  Added `RepositoryGetFollowersOptions` interface.
+     -  Added `Uuid` type.
+     -  Added `KvKey` type.
+     -  Added `KvStore` type.
+     -  Added `KvStoreRepositoryPrefixes` interface.
+     -  Added `Announce` class.
+     -  Added `Create` class.
+     -  Added `MemoryCachedRepository` class.
+
  -  Upgraded Fedify to 1.6.1.
 
 

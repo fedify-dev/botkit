@@ -68,7 +68,10 @@ const bot = createBot<void>({
 [Redis] (or its open source fork [Valkey]) is recommended for production
 deployments needing high performance:
 
-~~~~ typescript
+::: code-group
+
+~~~~ typescript [Deno] twoslash
+import { createBot } from "@fedify/botkit";
 import { RedisKvStore } from "@fedify/redis";
 import { Redis } from "ioredis";
 
@@ -76,7 +79,7 @@ const redis = new Redis({
   host: Deno.env.get("REDIS_HOST"),
   port: parseInt(Deno.env.get("REDIS_PORT") ?? "6379"),
   password: Deno.env.get("REDIS_PASSWORD"),
-  tls: Deno.env.get("REDIS_TLS") === "true",
+  tls: Deno.env.get("REDIS_TLS") === "true" ? {} : undefined,
 });
 
 const bot = createBot<void>({
@@ -84,6 +87,26 @@ const bot = createBot<void>({
   kv: new RedisKvStore(redis),
 });
 ~~~~
+
+~~~~ typescript [Node.js] twoslash
+import { createBot } from "@fedify/botkit";
+import { RedisKvStore } from "@fedify/redis";
+import { Redis } from "ioredis";
+
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: parseInt(process.env.REDIS_PORT ?? "6379"),
+  password: process.env.REDIS_PASSWORD,
+  tls: process.env.REDIS_TLS === "true" ? {} : undefined,
+});
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new RedisKvStore(redis),
+});
+~~~~
+
+:::
 
 > [!NOTE]
 > You need to install the [@fedify/redis] package to use the [`RedisKvStore`].
@@ -136,17 +159,35 @@ Managed services:
 [PostgreSQL] is suitable for deployments needing complex queries or
 transactions:
 
-~~~~ typescript
+::: code-group
+
+~~~~ typescript [Deno] twoslash
+import { createBot } from "@fedify/botkit";
 import { PostgresKvStore } from "@fedify/postgres";
 import postgres from "postgres";
 
-const sql = postgres(Deno.env.get("DATABASE_URL"));
+const sql = postgres(Deno.env.get("DATABASE_URL")!);
 
 const bot = createBot<void>({
   username: "mybot",
   kv: new PostgresKvStore(sql),
 });
 ~~~~
+
+~~~~ typescript [Node.js] twoslash
+import { createBot } from "@fedify/botkit";
+import { PostgresKvStore } from "@fedify/postgres";
+import postgres from "postgres";
+
+const sql = postgres(process.env.DATABASE_URL!);
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new PostgresKvStore(sql),
+});
+~~~~
+
+:::
 
 > [!TIP]
 > You need to install the [@fedify/postgres] package to use
@@ -245,8 +286,11 @@ bot.federation.startQueue();
 
 Recommended for production deployments:
 
-~~~~ typescript
-import { RedisMessageQueue } from "@fedify/redis";
+::: code-group
+
+~~~~ typescript [Deno] twoslash
+import { createBot } from "@fedify/botkit";
+import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
 import { Redis } from "ioredis";
 
 function getRedis(): Redis {
@@ -254,7 +298,7 @@ function getRedis(): Redis {
     host: Deno.env.get("REDIS_HOST"),
     port: parseInt(Deno.env.get("REDIS_PORT") ?? "6379"),
     password: Deno.env.get("REDIS_PASSWORD"),
-    tls: Deno.env.get("REDIS_TLS") === "true",
+    tls: Deno.env.get("REDIS_TLS") === "true" ? {} : undefined,
   });
 }
 
@@ -264,6 +308,29 @@ const bot = createBot<void>({
   queue: new RedisMessageQueue(getRedis),
 });
 ~~~~
+
+~~~~ typescript [Node.js] twoslash
+import { createBot } from "@fedify/botkit";
+import { RedisKvStore, RedisMessageQueue } from "@fedify/redis";
+import { Redis } from "ioredis";
+
+function getRedis(): Redis {
+  return new Redis({
+    host: process.env.REDIS_HOST,
+    port: parseInt(process.env.REDIS_PORT ?? "6379"),
+    password: process.env.REDIS_PASSWORD,
+    tls: process.env.REDIS_TLS === "true" ? {} : undefined,
+  });
+}
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new RedisKvStore(getRedis()),
+  queue: new RedisMessageQueue(getRedis),
+});
+~~~~
+
+:::
 
 > [!NOTE]
 > You need to install the [@fedify/redis] package to use
@@ -282,11 +349,14 @@ const bot = createBot<void>({
 
 Suitable when already using [PostgreSQL] for storage:
 
-~~~~ typescript
-import { PostgresMessageQueue } from "@fedify/postgres";
+::: code-group
+
+~~~~ typescript [Deno] twoslash
+import { createBot } from "@fedify/botkit";
+import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
 import postgres from "postgres";
 
-const sql = postgres(Deno.env.get("DATABASE_URL"));
+const sql = postgres(Deno.env.get("DATABASE_URL")!);
 
 const bot = createBot<void>({
   username: "mybot",
@@ -294,6 +364,22 @@ const bot = createBot<void>({
   queue: new PostgresMessageQueue(sql),
 });
 ~~~~
+
+~~~~ typescript [Node.js] twoslash
+import { createBot } from "@fedify/botkit";
+import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
+import postgres from "postgres";
+
+const sql = postgres(process.env.DATABASE_URL!);
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new PostgresKvStore(sql),
+  queue: new PostgresMessageQueue(sql),
+});
+~~~~
+
+:::
 
 > [!NOTE]
 > You need to install the [@fedify/postgres] package to use

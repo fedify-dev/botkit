@@ -25,8 +25,9 @@ When you receive a message from the fediverse, you can get a `Message`
 object from the event handler.  For example, in the following code snippet,
 the `~Bot.onMention` event handler is called with a `Message` object:
 
-~~~~ typescript
-import { createBot } from "@fedify/bot";
+~~~~ typescript twoslash
+// @noErrors: 2345
+import { createBot } from "@fedify/botkit";
 
 const bot = createBot<void>({
   // Omitted other options for brevity
@@ -43,7 +44,10 @@ When you publish a new message to the fediverse, you can get a `Message` object
 as a return value of the invoked method.  For example, in the following code
 snippet, the `Session.publish()` method returns an `AuthorizedMessage` object:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const session = bot.getSession("https://mydomain");
 const message = await session.publish(text`Hello, world!`);  // [!code highlight]
 ~~~~
@@ -77,7 +81,10 @@ Publishing a message
 You can publish a message to the fediverse by calling the `Session.publish()`
 method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 await session.publish(text`Hello, world!`);
 ~~~~
 
@@ -85,7 +92,10 @@ As you can see, the `~Session.publish()` method does not take a string,
 but a `Text` object.  The `Text` object can be instantiated by the `text()`
 string template tag.  Texts can include emphases, links, mentions, and so on:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, em, link, mention, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 await session.publish(text`
   ${link("BotKit", "https://botkit.fedify.dev/")} is a framework for \
   creating ${em("ActivityPub")} bots. It is powered by \
@@ -101,7 +111,10 @@ represents the message that was published.  You can use this object to interact
 with the message, such as [deleting](./message.md#deleting-a-message) it or
 [replying](./message.md#replying-to-a-message) to it:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This message will be deleted in a minute.`
 );
@@ -136,7 +149,10 @@ one of the following strings:
 
 Here's an example of publishing a direct message:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, mention, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 await session.publish(text`Hello, ${mention("@fedify@hollo.social")}!`, {
   visibility: "direct",  // [!code highlight]
 });
@@ -148,7 +164,10 @@ You can attach media files to a message by providing
 `~SessionPublishOptions.attachments` option.  The value of the option has to be
 an array of `Document` objects (which is provided by Fedify).  For example:
 
-~~~~ typescript {2-12}
+~~~~ typescript {2-12} twoslash
+import { Image, type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 await session.publish(text`Here's a cute dino!`, {
   attachments: [
     new Image({
@@ -168,7 +187,7 @@ await session.publish(text`Here's a cute dino!`, {
 > `Document` and its subclasses `Audio`, `Image`, and `Video` are re-exported
 > by BotKit:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
 > import { Audio, Document, Image, Video } from "@fedify/botkit";
 > ~~~~
 
@@ -195,7 +214,10 @@ has to be an [BCP 47], e.g., `"en"` for English, `"en-US"` for American English,
 
 Here's an example of publishing a message with the language hint:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 await session.publish(text`你好，世界！`, {
   language: "zh",  // [!code highlight]
 });
@@ -217,7 +239,10 @@ You can quote a message by providing `~SessionPublishOptions.quoteTarget`
 option.  The value of the option has to be a `Message` object that you want
 to quote.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await session.publish(
     text`This message quotes the message.`,
@@ -278,13 +303,16 @@ It is represented as an `Actor` object (which is provided by Fedify).
 The `Actor` object contains the information about the author, such as the
 display name, the username, the avatar, and so on:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Message, type MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const actor = message.actor;
 console.log(actor.id);  // The URI of the author
 console.log(actor.name);  // The display name of the author
 console.log(actor.preferredUsername);  // The username of the author
 console.log(actor.url);  // The URL of the profile of the author
-console.log(actor.icon?.url);  // The URL of the avatar of the author
+console.log(actor.iconId?.href);  // The URL of the avatar of the author
 ~~~~
 
 ### Visibility
@@ -318,8 +346,11 @@ You can get the language hint of the message through the `~Message.language`
 property.  It is represented as a [`LanguageTag`] object.  If you want just
 a BCP 47 language tag string, you can call the [`LanguageTag.compact()`] method:
 
-~~~~ typescript
-message.language.compact()  // e.g., "en", "en-US", "zh-Hant"
+~~~~ typescript twoslash
+import { type Message, type MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
+message.language?.compact()  // e.g., "en", "en-US", "zh-Hant"
 ~~~~
 
 > [!TIP]
@@ -335,7 +366,10 @@ You can get the parent message of a reply message through
 the `~Message.replyTarget` property, which is either another `Message` object
 or `undefined` if the message is not a reply:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onReply = async (session, reply) => {
   if (reply.replyTarget != null) {
     console.log("This is a reply to the message:", reply.replyTarget);
@@ -346,7 +380,10 @@ bot.onReply = async (session, reply) => {
 You can traverse the conversation by following the `~Message.replyTarget`
 property recursively:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot, Message, MessageClass } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onReply = async (session, reply) => {
   let message: Message<MessageClass, void> | undefined = reply;
   while (message != null) {
@@ -361,7 +398,10 @@ bot.onReply = async (session, reply) => {
 You can get the mentioned accounts in the message through
 the `~Message.mentions` property.  It is an array of `Actor` objects:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Message, type MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 for (const mention of message.mentions) {
   console.log(mention.name);
 }
@@ -375,7 +415,10 @@ for (const mention of message.mentions) {
 You can get the hashtags in the message through the `~Message.hashtags`
 property.  It is an array of `Hashtag` objects:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Message, type MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 for (const hashtag of message.hashtags) {
   console.log(hashtag.name);
 }
@@ -390,7 +433,10 @@ for (const hashtag of message.hashtags) {
 You can get the attachments in the message through the `~Message.attachments`
 property.  It is an array of `Document` objects:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Message, type MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 for (const attachment of message.attachments) {
   console.log(attachment.mediaType);
   console.log(attachment.url);
@@ -413,7 +459,7 @@ You can get the timestamp when the message was last updated through the
 `~Message.updated` property.  It is also represented as a [`Temporal.Instant`]
 object.
 
-[`Temporal.Instant`]: https://tc39.es/proposal-temporal/docs/instant.html
+[`Temporal.Instant`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Instant
 
 ### Quotes
 
@@ -426,7 +472,10 @@ or `undefined` if the message is not a quote.
 Since the quoted message itself can be a quote, you can traverse the
 conversation by following the `~Message.quoteTarget` property recursively:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 let quote: Message<MessageClass, void> | undefined = message.quoteTarget;
 while (quote != null) {
   console.log(quote);
@@ -445,7 +494,11 @@ For example, if you want to get the location of the message (Pixelfed et al.
 provide the geo location of the message), you can get it through
 the `~Message.raw` property:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+import { Place } from "@fedify/fedify/vocab";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const location = await message.raw.getLocation();
 if (location instanceof Place) {
   console.log(location.name);
@@ -457,7 +510,7 @@ if (location instanceof Place) {
 In the above example, the [`Place`] class is declared by Fedify, so you need to
 install it and import it:
 
-~~~~ typescript
+~~~~ typescript twoslash
 import { Place } from "@fedify/fedify/vocab";
 ~~~~
 
@@ -475,7 +528,10 @@ You can get the published messages by calling the `Session.getOutbox()` method.
 It returns an [`AsyncIterable`] object that yields the `AuthorizedMessage`
 objects:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 for await (const message of session.getOutbox()) {
   console.log(message.text);
 }
@@ -485,7 +541,10 @@ The yielded messages are in the descending order of the published timestamp by
 default, but you can specify the order by providing
 the `~SessionGetOutboxOptions.order` option:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 session.getOutbox({ order: "oldest" })
 ~~~~
 
@@ -493,7 +552,11 @@ Or you can specify the range of the messages by providing
 the `~SessionGetOutboxOptions.since` and `~SessionGetOutboxOptions.until`
 options:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+import { Temporal } from "@js-temporal/polyfill";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 session.getOutbox({
   since: Temporal.Instant.from("2025-01-01T00:00:00Z"),
   until: Temporal.Instant.from("2025-01-31T23:59:59.999Z"),
@@ -509,7 +572,11 @@ Updating a message
 You can update a message's content by calling the `~AuthorizedMessage.update()`
 method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This message will be updated in a minute.`
 );
@@ -534,7 +601,11 @@ Deleting a message
 
 You can delete a message by calling the `~AuthorizedMessage.delete()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This message will be deleted in a minute.`
 );
@@ -554,7 +625,11 @@ Liking a message
 
 You can like a message by calling the `~Message.like()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This message will be liked.`
 );
@@ -571,7 +646,10 @@ await message.like();  // [!code highlight]
 If you need to undo the liking, you can call the `~AuthorizedLike.unlike()`
 method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const like = await message.like();
 await like.unlike();  // [!code highlight]
 ~~~~
@@ -585,7 +663,10 @@ Reacting to a message with an emoji
 You can react to a message with an emoji by calling the `~Message.react()`
 method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { emoji, type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This message will be reacted to with an emoji.`
 );
@@ -600,31 +681,44 @@ await message.react(emoji`👍`);  // [!code highlight]
 Or you can use the `~Message.react()` method with a custom emoji.  You need to
 define custom emojis in advance by calling the `Bot.addCustomEmojis()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const emojis = bot.addCustomEmojis({
   // Use a remote image URL:
   yesBlob: {
     url: "https://cdn3.emoji.gg/emojis/68238-yesblob.png",
-    mediaType: "image/png",
+    type: "image/png",
   },
   // Use a local image file:
   noBlob: {
     file: `${import.meta.dirname}/emojis/no_blob.png`,
-    mediaType: "image/webp",
+    type: "image/webp",
   },
 });
 ~~~~
 
 Then you can use the custom emojis in the `~Message.react()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+import type { DeferredCustomEmoji } from "@fedify/botkit/emoji";
+const message = {} as unknown as Message<MessageClass, void>;
+const emojis = {} as Readonly<Record<"yesBlob" | "noBlob", DeferredCustomEmoji<void>>>;
+// ---cut-before---
 await message.react(emojis.yesBlob);
 ~~~~
 
 If you need to undo the reaction, you can call
 the `~AuthorizedReaction.unreact()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+import type { DeferredCustomEmoji } from "@fedify/botkit/emoji";
+const message = {} as unknown as Message<MessageClass, void>;
+const emojis = {} as Readonly<Record<"yesBlob" | "noBlob", DeferredCustomEmoji<void>>>;
+// ---cut-before---
 const reaction = await message.react(emojis.noBlob);
 await reaction.unreact();  // [!code highlight]
 ~~~~
@@ -645,7 +739,10 @@ Replying to a message
 
 You can reply to a message by calling the `~Message.reply()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This is a message that will be replied to.`
 );
@@ -656,7 +753,11 @@ const reply2 = await reply.reply(text`This is a reply to the reply.`);
 You can use the same set of options as the `Session.publish()` method when
 calling the `~Message.reply()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const reply = await message.reply(
   text`A reply with a language hint.`,
   { language: "en" },  // [!code highlight]
@@ -666,7 +767,11 @@ const reply = await message.reply(
 Like the `Session.publish()` method, the `~Message.reply()` method returns
 an `AuthorizedMessage` object that represents the reply message:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const reply = await message.reply(text`This reply will be deleted in a minute.`);
 setTimeout(async () => {
   await reply.delete();  // [!code highlight]
@@ -678,7 +783,10 @@ setTimeout(async () => {
 > However, you can manually [mention them](./text.md#mentions) in the reply
 > message by using the `mention()` function: 
 >
-> ~~~~ typescript {2}
+> ~~~~ typescript {2} twoslash
+> import { type Message, type MessageClass, mention, text } from "@fedify/botkit";
+> const message = {} as unknown as Message<MessageClass, void>;
+> // ---cut-before---
 > const reply = await message.reply(
 >   text`${mention(message.actor)} This is a reply to the message.`
 > );
@@ -687,7 +795,10 @@ setTimeout(async () => {
 > The visibility of the reply message is inherited from the original message
 > by default.  However, you can specify the visibility of the reply message:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { type Message, type MessageClass, mention, text } from "@fedify/botkit";
+> const message = {} as unknown as Message<MessageClass, void>;
+> // ---cut-before---
 > const reply = await message.reply(
 >   text`This is a direct reply to the message.`,
 >   { visibility: "direct" },  // [!code highlight]
@@ -700,7 +811,10 @@ Sharing a message
 
 You can share (i.e., boost) a message by calling the `~Message.share()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 const message = await session.publish(
   text`This is a message that will be shared.`
 );
@@ -710,14 +824,20 @@ await message.share();  // [!code highlight]
 > [!TIP]
 > You can specify the visibility of the shared message:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { type Message, type MessageClass } from "@fedify/botkit";
+> const message = {} as unknown as Message<MessageClass, void>;
+> // ---cut-before---
 > await message.share({ visibility: "followers" });
 > ~~~~
 
 If you need to undo the sharing, you can call
 the `~AuthorizedSharedMessage.unshare()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 const sharedMessage = await message.share();
 await sharedMessage.unshare();  // [!code highlight]
 ~~~~

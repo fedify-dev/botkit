@@ -9,7 +9,7 @@ protocol details.
 
 Here's a simple example of what you can build with BotKit:
 
-~~~~ typescript
+~~~~ typescript twoslash
 import { createBot, MemoryKvStore, text } from "@fedify/botkit";
 
 const bot = createBot<void>({
@@ -67,7 +67,12 @@ BotKit provides a straightforward API that handles common bot operations:
 Event handling
 :   Easily respond to mentions, follows, and messages.
 
-    ~~~~ typescript
+    ~~~~ typescript twoslash
+    import type { Bot, Session } from "@fedify/botkit";
+    import { text } from "@fedify/botkit";
+    const bot = {} as unknown as Bot<void>;
+    const session = {}  as unknown as Session<void>;
+    // ---cut-before---
     bot.onFollow = async (session, follower) => {
       await session.publish(
         text`Thanks for following me, ${follower}!`,
@@ -79,7 +84,11 @@ Event handling
 Rich content
 :   Create formatted messages with mentions, hashtags, and media.
 
-    ~~~~ typescript
+    ~~~~ typescript twoslash
+    import type { Session } from "@fedify/botkit";
+    import { hashtag, Image, link, text } from "@fedify/botkit";
+    const session = {}  as unknown as Session<void>;
+    // ---cut-before---
     await session.publish(
       text`Check out ${link("BotKit docs", "https://botkit.fedify.dev/")}!
 
@@ -99,7 +108,11 @@ Rich content
 Message management
 :   Programmatically update or delete posts.
 
-    ~~~~ typescript
+    ~~~~ typescript twoslash
+    import type { Session } from "@fedify/botkit";
+    import { text } from "@fedify/botkit";
+    const session = {}  as unknown as Session<void>;
+    // ---cut-before---
     const msg = await session.publish(text`Initial message`);
     await msg.update(text`Updated content`);
     ~~~~

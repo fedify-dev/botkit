@@ -19,13 +19,13 @@ Instantiation
 
 You can instantiate a `Bot` instance by calling the `createBot()` function:
 
-~~~~ typescript
-import { createBot } from "@fedify/bot";
+~~~~ typescript twoslash
+import { createBot } from "@fedify/botkit";
 import { MemoryKvStore } from "@fedify/fedify";
 
 const bot = createBot<void>({
   username: "my_bot",
-  kv: new MemoryKvStore(kv),
+  kv: new MemoryKvStore(),
 });
 ~~~~
 
@@ -155,7 +155,8 @@ about the bot like the website URL, the source code repository URL, etc. here.
 Note that the property names should be human-readable and property values are of
 the `Text` type (see also the [*Text* chapter](./text.md)):
 
-~~~~ typescript
+~~~~ typescript twoslash
+// @noErrors: 2345
 import { createBot, link, mention } from "@fedify/botkit";
 
 const bot = createBot<void>({
@@ -239,7 +240,8 @@ It consists of the following properties:
 :   The version of the bot software.  It should be a `SemVer` object.
     You can create a `SemVer` object using the `parseSemVer()` function:
 
-    ~~~~ typescript
+    ~~~~ typescript twoslash
+    // @noErrors: 2345
     import { createBot, parseSemVer } from "@fedify/botkit";
 
     const bot = createBot<void>({
@@ -332,8 +334,9 @@ or [srvx] on Node.js.
 For example, if you have a `Bot` object named `bot`, and `export` it as
 a default export:
 
-~~~~ typescript [bot.ts]
-import { createBot } from "@fedify/bot";
+~~~~ typescript [bot.ts] twoslash
+// @noErrors: 2345
+import { createBot } from "@fedify/botkit";
 
 const bot = createBot<void>({
   // Omitted other options for brevity
@@ -386,14 +389,18 @@ yarn add srvx
 
 Then, import [`serve()`] function from `srvx` module:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
 import { serve } from "srvx";
 ~~~~
 
 Finally, you can run the bot using the [`serve()`] function at the end of
 the *bot.ts* file:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
+import type { Bot } from "@fedify/botkit";
+import { serve } from "srvx";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const server = serve({
   ...bot,
   port: 8000,
@@ -426,8 +433,11 @@ It is recommended to have an environment variable to control
 the [`behindProxy`](#createbotoptions-behindproxy) option so that you can
 easily switch between local development and production:
 
-~~~~ typescript [bot.ts] {3-4,8}
-import { createBot } from "@fedify/bot";
+::: code-group
+
+~~~~ typescript [Deno] {3-4,8} twoslash
+// @noErrors: 2345
+import { createBot } from "@fedify/botkit";
 
 const BEHIND_PROXY =
   Deno.env.get("BEHIND_PROXY")?.trim()?.toLowerCase() === "true";
@@ -437,6 +447,21 @@ const bot = createBot<void>({
   behindProxy: BEHIND_PROXY,
 });
 ~~~~
+
+~~~~ typescript [Node.js] {3-4,8} twoslash
+// @noErrors: 2345
+import { createBot } from "@fedify/botkit";
+
+const BEHIND_PROXY =
+  process.env.BEHIND_PROXY?.trim()?.toLowerCase() === "true";
+
+const bot = createBot<void>({
+  // Omitted other options for brevity
+  behindProxy: BEHIND_PROXY,
+});
+~~~~
+
+:::
 
 Then, you can use the following command to run the bot with the `BEHIND_PROXY`
 environment variable set to `true`:

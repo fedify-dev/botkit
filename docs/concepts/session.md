@@ -18,7 +18,10 @@ Creating a session
 
 You can create a session by calling the `Bot.getSession()` method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const session = bot.getSession("https://mydomain");
 ~~~~
 
@@ -26,7 +29,12 @@ It takes a single argument, the origin of the server to which your bot belongs.
 In practice, you would have an environment variable that contains the hostname
 of your server, and you would pass it to the `~Bot.getSession()` method:
 
-~~~~ typescript
+::: code-group
+
+~~~~ typescript [Deno] twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const SERVER_NAME = Deno.env.get("SERVER_NAME");
 if (SERVER_NAME == null) {
   console.error("The SERVER_NAME environment variable is not set.");
@@ -36,6 +44,21 @@ if (SERVER_NAME == null) {
 const session = bot.getSession(`https://${SERVER_NAME}`);  // [!code highlight]
 ~~~~
 
+~~~~ typescript [Node.js] twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+const SERVER_NAME = process.env.SERVER_NAME;
+if (SERVER_NAME == null) {
+  console.error("The SERVER_NAME environment variable is not set.");
+  Deno.exit(1);
+}
+
+const session = bot.getSession(`https://${SERVER_NAME}`);  // [!code highlight]
+~~~~
+
+:::
+
 
 Getting a session from an event handler
 ---------------------------------------
@@ -43,7 +66,10 @@ Getting a session from an event handler
 When an event handler is called, you can get a session from the `Session`
 object that is passed as the first argument:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   // `session` is a `Session` object
 };
@@ -58,7 +84,10 @@ Determining the actor URI of the bot
 The `Session` object has an `actorId` property that contains the URI of the bot
 actor.  You can use this URI to refer to the bot in messages:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onFollow = async (session, actor) => {
   await session.publish(
     text`Hi, ${actor}! I'm ${session.actorId}. Thanks for following me!`
@@ -75,7 +104,11 @@ handle of the bot.  It looks like an email address except that it starts with
 an `@` symbol: `@myBot@myDomain`.  You can use this handle to refer to the bot
 in messages:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+import { markdown } from "@fedify/botkit/text";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onFollow = async (session, actor) => {
   await session.publish(
     markdown(`I'm ${session.actorHandle}. Thanks for following me!`)
@@ -90,8 +123,11 @@ Getting the bot's `Actor` object
 The `Session` object has a `~Session.getActor()` method that returns the `Actor`
 object of the bot:
 
-~~~~ typescript
-const actor: Actor = session.getActor();
+~~~~ typescript twoslash
+import type { Actor, Session } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+const actor: Actor = await session.getActor();
 ~~~~
 
 
@@ -117,9 +153,13 @@ Your bot can follow an actor by calling the `Session.follow()` method.
 The following example shows how to get the `bot` follow back all of its
 followers:
 
-~~~~ typescript
-bot.onFollow = async (session, actor) => {
-  await session.follow(actor);
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+bot.onFollow = async (session, followRequest) => {
+  await followRequest.accept();
+  await session.follow(followRequest.follower);
 };
 ~~~~
 
@@ -161,7 +201,10 @@ Likewise, your bot can unfollow an actor by calling the `Session.unfollow()`
 method.  The following example shows how to make the `bot` unfollow if any of
 its followers unfollow it:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onUnfollow = async (session, actor) => {
   await session.unfollow(actor);
 };
@@ -183,13 +226,16 @@ The `Session` object has a `~Session.follows()` method that returns a boolean
 value indicating whether your bot follows a given actor.  The following example
 shows how to check if your bot follows an actor and respond accordingly:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
-  const follows = await session.follows(message.author);
+  const follows = await session.follows(message.actor);
   await session.publish(
     follows
-      ? text`Hi ${message.author}, I'm already following you!`
-      : text`Hi ${message.author}, I don't follow you yet.`
+      ? text`Hi ${message.actor}, I'm already following you!`
+      : text`Hi ${message.actor}, I don't follow you yet.`
   );
 };
 ~~~~

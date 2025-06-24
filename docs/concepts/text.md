@@ -49,7 +49,7 @@ Template string tag
 First of all, BotKit provides a template string tag `text()` to format your
 text.  Here's how you can use it:
 
-~~~~ typescript
+~~~~ typescript twoslash
 import { text } from "@fedify/botkit";
 
 const yourText = text`Your text goes here!`;  // [!code highlight]
@@ -58,7 +58,11 @@ const yourText = text`Your text goes here!`;  // [!code highlight]
 For example, if you want to publish a [message](./message.md) with the text
 <q>Hello, **world**!</q> to the fediverse, you can write:
 
-~~~~ typescript
+~~~~ typescript twoslash
+// @noErrors: 2307
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 import { strong, text } from "@fedify/botkit";
 import { bot } from "./bot.ts";  // A hypothetical bot object
 
@@ -85,7 +89,9 @@ types:
 If you put another `Text` object inside the interpolation, it will be
 concatenated to the parent `Text` object.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text, em } from "@fedify/botkit";
+// ---cut-before---
 text`Hello, ${em("world")}.`
 ~~~~
 
@@ -100,7 +106,9 @@ See the below sections for more information.
 > Although you can put a block object, it will close the current paragraph and
 > start a new block.  For example:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { text } from "@fedify/botkit";
+> // ---cut-before---
 > text`Hello! ${text`This is a new paragraph.`}`
 > ~~~~
 >
@@ -113,7 +121,9 @@ See the below sections for more information.
 > If you put a block object at the boundary of the block, it will work as
 > expected.  For example:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { text } from "@fedify/botkit";
+> // ---cut-before---
 > text`Hello!\n\n${text`This is a new paragraph.`}\n\nThis is the last paragraph.`
 > ~~~~
 >
@@ -130,7 +140,10 @@ See the below sections for more information.
 If you put an `Actor` object (provided by Fedify) inside the interpolation,
 it will be rendered as a mention.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Message, type MessageClass, text } from "@fedify/botkit";
+const message = {} as unknown as Message<MessageClass, void>;
+// ---cut-before---
 text`Hello, ${message.actor}.`
 ~~~~
 
@@ -146,7 +159,10 @@ If you put an [`Emoji`] object (provided by Fedify) inside the interpolation,
 it will be rendered as a custom emoji.  You usually get [`Emoji`] objects from
 the `Reaction.emoji` property.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Reaction, text } from "@fedify/botkit";
+const reaction = {} as unknown as Reaction<void>;
+// ---cut-before---
 text`Here's a custom emoji: ${reaction.emoji}.`
 ~~~~
 
@@ -157,7 +173,9 @@ text`Here's a custom emoji: ${reaction.emoji}.`
 If you put a `URL` object inside the interpolation, it will be rendered as a
 link.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a link: ${new URL("https://botkit.fedify.dev/")}.`
 ~~~~
 
@@ -171,7 +189,9 @@ If you put any other JavaScript object inside the interpolation, it will be
 converted to a string—it's the same as calling `String()` on the object.
 For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text } from "@fedify/botkit";
+// ---cut-before---
 text`The number is ${42}.`
 ~~~~
 
@@ -182,7 +202,9 @@ The above code will create a text like this:
 If an interpolated string has line breaks, they will be preserved in the text.
 For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a multiline text:
 
 ${"First line.\nSecond line."}`
@@ -199,7 +221,9 @@ The above code will create a text like this:
 > Even if you put an HTML string inside the interpolation, it will be escaped
 > automatically:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { text } from "@fedify/botkit";
+> // ---cut-before---
 > text`The following HTML will be escaped: ${"<strong>bold</strong>"}.`
 > ~~~~
 >
@@ -220,7 +244,9 @@ You can create a paragraph by simply writing a text.  If you want to create
 multiple paragraphs, you can split them with two or more consecutive line
 breaks.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text } from "@fedify/botkit";
+// ---cut-before---
 text`This is the first paragraph.
 
 This is the second paragraph.\n\nThis is the last paragraph.`
@@ -243,7 +269,9 @@ Hard line breaks
 If you want to insert a hard line break, put a single line break (`\n`)
 between the lines.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { text } from "@fedify/botkit";
+// ---cut-before---
 text`This is the first line of the first paragraph.
 This is the second line of the first paragraph.
 
@@ -268,7 +296,9 @@ rendered as **bold**, and `em()` emphasizes which is usually rendered as
 _italic_.  Both are inlines, so you can put them inside the interpolation.
 For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { em, strong, text } from "@fedify/botkit";
+// ---cut-before---
 text`You can emphasize ${strong("this")} or ${em("this")}!`
 ~~~~
 
@@ -278,7 +308,9 @@ The above code will create a text like this:
 
 You can nest the emphasis constructs:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { em, strong, text } from "@fedify/botkit";
+// ---cut-before---
 text`You can emphasize ${strong(em("this"))}!`
 ~~~~
 
@@ -293,7 +325,9 @@ Links
 You can make a link to a URL by using the `link()` function.  It returns
 an inline `Text` object that represents a link.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { link, text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a link: ${link("https://fedify.dev/")}.`
 ~~~~
 
@@ -303,7 +337,9 @@ The above code will create a text like this:
 
 You can customize the label of the link if you provide two arguments:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { link, text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a link: ${link("Fedify", "https://fedify.dev/")}.`
 ~~~~
 
@@ -313,7 +349,9 @@ The above code will create a text like this:
 
 The label can have other formatting constructs:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { em, link, text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a link: ${link(em("Fedify"), "https://fedify.dev/")}.`
 ~~~~
 
@@ -328,7 +366,9 @@ Mentions
 You can mention another fediverse account by using the `mention()` function.
 It returns an inline `Text` object that represents a mention.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { mention, text } from "@fedify/botkit";
+// ---cut-before---
 text`Hello, ${mention("@fedify@hollo.social")}!`
 ~~~~
 
@@ -338,7 +378,9 @@ The above code will create a text like this:
 
 Or you can mention an account by its actor URI:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { mention, text } from "@fedify/botkit";
+// ---cut-before---
 text`Hello, ${mention(new URL("https://hollo.social/@fedify"))}!`
 ~~~~
 
@@ -348,7 +390,9 @@ The result is equivalent to the previous example:
 
 You can customize the label of the mention:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { mention, text } from "@fedify/botkit";
+// ---cut-before---
 text`Hello, ${mention("Fedify", new URL("https://hollo.social/@fedify"))}!`
 ~~~~
 
@@ -369,7 +413,9 @@ Hashtags
 You can include a hashtag in the text using the `hashtag()` function.
 It is an inline construct.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { hashtag, text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a hashtag: ${hashtag("#BotKit")}.`
 ~~~~
 
@@ -380,7 +426,9 @@ The above code will create a text like this:
 It does not matter if you put the leading `"#"` or not.  The `hashtag()`
 function will add the leading `"#"` if it is not present.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { hashtag, text } from "@fedify/botkit";
+// ---cut-before---
 text`Here's a hashtag: ${hashtag("BotKit")}.`
 ~~~~
 
@@ -403,7 +451,9 @@ You can include a code in the text using the `code()` function,
 which is usually rendered as monospaced font.  It is an inline construct.
 For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { code, text } from "@fedify/botkit/text";
+// ---cut-before---
 text`Here's a code: ${code("console.log('Hello, world!')")}.`
 ~~~~
 
@@ -427,7 +477,10 @@ In order to use the `customEmoji()` function, you need to define custom emojis
 first.  You can define custom emojis by using the `Bot.addCustomEmojis()`
 method after creating the bot:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 // Define custom emojis:
 const emojis = bot.addCustomEmojis({
   // Use a local image file:
@@ -441,7 +494,11 @@ The `~Bot.addCustomEmojis()` method returns an object that contains the custom
 emojis.  You can use the keys of the object to refer to the custom emojis.
 For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { customEmoji, text } from "@fedify/botkit/text";
+import type { DeferredCustomEmoji } from "@fedify/botkit/emoji";
+const emojis = {} as Readonly<Record<"botkit" | "fedify", DeferredCustomEmoji<void>>>;
+// ---cut-before---
 text`Here's a custom emoji:
 
 ${customEmoji(emojis.botkit)} by ${customEmoji(emojis.fedify)}.`
@@ -458,7 +515,9 @@ Sometimes you have a Markdown text and want to render it as a `Text` object.
 You can use the `markdown()` function to convert the Markdown text to the `Text`
 object.  It is a block construct.  For example:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown } from "@fedify/botkit/text";
+// ---cut-before---
 markdown(`
 Here's a Markdown text.
 
@@ -478,7 +537,9 @@ The above code will create a text like this:
 
 You can also put the `markdown()` function inside the interpolation:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown, text } from "@fedify/botkit/text";
+// ---cut-before---
 text`The following is a Markdown text: 
 
 ${markdown(`
@@ -487,7 +548,7 @@ Here's a Markdown text.
 - I can have a list.
 - I can have a **bold** text.
 - I can have an _italic_ text.
-`)
+`)}
 `
 ~~~~
 
@@ -508,7 +569,9 @@ mentioning and hashtag syntax for the fediverse.
 
 The following example shows how to mention an account:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown } from "@fedify/botkit/text";
+// ---cut-before---
 markdown(`Hello, @fedify@hollo.social!`)
 ~~~~
 
@@ -522,14 +585,18 @@ The above code will create a text like this:
 > about the mention.  If you want to just link to the account without
 > notifying, use the normal link syntax instead:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { markdown } from "@fedify/botkit/text";
+> // ---cut-before---
 > markdown(`Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!`)
 > ~~~~ 
 
 If you want `@`-syntax to be treated as a normal text, turn off the syntax
 by setting the `mentions` option to `false`:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown } from "@fedify/botkit/text";
+// ---cut-before---
 markdown(`Hello, @fedify@hollo.social!`, { mentions: false })
 ~~~~
 
@@ -541,7 +608,9 @@ The above code will create a text like this:
 
 The following example shows how to include a hashtag:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown } from "@fedify/botkit/text";
+// ---cut-before---
 markdown(`Here's a hashtag: #BotKit`)
 ~~~~
 
@@ -556,14 +625,18 @@ The above code will create a text like this:
 > only from public messages though).  If you want to just link to the hashtag
 > without denoting it, use the normal link syntax instead:
 >
-> ~~~~ typescript
+> ~~~~ typescript twoslash
+> import { markdown } from "@fedify/botkit/text";
+> // ---cut-before---
 > markdown(`Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit)`)
 > ~~~~
 
 If you want `#`-syntax to be treated as a normal text, turn off the syntax
 by setting the `hashtags` option to `false`:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { markdown } from "@fedify/botkit/text";
+// ---cut-before---
 markdown(`Here's a hashtag: #BotKit`, { hashtags: false })
 ~~~~
 
@@ -579,8 +652,14 @@ You can determine if the text mentions an account by using the `mentions()`
 function.  It returns `true` if the text mentions the account,
 otherwise `false`:
 
-~~~~ typescript
-import { type Actor, markdown, mention, mentions, text } from "@fedify/botkit";
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+/** A hypothetical function that returns an Actor object. **/
+declare function getActor(handle: string): Actor;
+const session = {} as unknown as Session<unknown>;
+// ---cut-before---
+import type { Actor } from "@fedify/botkit";
+import { markdown, mention, mentions, text } from "@fedify/botkit/text";
 
 const actor: Actor = getActor(  // A hypothetical function that returns an Actor object
   "@fedify@hollo.social"
@@ -588,14 +667,14 @@ const actor: Actor = getActor(  // A hypothetical function that returns an Actor
 const actor2: Actor = getActor("@another@example.com");
 
 const md = markdown("Hello, @fedify@hollo.social!");
-console.log(await mentions(md, actor));  // true
-console.log(await mentions(md, actor2));  // false
+console.log(await mentions(session, md, actor));  // true
+console.log(await mentions(session, md, actor2));  // false
 
 const txt = text`Hi, ${actor2}!`
-console.log(await mentions(txt, actor));  // false
-console.log(await mentions(txt, actor2));  // true
+console.log(await mentions(session, txt, actor));  // false
+console.log(await mentions(session, txt, actor2));  // true
 
 const noMention = text`Hello, world!`;
-console.log(await mentions(noMention, actor));  // false
-console.log(await mentions(noMention, actor2));  // false
+console.log(await mentions(session, noMention, actor));  // false
+console.log(await mentions(session, noMention, actor2));  // false
 ~~~~

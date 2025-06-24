@@ -64,7 +64,7 @@ To create a bot, you need to create a new TypeScript file and define your
 [`Bot`](./concepts/bot.md) instance using
 the [`createBot()`](./concepts/bot.md#instantiation) function:
 
-~~~~ typescript [bot.ts] {8-14}
+~~~~ typescript [bot.ts] {8-14} twoslash
 import {
   createBot,
   InProcessMessageQueue,
@@ -127,7 +127,12 @@ setting the corresponding event handlers on the `Bot` instance.
 Here, we will let the bot [publish](./concepts/message.md#publishing-a-message)
 a direct message when someone [follows](./concepts/events.md#follow) the bot:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
+import type { Bot, Session } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+const session = {} as unknown as Session<void>;
+// ---cut-before---
 bot.onFollow = async (session, follower) => {
   await session.publish(text`Thanks for following me, ${follower}!`, {
     visibility: "direct",
@@ -149,7 +154,10 @@ We will utilize [`deno serve`] command.  In order to connect the bot to Deno's
 HTTP server, you need to `export` the `bot` instance as a default export in
 the *bot.ts* file:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 export default bot;
 ~~~~
 
@@ -192,14 +200,18 @@ yarn add srvx
 
 Then, import [`serve()`] function from `srvx` module:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
 import { serve } from "srvx";
 ~~~~
 
 Finally, you can run the bot using the [`serve()`] function at the end of
 the *bot.ts* file:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
+import type { Bot } from "@fedify/botkit";
+import { serve } from "srvx";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 const server = serve({
   ...bot,
   port: 8000,
@@ -237,7 +249,14 @@ Since those tunneling services practically act as an L7 reverse proxy,
 you need to turn on
 the [`behindProxy`](./concepts/bot.md#createbotoptions-behindproxy) option:
 
-~~~~ typescript [bot.ts]
+~~~~ typescript [bot.ts] twoslash
+import {
+  createBot,
+  InProcessMessageQueue,
+  MemoryKvStore,
+  text,
+} from "@fedify/botkit";
+// ---cut-before---
 const bot = createBot<void>({
   username: "mybot",
   name: "My Bot",

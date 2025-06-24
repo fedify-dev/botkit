@@ -1,7 +1,9 @@
+import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
 import deflist from "markdown-it-deflist";
 import footnote from "markdown-it-footnote";
 import { jsrRef } from "markdown-it-jsr-ref";
 import process from "node:process";
+import { ModuleKind, ModuleResolutionKind } from "typescript";
 import { defineConfig } from "vitepress";
 import {
   groupIconMdPlugin,
@@ -153,6 +155,18 @@ export default defineConfig({
   ignoreDeadLinks: true,
 
   markdown: {
+    codeTransformers: [
+      transformerTwoslash({
+        twoslashOptions: {
+          compilerOptions: {
+            lib: ["dom", "dom.iterable", "esnext"],
+            types: ["dom", "dom.iterable", "esnext", "@types/deno", "node"],
+            moduleResolution: ModuleResolutionKind.Bundler,
+            module: ModuleKind.ESNext,
+          },
+        },
+      }),
+    ],
     config(md) {
       md.use(deflist);
       md.use(footnote);

@@ -19,7 +19,10 @@ the [`visibility`](./concepts/message.md#visibility) option to `"direct"`
 when calling the [`Session.publish()`](./concepts/message.md#publishing-a-message)
 method:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await session.publish(
     text`Hi, ${message.actor}!`,
@@ -41,7 +44,10 @@ the [`onFollow`](./concepts/events.md#follow) event with
 the [`Session.follow()`](./concepts//session.md#following-an-actor) method
 together:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onFollow = async (session, followRequest) => {
   await followRequest.accept();
   await session.follow(followRequest.follower);
@@ -62,8 +68,12 @@ To automatically delete old messages after a certain period, you can use
 and the [`setInterval()`] function together.  The following example shows how to
 delete all messages older than a week:
 
-~~~~ typescript
-async function deleteOldPosts(session: Session): Promise<void> {
+~~~~ typescript twoslash
+import type { Bot, Session } from "@fedify/botkit";
+import { Temporal } from "@js-temporal/polyfill";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+async function deleteOldPosts<T>(session: Session<T>): Promise<void> {
   const now = Temporal.Now.instant();
   const oneWeekAgo = now.subtract({ hours: 7 * 24 });
   const oldPosts = session.getOutbox({ until: oneWeekAgo });
@@ -88,17 +98,23 @@ Scheduled messages
 You can use the [`setInterval()`] function to send messages at regular
 intervals:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 setInterval(async () => {
   const session = bot.getSession("https://yourdomain");
   await session.publish(text`Hello, world!`);
 }, 1000 * 60 * 60);
 ~~~~
 
-Or if you use non-standard APIs like [`Deno.cron()`], you can use it to send
+Or if you use Deno, you can use non-standard APIs like [`Deno.cron()`] to send
 messages at specific times:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 Deno.cron("scheduled messages", "0 0 12 * * *", async () => {
   const session = bot.getSession("https://yourdomain");
   await session.publish(text`Hello, world!`);
@@ -115,7 +131,10 @@ It is simple to automatically like mentions of your bot.  You can use the
 [`onMention`](./concepts/events.md#mention) event handler and
 the [`Message.like()`](./concepts/message.md#liking-a-message) method together:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await message.like();
 };
@@ -130,7 +149,10 @@ It is simple to automatically reply to mentions of your bot.  You can use the
 the [`Message.reply()`](./concepts/message.md#replying-to-a-message) method
 together:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
 bot.onMention = async (session, message) => {
   await message.reply(text`You mentioned me, ${message.actor}!`);
 };
@@ -145,9 +167,13 @@ want to create a thread for storytelling or to make audience engagement easier.
 You can use the [`Message.reply()`](./concepts/message.md#replying-to-a-message)
 method to your own messages too:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { AuthorizedMessage, Bot, Note, Session, Text } from "@fedify/botkit";
+import { text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<unknown>;
+// ---cut-before---
 async function *createThread<TContextData>(
-  session: Session,
+  session: Session<TContextData>,
   messages: Text<"block", TContextData>[]
 ): AsyncIterable<AuthorizedMessage<Note, TContextData>> {
   let parent = await session.publish(messages[0]);
@@ -165,7 +191,7 @@ const messages = [
   text`The bot was so powerful that it could even create other bots.`,
   text`And so, BotKit lived happily ever after.`,
 ];
-const session = bot.getSession("https://yourdomain");
+const session = bot.getSession("https://yourdomain", undefined);
 for await (const message of createThread(session, messages)) {
   console.debug(`Created message ${message.id}`);
 }
@@ -181,9 +207,11 @@ recursively traversing
 the [`Message.replyTarget`](./concepts/message.md#traversing-the-conversation)
 property:
 
-~~~~ typescript
+~~~~ typescript twoslash
+import type { Message, MessageClass, Session } from "@fedify/botkit";
+// ---cut-before---
 async function traverseThread<TContextData>(
-  session: Session,
+  session: Session<TContextData>,
   message: Message<MessageClass, TContextData>
 ): Promise<Message<MessageClass, TContextData>[]> {
   const thread: Message<MessageClass, TContextData>[] = [];

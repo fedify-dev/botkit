@@ -14,6 +14,7 @@
     "./follow": "./src/follow.ts",
     "./message": "./src/message.ts",
     "./reaction": "./src/reaction.ts",
+    "./repository": "./src/repository.ts",
     "./session": "./src/session.ts",
     "./text": "./src/text.ts"
   },
