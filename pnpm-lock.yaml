@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fedify/fedify':
-      specifier: ^1.6.2
-      version: 1.6.2
+      specifier: ^1.7.1
+      version: 1.7.1
 
 importers:
 
@@ -16,7 +16,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.6.2(web-streams-polyfill@3.3.3)
+        version: 1.7.1(web-streams-polyfill@3.3.3)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -65,7 +65,7 @@ importers:
         version: link:..
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.6.2(web-streams-polyfill@3.3.3)
+        version: 1.7.1(web-streams-polyfill@3.3.3)
       '@fedify/postgres':
         specifier: ^0.3.0
         version: 0.3.0(web-streams-polyfill@3.3.3)
@@ -410,8 +410,8 @@ packages:
     resolution: {integrity: sha512-gGD8+mwkLsavBoj/qyfhMD8Tnv9+hid59NrQ6ZrD5Zn5rWvq4LleU09GF78OqPWdSLY03ihxb6+EArcsb5VZCA==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=20.0.0'}
 
-  '@fedify/fedify@1.6.2':
-    resolution: {integrity: sha512-1MXn91B0EqPmkk+0idTAw4fZCpYG1E/6gxs2Brn+iaIEwR4vAvQc3PqHMAKQOK8vfc9R/TBHh5myZRpkoBkVaw==}
+  '@fedify/fedify@1.7.1':
+    resolution: {integrity: sha512-j/Pq3CvINorEpltQFbILNZg39KTY1pIb7PscqE5/pTwi7W/9iiTlSlS8bAcvO63WIJdo1PRn/2OLlm3XzzmQrw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -489,9 +489,6 @@ packages:
   '@js-temporal/polyfill@0.5.1':
     resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
     engines: {node: '>=12'}
-
-  '@logtape/logtape@0.11.0':
-    resolution: {integrity: sha512-CV14Jf+gXCdgICvMZbkUOrVPJ2eBuLFaacEYJ3vI6ohv6n2mVepakxTfuZNhtWYVeIB1EblRRQNkFs/n5vFYqA==}
 
   '@logtape/logtape@0.8.2':
     resolution: {integrity: sha512-KikaMHi64p0BHYrYOE2Lom4dOE3R8PGT+21QJ5Ql/SWy0CNOp69dkAlG9RXzENQ6PAMWtiU+4kelJYNvfUvHOQ==}
@@ -2214,13 +2211,13 @@ snapshots:
     transitivePeerDependencies:
       - web-streams-polyfill
 
-  '@fedify/fedify@1.6.2(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.7.1(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@es-toolkit/es-toolkit': es-toolkit@1.39.4
       '@hugoalh/http-header-link': 1.0.3
       '@js-temporal/polyfill': 0.5.1
-      '@logtape/logtape': 0.11.0
+      '@logtape/logtape': 1.0.0
       '@multiformats/base-x': 4.0.1
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.34.0
@@ -2338,8 +2335,6 @@ snapshots:
   '@js-temporal/polyfill@0.5.1':
     dependencies:
       jsbi: 4.3.2
-
-  '@logtape/logtape@0.11.0': {}
 
   '@logtape/logtape@0.8.2': {}
 

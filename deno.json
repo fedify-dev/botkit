@@ -20,7 +20,7 @@
     "./text": "./src/text.ts"
   },
   "imports": {
-    "@fedify/fedify": "jsr:@fedify/fedify@^1.6.1",
+    "@fedify/fedify": "jsr:@fedify/fedify@^1.7.1",
     "@fedify/markdown-it-hashtag": "jsr:@fedify/markdown-it-hashtag@^0.3.0",
     "@fedify/markdown-it-mention": "jsr:@fedify/markdown-it-mention@^0.3.0",
     "@logtape/logtape": "jsr:@logtape/logtape@^1.0.0",

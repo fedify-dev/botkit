@@ -1,15 +1,14 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@es-toolkit/es-toolkit@^1.38.0": "1.39.4",
-    "jsr:@fedify/fedify@^1.6.1": "1.6.2",
+    "jsr:@es-toolkit/es-toolkit@^1.38.0": "1.39.5",
+    "jsr:@fedify/fedify@^1.7.1": "1.7.1",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
-    "jsr:@hono/hono@^4.8.2": "4.8.2",
+    "jsr:@hono/hono@^4.8.2": "4.8.3",
     "jsr:@hugoalh/http-header-link@^1.0.2": "1.0.3",
-    "jsr:@hugoalh/is-string-singleline@^1.0.4": "1.0.4",
-    "jsr:@logtape/logtape@0.11": "0.11.0",
+    "jsr:@hugoalh/is-string-singleline@^1.0.4": "1.0.5",
     "jsr:@logtape/logtape@1": "1.0.0",
     "jsr:@std/html@0.224": "0.224.2",
     "npm:@fedify/markdown-it-hashtag@0.3": "0.3.0",
@@ -42,15 +41,15 @@
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@es-toolkit/es-toolkit@1.39.4": {
-      "integrity": "e1ee3e23dd146e0864dba3c74b9ff99bb02d33bfe76ef954c7f25aed60a0c51c"
+    "@es-toolkit/es-toolkit@1.39.5": {
+      "integrity": "f16bef4e1eff94f74981d8ad04dab27d35568bc7088454a0a0269d6c36b215c0"
     },
-    "@fedify/fedify@1.6.2": {
-      "integrity": "d93fa3b3bf3d598137a9f39245897b24aeff2d40dd67e813e845d306b93d3634",
+    "@fedify/fedify@1.7.1": {
+      "integrity": "a168bfd0124e8962abfa073df1926baca87eae0a88a8f42b78ec0b3a7a09a47d",
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
         "jsr:@hugoalh/http-header-link",
-        "jsr:@logtape/logtape@0.11",
+        "jsr:@logtape/logtape@1",
         "npm:@multiformats/base-x",
         "npm:@opentelemetry/api",
         "npm:@opentelemetry/semantic-conventions",
@@ -86,17 +85,17 @@
     "@hono/hono@4.8.2": {
       "integrity": "74fe4fb5392ecc757a6e1d63bc9af9194f720a82ef741e4080a51d7a32799511"
     },
+    "@hono/hono@4.8.3": {
+      "integrity": "f17509836610b97e9ec86bce5349387115c35ee72b7b29fd2b7944abe5f843ab"
+    },
     "@hugoalh/http-header-link@1.0.3": {
       "integrity": "3372096a73d755e3351f7fbd7155db7725874c2682a594a655580e3866563024",
       "dependencies": [
         "jsr:@hugoalh/is-string-singleline"
       ]
     },
-    "@hugoalh/is-string-singleline@1.0.4": {
-      "integrity": "b283396a7b1a1c9777c42560f657a5b13b0dee486282cce87f3c41a9e5796a66"
-    },
-    "@logtape/logtape@0.11.0": {
-      "integrity": "87f90b428c7a86f4d08b7701f54171fde1f15942e4e43846fa6fc0b016c10285"
+    "@hugoalh/is-string-singleline@1.0.5": {
+      "integrity": "3409f64eaad51e4afccea0f21853cedf7b0b5b147e3606e585e5e88ba2b03b32"
     },
     "@logtape/logtape@1.0.0": {
       "integrity": "30e23091ed75daac9eaff83688a90ccfbb7e75e79d0344d5a6e9585e6f653f92"
@@ -861,7 +860,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/fedify@^1.6.1",
+      "jsr:@fedify/fedify@^1.7.1",
       "jsr:@fedify/markdown-it-hashtag@0.3",
       "jsr:@fedify/markdown-it-mention@0.3",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
