@@ -746,7 +746,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       await this.onVote(session, vote);
       const update = new Update({
         id: new URL(
-          `#update-votes/${Date.now()}`,
+          `#update-votes/${crypto.randomUUID()}`,
           updatedQuestion.id ?? ctx.origin,
         ),
         actor: ctx.getActorUri(this.identifier),

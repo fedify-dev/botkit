@@ -265,6 +265,15 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     let voters: number | null = null;
     let endTime: Temporal.Instant | null = null;
     if ("class" in options && options.class === Question && "poll" in options) {
+      if (options.poll.options.length < 2) {
+        throw new TypeError("At least two options are required in a poll.");
+      } else if (
+        new Set(options.poll.options).size != options.poll.options.length
+      ) {
+        throw new TypeError("Duplicate options are not allowed in a poll.");
+      } else if (options.poll.options.some((o) => o.trim() === "")) {
+        throw new TypeError("Poll options cannot be empty.");
+      }
       const pollOptions = options.poll.options.map((option) =>
         new Note({
           name: option,

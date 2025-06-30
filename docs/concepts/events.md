@@ -485,9 +485,6 @@ The `Vote` object contains the following properties:
 `~Vote.message`
 :   The poll message that was voted on.
 
-Note that for multiple choice polls, each option selection creates a separate
-`Vote` object, even if the same user selects multiple options.
-
 > [!TIP]
 > You can check if a poll allows multiple selections by accessing the
 > `vote.poll.multiple` property:

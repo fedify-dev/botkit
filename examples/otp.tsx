@@ -203,7 +203,7 @@ app.post("/authenticate", async (c) => {
   const form = await c.req.formData();
   const messageId = form.get("messageId")?.toString();
   if (messageId == null) return c.notFound();
-  const key = await kv.get<string>(["emojis", messageId]);
+  const key = await kv.get<string[]>(["emojis", messageId]);
   if (key?.value == null) return c.notFound();
   const emojis = new Set(key.value);
   const answer = new Set<string>();
