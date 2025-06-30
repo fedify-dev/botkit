@@ -257,6 +257,70 @@ bot.onMention = async (session, message) => {
 > while others like Mastodon might implement quotes differently or not support
 > them at all.
 
+### Polls
+
+*This API is available since BotKit 0.3.0.*
+
+You can attach a poll to a message by providing
+the `~SessionPublishOptionsWithQuestion.poll` option along with
+the message class `Question`.  The poll option allows users to vote on
+different choices.  For example:
+
+~~~~ typescript twoslash
+import { type Session, Question, text } from "@fedify/botkit";
+import { Temporal } from "@js-temporal/polyfill";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+await session.publish(text`What's your favorite color?`, {
+  class: Question,
+  poll: {
+    multiple: false,  // Single choice poll
+    options: ["Red", "Blue", "Green"],
+    endTime: Temporal.Now.instant().add({ hours: 24 }),
+  },
+});
+~~~~
+
+For multiple choice polls, set `~Poll.multiple` to `true`:
+
+~~~~ typescript twoslash
+import { type Session, Question, text } from "@fedify/botkit";
+import { Temporal } from "@js-temporal/polyfill";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+await session.publish(text`Which programming languages do you know?`, {
+  class: Question,
+  poll: {
+    multiple: true,  // Multiple choice poll
+    options: ["JavaScript", "TypeScript", "Python", "Rust"],
+    endTime: Temporal.Now.instant().add({ hours: 24 * 7 }),
+  },
+});
+~~~~
+
+The poll configuration includes:
+
+`~Poll.multiple`
+:   Whether the poll allows multiple selections (`true` for multiple
+    choice, `false` for single choice).
+
+`~Poll.options`
+:   An array of strings representing the poll options. Each option
+    must be unique and non-empty.
+
+`~Poll.endTime`
+:   A [`Temporal.Instant`] representing when the poll closes.
+
+> [!NOTE]
+> Polls are represented as ActivityPub `Question` objects. Not all ActivityPub
+> implementations support polls, and the behavior may vary between different
+> platforms.
+
+> [!TIP]
+> When someone votes on your bot's poll, the `~Bot.onVote` event handler will
+> be called. See the [*Vote* section](./events.md#vote) in the *Events* concept
+> document for more information.
+
 
 Extracting information from a message
 -------------------------------------

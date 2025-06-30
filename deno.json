@@ -13,6 +13,7 @@
     "./events": "./src/events.ts",
     "./follow": "./src/follow.ts",
     "./message": "./src/message.ts",
+    "./poll": "./src/poll.ts",
     "./reaction": "./src/reaction.ts",
     "./repository": "./src/repository.ts",
     "./session": "./src/session.ts",
@@ -54,7 +55,11 @@
     "test": "deno test --allow-env=NODE_V8_COVERAGE,JEST_WORKER_ID --allow-net=hollo.social --parallel",
     "test:node": "pnpm install && pnpm test",
     "test-all": {
-      "dependencies": ["check", "test", "test:node"]
+      "dependencies": [
+        "check",
+        "test",
+        "test:node"
+      ]
     },
     "coverage": "deno task test --coverage --clean && deno coverage --html",
     "hooks:install": "deno run --allow-read=deno.json,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",

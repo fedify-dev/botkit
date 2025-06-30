@@ -610,7 +610,7 @@ interface KeyPair {
  * @internal
  */
 function extractTimestamp(uuid: string): number {
-  // UUIDv7 format: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+  // UUIDv7 format: xxxxxxxx-xxxx-7xxx-xxxx-xxxxxxxxxxxx
   // The timestamp is in the first 6 bytes (48 bits) of the UUID.
   if (uuid.length !== 36 || uuid[14] !== "7") {
     throw new TypeError("Invalid UUIDv7 format.");

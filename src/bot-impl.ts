@@ -25,6 +25,7 @@ import {
   type Recipient,
   type RequestContext,
   type Software,
+  Update,
 } from "@fedify/fedify";
 import {
   Accept,
@@ -79,6 +80,7 @@ import type {
   UndoneReactionEventHandler,
   UnfollowEventHandler,
   UnlikeEventHandler,
+  VoteEventHandler,
 } from "./events.ts";
 import { FollowRequestImpl } from "./follow-impl.ts";
 import {
@@ -90,6 +92,7 @@ import {
 } from "./message-impl.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import { app } from "./pages.tsx";
+import type { Vote } from "./poll.ts";
 import type { Like, Reaction } from "./reaction.ts";
 import { KvRepository, type Repository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -134,6 +137,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onUnlike?: UnlikeEventHandler<TContextData>;
   onReact?: ReactionEventHandler<TContextData>;
   onUnreact?: UndoneReactionEventHandler<TContextData>;
+  onVote?: VoteEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
     this.identifier = options.identifier ?? "bot";
@@ -650,7 +654,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     const object = await create.getObject(ctx);
     if (
       !(object instanceof Article || object instanceof ChatMessage ||
-        object instanceof Note || object instanceof Question)
+        object instanceof Note || object instanceof Question) ||
+      object.attributionId?.href !== create.actorId?.href
     ) {
       return;
     }
@@ -661,6 +666,123 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       return messageCache = await createMessage(object, session, {});
     };
     const replyTarget = ctx.parseUri(object.replyTargetId);
+    if (
+      this.onVote != null &&
+      object instanceof Note && replyTarget?.type === "object" &&
+      // @ts-ignore: replyTarget.class satisfies (typeof messageClasses)[number]
+      messageClasses.includes(replyTarget.class) &&
+      object.name != null
+    ) {
+      if (create.actorId?.href === session.actorId.href) return;
+      const actor = await create.getActor(ctx);
+      if (actor == null) return;
+      const pollMessage = await this.repository.getMessage(
+        replyTarget.values.id as Uuid,
+      );
+      if (!(pollMessage instanceof Create)) return;
+      const question = await pollMessage.getObject(ctx);
+      if (
+        !(question instanceof Question) || question.endTime == null ||
+        Temporal.Instant.compare(question.endTime, Temporal.Now.instant()) < 0
+      ) {
+        return;
+      }
+      const optionNotes: Note[] = [];
+      const options: string[] = [];
+      for await (const note of question.getInclusiveOptions(ctx)) {
+        if (!(note instanceof Note)) continue;
+        optionNotes.push(note);
+        if (note.name != null) options.push(note.name.toString());
+      }
+      const multiple = options.length > 0;
+      for await (const note of question.getExclusiveOptions(ctx)) {
+        if (!(note instanceof Note)) continue;
+        optionNotes.push(note);
+        if (note.name != null) options.push(note.name.toString());
+      }
+      const option = object.name.toString();
+      if (!options.includes(option)) return;
+      const updatedOptionNotes: Note[] = [...optionNotes];
+      let i = 0;
+      for (const note of updatedOptionNotes) {
+        if (note.name === option) {
+          const replies = await note.getReplies(ctx);
+          if (replies != null && replies.totalItems != null) {
+            updatedOptionNotes[i] = note.clone({
+              replies: replies.clone({
+                // FIXME: This way of updating vote count is not only inefficient,
+                // but also can lead to incorrect counts if multiple votes are
+                // cast at the same time.
+                totalItems: replies.totalItems + 1,
+              }),
+            });
+          }
+        }
+        i++;
+      }
+      const updatedQuestion = question.clone({
+        inclusiveOptions: multiple ? updatedOptionNotes : [],
+        exclusiveOptions: !multiple ? updatedOptionNotes : [],
+      });
+      const updatedPollMessage = pollMessage.clone({
+        object: updatedQuestion,
+      });
+      await this.repository.updateMessage(
+        replyTarget.values.id as Uuid,
+        () => updatedPollMessage,
+      );
+      const message = await createMessage(updatedQuestion, session, {});
+      const vote: Vote<TContextData> = {
+        raw: object,
+        actor,
+        message,
+        poll: {
+          multiple,
+          options,
+          endTime: question.endTime,
+        },
+        option,
+      };
+      await this.onVote(session, vote);
+      const update = new Update({
+        id: new URL(
+          `#update-votes/${Date.now()}`,
+          updatedQuestion.id ?? ctx.origin,
+        ),
+        actor: ctx.getActorUri(this.identifier),
+        object: updatedPollMessage.id,
+        tos: updatedPollMessage.toIds,
+        ccs: updatedPollMessage.ccIds,
+      });
+      if (message.visibility === "direct") {
+        await ctx.forwardActivity(this, [...message.mentions], {
+          skipIfUnsigned: true,
+          excludeBaseUris: [new URL(ctx.origin)],
+        });
+        await ctx.sendActivity(
+          this,
+          [...message.mentions],
+          update,
+          { excludeBaseUris: [new URL(ctx.origin)] },
+        );
+      } else {
+        await ctx.forwardActivity(this, "followers", {
+          skipIfUnsigned: true,
+          preferSharedInbox: true,
+          excludeBaseUris: [new URL(ctx.origin)],
+        });
+        await ctx.sendActivity(
+          this,
+          "followers",
+          update,
+          {
+            preferSharedInbox: true,
+            excludeBaseUris: [new URL(ctx.origin)],
+          },
+        );
+      }
+      return;
+    }
     if (
       this.onReply != null &&
       replyTarget?.type === "object" &&

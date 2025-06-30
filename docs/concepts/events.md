@@ -444,3 +444,81 @@ bot.onUnreact = async (session, reaction) => {
   }
 };
 ~~~~
+
+
+Vote
+----
+
+*This API is available since BotKit 0.3.0.*
+
+The `~Bot.onVote` event handler is called when someone votes on a poll created
+by your bot.  It receives a `Vote` object, which represents the vote activity,
+as the second argument.
+
+The following is an example of a vote event handler that sends a direct message
+when someone votes on your bot's poll:
+
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+bot.onVote = async (session, vote) => {
+  await session.publish(
+    text`Thanks for voting "${vote.option}" on my poll, ${vote.actor}!`,
+    { visibility: "direct" },
+  );
+};
+~~~~
+
+The `Vote` object contains the following properties:
+
+`~Vote.actor`
+:   The actor who voted.
+
+`~Vote.option`
+:   The option that was voted for (as a string).
+
+`~Vote.poll`
+:   Information about the poll including whether it allows `~Poll.multiple`
+    choices, all available `~Poll.options`, and the `~Poll.endTime`.
+
+`~Vote.message`
+:   The poll message that was voted on.
+
+Note that for multiple choice polls, each option selection creates a separate
+`Vote` object, even if the same user selects multiple options.
+
+> [!TIP]
+> You can check if a poll allows multiple selections by accessing the
+> `vote.poll.multiple` property:
+>
+> ~~~~ typescript twoslash
+> import { type Bot, text } from "@fedify/botkit";
+> const bot = {} as unknown as Bot<void>;
+> // ---cut-before---
+> bot.onVote = async (session, vote) => {
+>   if (vote.poll.multiple) {
+>     await vote.message.reply(
+>       text`${vote.actor} selected "${vote.option}" in the multiple choice poll!`
+>     );
+>   } else {
+>     await vote.message.reply(
+>       text`${vote.actor} voted for "${vote.option}"!`
+>     );
+>   }
+> };
+> ~~~~
+
+> [!NOTE]
+> The `~Bot.onVote` event handler is only called for votes on polls created by
+> your bot. Votes on polls created by others will not trigger this event.
+
+> [!NOTE]
+> The bot author cannot vote on their own polls—such votes  are automatically
+> ignored and will not trigger the `~Bot.onVote` event handler.
+
+> [!NOTE]
+> On a poll with multiple options, each selection creates a separate `Vote`
+> object, even if the same user selects multiple options. This means that if
+> a user selects multiple options in a multiple-choice poll, the `~Bot.onVote`
+> event handler will be called multiple times, once for each selected option.

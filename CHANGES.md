@@ -9,6 +9,16 @@ To be released.
  -  BotKit now supports Node.js alongside of Deno.  The minimum required
     version of Node.js is 22.0.0.
 
+ -  BotKit now supports publishing polls.  [[#7]]
+
+     -  Added `Poll` interface.
+     -  Added `Vote` interface.
+     -  Added an overload of the `Session.publish()` method that accepts
+        `SessionPublishOptionsWithQuestion` as the second argument.
+     -  Added `SessionPublishOptionsWithQuestion` interface.
+     -  Added `Bot.onVote` event.
+     -  Added `VoteEventHandler` type.
+
  -  Added `@fedify/botkit/repository` module that provides repository
     implementations for BotKit.
 
@@ -23,6 +33,8 @@ To be released.
      -  Added `MemoryCachedRepository` class.
 
  -  Upgraded Fedify to 1.6.1.
+
+[#7]: https://github.com/fedify-dev/botkit/issues/7
 
 
 Version 0.2.0

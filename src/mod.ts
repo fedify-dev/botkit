@@ -64,6 +64,7 @@ export type {
   MessageVisibility,
   SharedMessage,
 } from "./message.ts";
+export type { Poll, Vote } from "./poll.ts";
 export {
   type AuthorizedLike,
   type AuthorizedReaction,

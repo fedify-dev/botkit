@@ -30,6 +30,7 @@ import type {
   MessageClass,
   MessageVisibility,
 } from "./message.ts";
+import type { Poll } from "./poll.ts";
 import type { Text } from "./text.ts";
 
 /**
@@ -128,6 +129,18 @@ export interface Session<TContextData> {
   ): Promise<AuthorizedMessage<T, TContextData>>;
 
   /**
+   * Publishes a question attributed to the bot with a poll.
+   * @param content The content of the question.
+   * @param options The options for publishing the question.
+   * @returns The published question.
+   * @since 0.3.0
+   */
+  publish(
+    content: Text<"block", TContextData>,
+    options: SessionPublishOptionsWithQuestion<TContextData>,
+  ): Promise<AuthorizedMessage<Question, TContextData>>;
+
+  /**
    * Gets messages from the bot's outbox.
    * @param options The options for getting messages.
    * @returns An async iterable of messages.
@@ -182,6 +195,20 @@ export interface SessionPublishOptionsWithClass<
     : T extends Note ? typeof Note
     : T extends Question ? typeof Question
     : never;
+}
+
+/**
+ * Options for publishing a question with a poll.
+ * @typeParam TContextData The type of the context data.
+ * @since 0.3.0
+ */
+export interface SessionPublishOptionsWithQuestion<TContextData>
+  extends SessionPublishOptionsWithClass<Question, TContextData> {
+  /**
+   * The poll to attach to the question.
+   * @since 0.3.0
+   */
+  readonly poll: Poll;
 }
 
 /**
