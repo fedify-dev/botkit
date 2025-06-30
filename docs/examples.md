@@ -25,6 +25,59 @@ BotKit.  The bot performs the following actions:
 :::
 
 
+One-time passcode authentication bot
+------------------------------------
+
+This example demonstrates how to implement an emoji-based one-time passcode
+authentication system using BotKit's poll functionality.  The bot provides
+a simple two-factor authentication mechanism through the fediverse.
+
+The authentication flow works as follows:
+
+1. *Initial setup*: The user visits the web interface and enters their fediverse
+   handle (e.g., `@username@server.com`).
+
+2. *Challenge generation*: The system generates a random set of emojis and sends
+   a direct message containing a poll with all available emoji options to
+  the user's fediverse account.
+
+3. *Web interface display*: The correct emoji sequence is displayed on the
+   web page.
+
+4. *User response*: The user votes for the matching emojis in the poll they
+   received via direct message.
+
+5. *Verification*: The system verifies that the user selected exactly
+   the same emojis shown on the web page.
+
+6. *Authentication result*: If the emoji selection matches, authentication is
+   successful.
+
+Key features:
+
+ -  Uses BotKit's [poll functionality](./concepts/message.md#polls) for secure
+    voting
+ -  Implements a 15-minute expiration for both the challenge and authentication
+    attempts
+ -  Provides a clean web interface using [Hono] framework and [Pico CSS]
+ -  Stores temporary data using [Deno KV] for session management
+ -  Supports both direct message delivery and real-time vote tracking
+
+This example showcases how to combine ActivityPub's social features with web
+authentication, demonstrating BotKit's capability to bridge fediverse
+interactions with traditional web applications.
+
+::: code-group
+
+<<< @/../examples/otp.tsx [otp.tsx]
+
+:::
+
+[Hono]: https://hono.dev/
+[Pico CSS]: https://picocss.com/
+[Deno KV]: https://deno.com/kv
+
+
 FediChatBot
 -----------
 
