@@ -37,6 +37,7 @@ import type {
   UndoneReactionEventHandler,
   UnfollowEventHandler,
   UnlikeEventHandler,
+  VoteEventHandler,
 } from "./events.ts";
 import type { Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
@@ -177,6 +178,21 @@ export interface Bot<TContextData> {
    * @since 0.2.0
    */
   onUnreact?: UndoneReactionEventHandler<TContextData>;
+
+  /**
+   * An event handler for a vote in a poll.  This event is only triggered when
+   * the bot is the author of the poll, and the vote is made by another actor.
+   * If the poll allows multiple selections, this event is triggered multiple
+   * times, once for each option selected by the actor.
+   *
+   * Note that this event can be triggered even if the voter vote an option
+   * multiple times or multiple options for a poll that disallows multiple
+   * selections.  You should validate the vote in the event handler by storing
+   * the votes in a persistent store, and checking if the vote is valid.
+   * (This behavior can subject to change in the future.)
+   * @since 0.3.0
+   */
+  onVote?: VoteEventHandler<TContextData>;
 }
 
 /**
@@ -473,6 +489,12 @@ export function createBot<TContextData = void>(
     },
     set onUnreact(value) {
       bot.onUnreact = value;
+    },
+    get onVote() {
+      return bot.onVote;
+    },
+    set onVote(value) {
+      bot.onVote = value;
     },
   } satisfies Bot<TContextData> & { impl: BotImpl<TContextData> };
   // @ts-ignore: the wrapper implements BotWithVoidContextData

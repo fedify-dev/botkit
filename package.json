@@ -78,6 +78,14 @@
       "import": "./dist/message.js",
       "require": "./dist/message.cjs"
     },
+    "./poll": {
+      "types": {
+        "import": "./dist/poll.d.ts",
+        "require": "./dist/poll.d.cts"
+      },
+      "import": "./dist/poll.js",
+      "require": "./dist/poll.cjs"
+    },
     "./reaction": {
       "types": {
         "import": "./dist/reaction.d.ts",

@@ -24,19 +24,25 @@ import {
   type Object,
   PUBLIC_COLLECTION,
 } from "@fedify/fedify";
-import { Follow, Link, Undo } from "@fedify/fedify/vocab";
+import { Collection, Follow, Link, Undo } from "@fedify/fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import { encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import type { BotImpl } from "./bot-impl.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
-import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
+import {
+  type AuthorizedMessage,
+  type Message,
+  type MessageClass,
+  Question,
+} from "./message.ts";
 import type { Uuid } from "./repository.ts";
 import type {
   Session,
   SessionGetOutboxOptions,
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
+  SessionPublishOptionsWithQuestion,
 } from "./session.ts";
 import type { Text } from "./text.ts";
 
@@ -53,6 +59,12 @@ export interface SessionImplPublishOptionsWithClass<
 > extends
   SessionPublishOptionsWithClass<T, TContextData>,
   SessionImplPublishOptions<TContextData> {
+}
+
+export interface SessionImplPublishOptionsWithQuestion<TContextData>
+  extends
+    SessionPublishOptionsWithQuestion<TContextData>,
+    SessionImplPublishOptionsWithClass<Question, TContextData> {
 }
 
 export class SessionImpl<TContextData> implements Session<TContextData> {
@@ -208,9 +220,14 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
   ): Promise<AuthorizedMessage<T, TContextData>>;
   async publish(
     content: Text<"block", TContextData>,
+    options: SessionImplPublishOptionsWithQuestion<TContextData>,
+  ): Promise<AuthorizedMessage<Question, TContextData>>;
+  async publish(
+    content: Text<"block", TContextData>,
     options:
       | SessionImplPublishOptions<TContextData>
-      | SessionImplPublishOptionsWithClass<MessageClass, TContextData> = {},
+      | SessionImplPublishOptionsWithClass<MessageClass, TContextData>
+      | SessionImplPublishOptionsWithQuestion<TContextData> = {},
   ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
     const published = new Date();
     const id = uuidv7({ msecs: +published }) as Uuid;
@@ -243,6 +260,31 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         }),
       );
     }
+    let inclusiveOptions: Note[] = [];
+    let exclusiveOptions: Note[] = [];
+    let voters: number | null = null;
+    let endTime: Temporal.Instant | null = null;
+    if ("class" in options && options.class === Question && "poll" in options) {
+      if (options.poll.options.length < 2) {
+        throw new TypeError("At least two options are required in a poll.");
+      } else if (
+        new Set(options.poll.options).size != options.poll.options.length
+      ) {
+        throw new TypeError("Duplicate options are not allowed in a poll.");
+      } else if (options.poll.options.some((o) => o.trim() === "")) {
+        throw new TypeError("Poll options cannot be empty.");
+      }
+      const pollOptions = options.poll.options.map((option) =>
+        new Note({
+          name: option,
+          replies: new Collection({ totalItems: 0 }),
+        })
+      );
+      if (options.poll.multiple) inclusiveOptions = pollOptions;
+      else exclusiveOptions = pollOptions;
+      voters = 0;
+      endTime = options.poll.endTime;
+    }
     const msg = new cls({
       id: this.context.getObjectUri<MessageClass>(cls, { id }),
       contents: options.language == null
@@ -253,6 +295,10 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       tags,
       attribution: this.context.getActorUri(this.bot.identifier),
       attachments: options.attachments ?? [],
+      inclusiveOptions,
+      exclusiveOptions,
+      voters,
+      endTime,
       tos: visibility === "public"
         ? [PUBLIC_COLLECTION, ...mentionedActorIds]
         : visibility === "unlisted" || visibility === "followers"

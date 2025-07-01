@@ -16,6 +16,7 @@
 import type { Actor } from "@fedify/fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
+import type { Vote } from "./poll.ts";
 import type { Like, Reaction } from "./reaction.ts";
 import type { Session } from "./session.ts";
 
@@ -165,4 +166,19 @@ export type ReactionEventHandler<TContextData> = (
 export type UndoneReactionEventHandler<TContextData> = (
   session: Session<TContextData>,
   reaction: Reaction<TContextData>,
+) => void | Promise<void>;
+
+/**
+ * An event handler for a vote in a poll.  This event is only triggered when
+ * the bot is the author of the poll, and the vote is made by another actor.
+ * Note that if the poll allows multiple selections, this event is triggered
+ * multiple times, once for each option selected by the actor.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param vote The vote made by another actor in the poll.
+ * @since 0.3.0
+ */
+export type VoteEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  vote: Vote<TContextData>,
 ) => void | Promise<void>;

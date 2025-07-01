@@ -20,6 +20,7 @@ import {
   type Actor,
   Announce,
   Article,
+  Collection,
   Create,
   CryptographicKey,
   Emoji,
@@ -33,10 +34,12 @@ import {
   Place,
   PropertyValue,
   PUBLIC_COLLECTION,
+  Question,
   type Recipient,
   Reject,
   Service,
   Undo,
+  Update,
 } from "@fedify/fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
@@ -45,6 +48,7 @@ import { parseSemVer } from "./bot.ts";
 import type { CustomEmoji } from "./emoji.ts";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
+import type { Vote } from "./poll.ts";
 import type { Like, Reaction } from "./reaction.ts";
 import { MemoryRepository } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
@@ -2512,5 +2516,305 @@ function createMockInboxContext(
   };
   return ctx;
 }
+
+test("BotImpl.onVote()", async (t) => {
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+  });
+  const ctx = createMockInboxContext(bot, "https://example.com", "bot");
+
+  // Create a poll first
+  const pollId = "01950000-0000-7000-8000-000000000000";
+  const poll = new Create({
+    id: new URL(`https://example.com/ap/create/${pollId}`),
+    actor: ctx.getActorUri(bot.identifier),
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(bot.identifier),
+    object: new Question({
+      id: new URL(`https://example.com/ap/question/${pollId}`),
+      attribution: ctx.getActorUri(bot.identifier),
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(bot.identifier),
+      content: "What's your favorite color?",
+      inclusiveOptions: [],
+      exclusiveOptions: [
+        new Note({ name: "Red", replies: new Collection({ totalItems: 0 }) }),
+        new Note({ name: "Blue", replies: new Collection({ totalItems: 0 }) }),
+        new Note({ name: "Green", replies: new Collection({ totalItems: 0 }) }),
+      ],
+      endTime: Temporal.Now.instant().add({ hours: 24 }),
+      voters: 0,
+    }),
+    published: Temporal.Now.instant(),
+  });
+  await repository.addMessage(pollId, poll);
+
+  // Create a voter
+  const voter = new Person({
+    id: new URL("https://hollo.social/@alice"),
+    preferredUsername: "alice",
+  });
+
+  let receivedVote: Vote<void> | null = null;
+  bot.onVote = (_session, vote) => {
+    receivedVote = vote;
+  };
+
+  await t.test("vote on single choice poll", async () => {
+    ctx.sentActivities = [];
+    ctx.forwardedRecipients = [];
+    receivedVote = null;
+
+    // Create a vote
+    const voteCreate = new Create({
+      id: new URL("https://example.com/ap/create/vote1"),
+      actor: voter,
+      to: PUBLIC_COLLECTION,
+      object: new Note({
+        id: new URL("https://example.com/ap/note/vote1"),
+        attribution: voter,
+        to: PUBLIC_COLLECTION,
+        name: "Red",
+        replyTarget: poll.objectId,
+        content: "Red",
+      }),
+      published: Temporal.Now.instant(),
+    });
+
+    // Process the vote
+    await bot.onCreated(ctx, voteCreate);
+
+    // Check that onVote was called
+    assert.ok(receivedVote != null, "onVote should have been called");
+    const vote = receivedVote as Vote<void>;
+    assert.deepStrictEqual(vote.actor.id, voter.id);
+    assert.deepStrictEqual(vote.option, "Red");
+    assert.deepStrictEqual(vote.poll.multiple, false);
+    assert.deepStrictEqual(vote.poll.options, ["Red", "Blue", "Green"]);
+
+    // Check that Update activity was sent
+    assert.ok(ctx.sentActivities.length > 0, "Update activity should be sent");
+    const updateActivity = ctx.sentActivities.find(
+      ({ activity }: { activity: Activity }) => activity instanceof Update,
+    );
+    assert.ok(updateActivity != null, "Update activity should be found");
+    assert.ok(updateActivity.activity instanceof Update);
+    assert.deepStrictEqual(
+      updateActivity.activity.objectId,
+      poll.id,
+    );
+
+    // Check that vote count was updated in repository
+    const updatedPoll = await repository.getMessage(pollId);
+    assert.ok(updatedPoll instanceof Create);
+    const updatedQuestion = await updatedPoll.getObject(ctx);
+    assert.ok(updatedQuestion instanceof Question);
+    const updatedOptions = await Array.fromAsync(
+      updatedQuestion.getExclusiveOptions(ctx),
+    );
+    const redOption = updatedOptions.find((opt) =>
+      opt.name?.toString() === "Red"
+    );
+    assert.ok(redOption != null);
+    const replies = await redOption.getReplies(ctx);
+    assert.deepStrictEqual(replies?.totalItems, 1);
+  });
+
+  await t.test("vote on multiple choice poll", async () => {
+    // Create a multiple choice poll
+    const multiPollId = "01950000-0000-7000-8000-000000000001";
+    const multiPoll = new Create({
+      id: new URL(`https://example.com/ap/create/${multiPollId}`),
+      actor: ctx.getActorUri(bot.identifier),
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(bot.identifier),
+      object: new Question({
+        id: new URL(`https://example.com/ap/question/${multiPollId}`),
+        attribution: ctx.getActorUri(bot.identifier),
+        to: PUBLIC_COLLECTION,
+        cc: ctx.getFollowersUri(bot.identifier),
+        content: "Which languages do you know?",
+        inclusiveOptions: [
+          new Note({
+            name: "JavaScript",
+            replies: new Collection({ totalItems: 0 }),
+          }),
+          new Note({
+            name: "TypeScript",
+            replies: new Collection({ totalItems: 0 }),
+          }),
+          new Note({
+            name: "Python",
+            replies: new Collection({ totalItems: 0 }),
+          }),
+        ],
+        exclusiveOptions: [],
+        endTime: Temporal.Now.instant().add({ hours: 24 }),
+        voters: 0,
+      }),
+      published: Temporal.Now.instant(),
+    });
+    await repository.addMessage(multiPollId, multiPoll);
+
+    ctx.sentActivities = [];
+    ctx.forwardedRecipients = [];
+    receivedVote = null;
+
+    // Create a vote for JavaScript
+    const jsVoteCreate = new Create({
+      id: new URL("https://example.com/ap/create/vote2"),
+      actor: voter,
+      to: PUBLIC_COLLECTION,
+      object: new Note({
+        id: new URL("https://example.com/ap/note/vote2"),
+        attribution: voter,
+        to: PUBLIC_COLLECTION,
+        name: "JavaScript",
+        replyTarget: multiPoll.objectId,
+        content: "JavaScript",
+      }),
+      published: Temporal.Now.instant(),
+    });
+
+    // Process the vote
+    await bot.onCreated(ctx, jsVoteCreate);
+
+    // Check that onVote was called
+    assert.ok(receivedVote != null, "onVote should have been called");
+    const vote = receivedVote as Vote<void>;
+    assert.deepStrictEqual(vote.actor.id, voter.id);
+    assert.deepStrictEqual(vote.option, "JavaScript");
+    assert.deepStrictEqual(vote.poll.multiple, true);
+    assert.deepStrictEqual(vote.poll.options, [
+      "JavaScript",
+      "TypeScript",
+      "Python",
+    ]);
+  });
+
+  await t.test("ignore vote from poll author", async () => {
+    ctx.sentActivities = [];
+    ctx.forwardedRecipients = [];
+    receivedVote = null;
+
+    // Create a vote from the bot itself
+    const selfVoteCreate = new Create({
+      id: new URL("https://example.com/ap/create/vote3"),
+      actor: ctx.getActorUri(bot.identifier),
+      to: PUBLIC_COLLECTION,
+      object: new Note({
+        id: new URL("https://example.com/ap/note/vote3"),
+        attribution: ctx.getActorUri(bot.identifier),
+        to: PUBLIC_COLLECTION,
+        name: "Red",
+        replyTarget: poll.objectId,
+        content: "Red",
+      }),
+      published: Temporal.Now.instant(),
+    });
+
+    // Process the vote
+    await bot.onCreated(ctx, selfVoteCreate);
+
+    // Check that onVote was NOT called
+    assert.deepStrictEqual(
+      receivedVote,
+      null,
+      "onVote should not be called for poll author",
+    );
+  });
+
+  await t.test("ignore vote on expired poll", async () => {
+    // Create an expired poll
+    const expiredPollId = "01950000-0000-7000-8000-000000000002";
+    const expiredPoll = new Create({
+      id: new URL(`https://example.com/ap/create/${expiredPollId}`),
+      actor: ctx.getActorUri(bot.identifier),
+      to: PUBLIC_COLLECTION,
+      cc: ctx.getFollowersUri(bot.identifier),
+      object: new Question({
+        id: new URL(`https://example.com/ap/question/${expiredPollId}`),
+        attribution: ctx.getActorUri(bot.identifier),
+        to: PUBLIC_COLLECTION,
+        cc: ctx.getFollowersUri(bot.identifier),
+        content: "Expired poll?",
+        inclusiveOptions: [],
+        exclusiveOptions: [
+          new Note({ name: "Yes", replies: new Collection({ totalItems: 0 }) }),
+          new Note({ name: "No", replies: new Collection({ totalItems: 0 }) }),
+        ],
+        endTime: Temporal.Now.instant().subtract({ hours: 1 }), // Expired
+        voters: 0,
+      }),
+      published: Temporal.Now.instant(),
+    });
+    await repository.addMessage(expiredPollId, expiredPoll);
+
+    ctx.sentActivities = [];
+    ctx.forwardedRecipients = [];
+    receivedVote = null;
+
+    // Create a vote on expired poll
+    const expiredVoteCreate = new Create({
+      id: new URL("https://example.com/ap/create/vote4"),
+      actor: voter,
+      to: PUBLIC_COLLECTION,
+      object: new Note({
+        id: new URL("https://example.com/ap/note/vote4"),
+        attribution: voter,
+        to: PUBLIC_COLLECTION,
+        name: "Yes",
+        replyTarget: expiredPoll.objectId,
+        content: "Yes",
+      }),
+      published: Temporal.Now.instant(),
+    });
+
+    // Process the vote
+    await bot.onCreated(ctx, expiredVoteCreate);
+
+    // Check that onVote was NOT called
+    assert.deepStrictEqual(
+      receivedVote,
+      null,
+      "onVote should not be called for expired poll",
+    );
+  });
+
+  await t.test("ignore vote with invalid option", async () => {
+    ctx.sentActivities = [];
+    ctx.forwardedRecipients = [];
+    receivedVote = null;
+
+    // Create a vote with invalid option
+    const invalidVoteCreate = new Create({
+      id: new URL("https://example.com/ap/create/vote5"),
+      actor: voter,
+      to: PUBLIC_COLLECTION,
+      object: new Note({
+        id: new URL("https://example.com/ap/note/vote5"),
+        attribution: voter,
+        to: PUBLIC_COLLECTION,
+        name: "Purple", // Not a valid option
+        replyTarget: poll.objectId,
+        content: "Purple",
+      }),
+      published: Temporal.Now.instant(),
+    });
+
+    // Process the vote
+    await bot.onCreated(ctx, invalidVoteCreate);
+
+    // Check that onVote was NOT called
+    assert.deepStrictEqual(
+      receivedVote,
+      null,
+      "onVote should not be called for invalid option",
+    );
+  });
+});
 
 // cSpell: ignore thumbsup

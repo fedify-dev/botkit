@@ -24,8 +24,11 @@ import {
   isActor,
   Object,
 } from "@fedify/fedify/vocab";
+import { getLogger } from "@logtape/logtape";
 export type { KvKey, KvStore } from "@fedify/fedify/federation";
 export { Announce, Create } from "@fedify/fedify/vocab";
+
+const logger = getLogger(["botkit", "repository"]);
 
 /**
  * A UUID (universally unique identifier).
@@ -190,6 +193,43 @@ export interface Repository {
    *          exist.
    */
   getFollowee(followeeId: URL): Promise<Follow | undefined>;
+
+  /**
+   * Records a vote in a poll.  If the same voter had already voted for the
+   * same option in a poll, the vote will be silently ignored.
+   * @param messageId The UUID of the poll message to vote on.
+   * @param voterId The ID of the voter.  It should be a URL of the actor who is
+   *                voting.
+   * @param option The option that the voter is voting for.  It should be one of
+   *               the options in the poll.  If the poll allows multiple
+   *               selections, this should be a single option that the voter is
+   *               voting for, which is one of multiple calls to this method.
+   * @since 0.3.0
+   */
+  vote(messageId: Uuid, voterId: URL, option: string): Promise<void>;
+
+  /**
+   * Counts the number of voters in a poll.  Even if the poll allows multiple
+   * selections, each voter is counted only once.
+   * @param messageId The UUID of the poll message to count voters for.
+   * @returns The number of voters in the poll.  If the poll does not exist,
+   *          0 will be returned.
+   * @since 0.3.0
+   */
+  countVoters(messageId: Uuid): Promise<number>;
+
+  /**
+   * Counts the votes for each option in a poll.  If the poll allows multiple
+   * selections, each option is counted separately, and the same voter can
+   * vote for multiple options.
+   * @param messageId The UUID of the poll message to count votes for.
+   * @returns A record where the keys are the options and the values are
+   *          the number of votes for each option.  If the poll does not exist,
+   *          an empty record will be returned.  Some options may not be
+   *          present in the record if no votes were cast for them.
+   * @since 0.3.0
+   */
+  countVotes(messageId: Uuid): Promise<Readonly<Record<string, number>>>;
 }
 
 /**
@@ -279,6 +319,13 @@ export interface KvStoreRepositoryPrefixes {
    * @default `["_botkit", "follows"]`
    */
   readonly follows: KvKey;
+
+  /**
+   * The key prefix used for storing poll votes.
+   * @default `["_botkit", "polls"]`
+   * @since 0.3.0
+   */
+  readonly polls: KvKey;
 }
 
 /**
@@ -294,6 +341,13 @@ export class KvRepository implements Repository {
    * @param prefixes The prefixes for key-value store keys.
    */
   constructor(kv: KvStore, prefixes?: KvStoreRepositoryPrefixes) {
+    if (kv.cas == null) {
+      logger.warn(
+        "The given KvStore {kv} does not support CAS operations. " +
+          "This may cause issues with concurrent updates.",
+        { kv },
+      );
+    }
     this.kv = kv;
     this.prefixes = {
       keyPairs: ["_botkit", "keyPairs"],
@@ -302,6 +356,7 @@ export class KvRepository implements Repository {
       followRequests: ["_botkit", "followRequests"],
       followees: ["_botkit", "followees"],
       follows: ["_botkit", "follows"],
+      polls: ["_botkit", "polls"],
       ...prefixes ?? {},
     };
   }
@@ -596,6 +651,90 @@ export class KvRepository implements Repository {
       return undefined;
     }
   }
+
+  async vote(messageId: Uuid, voterId: URL, option: string): Promise<void> {
+    const key: KvKey = [...this.prefixes.polls, messageId, option];
+    while (true) {
+      const prev = await this.kv.get<string[]>(key);
+      if (prev != null && prev.includes(voterId.href)) return;
+      const next = prev == null ? [voterId.href] : [...prev, voterId.href];
+      if (this.kv.cas == null) {
+        this.kv.set(key, next);
+        break;
+      } else {
+        const success = await this.kv.cas(key, prev, next);
+        if (success) break;
+        // If the CAS operation failed, we retry to ensure the vote is recorded.
+        logger.trace(
+          "CAS operation failed, retrying vote for {messageId} by {voterId} for option {option}.",
+          {
+            messageId,
+            voterId: voterId.href,
+            option,
+          },
+        );
+      }
+    }
+    const optionsKey: KvKey = [...this.prefixes.polls, messageId];
+    while (true) {
+      const prevOptions = await this.kv.get<string[]>(optionsKey);
+      if (prevOptions != null && prevOptions.includes(option)) return;
+      const nextOptions = prevOptions == null
+        ? [option]
+        : [...prevOptions, option];
+      if (this.kv.cas == null) {
+        this.kv.set(optionsKey, nextOptions);
+        break;
+      } else {
+        const success = await this.kv.cas(optionsKey, prevOptions, nextOptions);
+        if (success) break;
+        // If the CAS operation failed, we retry to ensure the option is recorded.
+        logger.trace(
+          "CAS operation failed, retrying to add option {option} for message {messageId}.",
+          {
+            option,
+            messageId,
+          },
+        );
+      }
+    }
+  }
+
+  async countVoters(messageId: Uuid): Promise<number> {
+    const options = await this.kv.get<string[]>([
+      ...this.prefixes.polls,
+      messageId,
+    ]) ?? [];
+    const result = new Set<string>();
+    for (const option of options) {
+      const voters = await this.kv.get<string[]>([
+        ...this.prefixes.polls,
+        messageId,
+        option,
+      ]);
+      if (voters != null) {
+        for (const voter of voters) result.add(voter);
+      }
+    }
+    return result.size;
+  }
+
+  async countVotes(messageId: Uuid): Promise<Readonly<Record<string, number>>> {
+    const options = await this.kv.get<string[]>([
+      ...this.prefixes.polls,
+      messageId,
+    ]) ?? [];
+    const result: Record<string, number> = {};
+    for (const option of options) {
+      const voters = await this.kv.get<string[]>([
+        ...this.prefixes.polls,
+        messageId,
+        option,
+      ]);
+      result[option] = voters == null ? 0 : voters.length;
+    }
+    return result;
+  }
 }
 
 interface KeyPair {
@@ -610,7 +749,7 @@ interface KeyPair {
  * @internal
  */
 function extractTimestamp(uuid: string): number {
-  // UUIDv7 format: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+  // UUIDv7 format: xxxxxxxx-xxxx-7xxx-xxxx-xxxxxxxxxxxx
   // The timestamp is in the first 6 bytes (48 bits) of the UUID.
   if (uuid.length !== 36 || uuid[14] !== "7") {
     throw new TypeError("Invalid UUIDv7 format.");
@@ -630,6 +769,7 @@ export class MemoryRepository implements Repository {
   followRequests: Record<string, string> = {};
   sentFollows: Record<string, Follow> = {};
   followees: Record<string, Follow> = {};
+  polls: Record<Uuid, Record<string, Set<string>>> = {};
 
   setKeyPairs(keyPairs: CryptoKeyPair[]): Promise<void> {
     this.keyPairs = keyPairs;
@@ -780,6 +920,33 @@ export class MemoryRepository implements Repository {
 
   getFollowee(followeeId: URL): Promise<Follow | undefined> {
     return Promise.resolve(this.followees[followeeId.href]);
+  }
+
+  vote(messageId: Uuid, voterId: URL, option: string): Promise<void> {
+    const poll = this.polls[messageId] ??= {};
+    const voters = poll[option] ??= new Set();
+    voters.add(voterId.href);
+    return Promise.resolve();
+  }
+
+  countVoters(messageId: Uuid): Promise<number> {
+    const poll = this.polls[messageId];
+    if (poll == null) return Promise.resolve(0);
+    let voters = new Set<string>();
+    for (const votersSet of globalThis.Object.values(poll)) {
+      voters = voters.union(votersSet);
+    }
+    return Promise.resolve(voters.size);
+  }
+
+  countVotes(messageId: Uuid): Promise<Readonly<Record<string, number>>> {
+    const poll = this.polls[messageId];
+    if (poll == null) return Promise.resolve({});
+    const counts: Record<string, number> = {};
+    for (const [option, voters] of globalThis.Object.entries(poll)) {
+      counts[option] = voters.size;
+    }
+    return Promise.resolve(counts);
   }
 }
 
@@ -969,5 +1136,22 @@ export class MemoryCachedRepository implements Repository {
       }
     }
     return follow;
+  }
+
+  async vote(messageId: Uuid, voterId: URL, option: string): Promise<void> {
+    await this.cache.vote(messageId, voterId, option);
+    await this.underlying.vote(messageId, voterId, option);
+  }
+
+  async countVoters(messageId: Uuid): Promise<number> {
+    const voters = await this.cache.countVoters(messageId);
+    if (voters > 0) return voters;
+    return this.underlying.countVoters(messageId);
+  }
+
+  async countVotes(messageId: Uuid): Promise<Readonly<Record<string, number>>> {
+    const votes = await this.cache.countVotes(messageId);
+    if (globalThis.Object.keys(votes).length > 0) return votes;
+    return await this.underlying.countVotes(messageId);
   }
 }

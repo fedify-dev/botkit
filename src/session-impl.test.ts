@@ -21,6 +21,7 @@ import {
   Note,
   Person,
   PUBLIC_COLLECTION,
+  Question,
   type Recipient,
   Undo,
 } from "@fedify/fedify/vocab";
@@ -469,6 +470,197 @@ test("SessionImpl.publish()", async (t) => {
     );
     assert.deepStrictEqual(quote.visibility, "public");
     assert.deepStrictEqual(quote.quoteTarget?.id, originalMsg.id);
+  });
+
+  await t.test("poll single choice", async () => {
+    ctx.sentActivities = [];
+    const endTime = Temporal.Now.instant().add({ hours: 24 });
+    const poll = await session.publish(text`What's your favorite color?`, {
+      class: Question,
+      poll: {
+        multiple: false,
+        options: ["Red", "Blue", "Green"],
+        endTime,
+      },
+    });
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assert.deepStrictEqual(recipients, "followers");
+    assert.ok(activity instanceof Create);
+    assert.deepStrictEqual(activity.actorId, ctx.getActorUri(bot.identifier));
+    assert.deepStrictEqual(activity.toIds, [PUBLIC_COLLECTION]);
+    assert.deepStrictEqual(activity.ccIds, [
+      ctx.getFollowersUri(bot.identifier),
+    ]);
+    const object = await activity.getObject(ctx);
+    assert.ok(object instanceof Question);
+    assert.deepStrictEqual(
+      object.attributionId,
+      ctx.getActorUri(bot.identifier),
+    );
+    assert.deepStrictEqual(object.toIds, [PUBLIC_COLLECTION]);
+    assert.deepStrictEqual(object.ccIds, [ctx.getFollowersUri(bot.identifier)]);
+    assert.deepStrictEqual(
+      object.content,
+      "<p>What&apos;s your favorite color?</p>",
+    );
+    assert.deepStrictEqual(object.endTime, endTime);
+    assert.deepStrictEqual(object.voters, 0);
+    assert.deepStrictEqual(object.inclusiveOptionIds, []);
+
+    const exclusiveOptions = await Array.fromAsync(
+      object.getExclusiveOptions(ctx),
+    );
+    assert.deepStrictEqual(exclusiveOptions.length, 3);
+    assert.ok(exclusiveOptions[0] instanceof Note);
+    assert.deepStrictEqual(exclusiveOptions[0].name?.toString(), "Red");
+    assert.ok(exclusiveOptions[1] instanceof Note);
+    assert.deepStrictEqual(exclusiveOptions[1].name?.toString(), "Blue");
+    assert.ok(exclusiveOptions[2] instanceof Note);
+    assert.deepStrictEqual(exclusiveOptions[2].name?.toString(), "Green");
+
+    for (const option of exclusiveOptions) {
+      const replies = await option.getReplies(ctx);
+      assert.deepStrictEqual(replies?.totalItems, 0);
+    }
+
+    assert.deepStrictEqual(poll.id, object.id);
+    assert.deepStrictEqual(poll.text, "What's your favorite color?");
+    assert.deepStrictEqual(
+      poll.html,
+      "<p>What&apos;s your favorite color?</p>",
+    );
+    assert.deepStrictEqual(poll.visibility, "public");
+  });
+
+  await t.test("poll multiple choice", async () => {
+    ctx.sentActivities = [];
+    const endTime = Temporal.Now.instant().add({ hours: 24 * 7 });
+    const poll = await session.publish(
+      text`Which programming languages do you know?`,
+      {
+        class: Question,
+        poll: {
+          multiple: true,
+          options: ["JavaScript", "TypeScript", "Python", "Rust"],
+          endTime,
+        },
+        visibility: "unlisted",
+      },
+    );
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assert.deepStrictEqual(recipients, "followers");
+    assert.ok(activity instanceof Create);
+    const object = await activity.getObject(ctx);
+    assert.ok(object instanceof Question);
+    assert.deepStrictEqual(object.endTime, endTime);
+    assert.deepStrictEqual(object.voters, 0);
+    assert.deepStrictEqual(object.exclusiveOptionIds, []);
+
+    const inclusiveOptions = await Array.fromAsync(
+      object.getInclusiveOptions(ctx),
+    );
+    assert.deepStrictEqual(inclusiveOptions.length, 4);
+    assert.ok(inclusiveOptions[0] instanceof Note);
+    assert.deepStrictEqual(inclusiveOptions[0].name?.toString(), "JavaScript");
+    assert.ok(inclusiveOptions[1] instanceof Note);
+    assert.deepStrictEqual(inclusiveOptions[1].name?.toString(), "TypeScript");
+    assert.ok(inclusiveOptions[2] instanceof Note);
+    assert.deepStrictEqual(inclusiveOptions[2].name?.toString(), "Python");
+    assert.ok(inclusiveOptions[3] instanceof Note);
+    assert.deepStrictEqual(inclusiveOptions[3].name?.toString(), "Rust");
+
+    assert.deepStrictEqual(poll.visibility, "unlisted");
+    assert.deepStrictEqual(activity.toIds, [
+      ctx.getFollowersUri(bot.identifier),
+    ]);
+    assert.deepStrictEqual(activity.ccIds, [PUBLIC_COLLECTION]);
+  });
+
+  await t.test("poll with direct visibility", async () => {
+    const mentioned = new Person({
+      id: new URL("https://example.com/ap/actor/alice"),
+      preferredUsername: "alice",
+    });
+    ctx.sentActivities = [];
+    const endTime = Temporal.Now.instant().add({ hours: 12 });
+    const poll = await session.publish(
+      text`Hey ${mention(mentioned)}, what do you think?`,
+      {
+        class: Question,
+        poll: {
+          multiple: false,
+          options: ["Good", "Bad", "Neutral"],
+          endTime,
+        },
+        visibility: "direct",
+      },
+    );
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    const { recipients, activity } = ctx.sentActivities[0];
+    assert.deepStrictEqual(recipients, [mentioned]);
+    assert.ok(activity instanceof Create);
+    const object = await activity.getObject(ctx);
+    assert.ok(object instanceof Question);
+    assert.deepStrictEqual(object.toIds, [mentioned.id]);
+    assert.deepStrictEqual(object.ccIds, []);
+    assert.deepStrictEqual(poll.visibility, "direct");
+  });
+
+  await t.test("poll end-to-end workflow", async () => {
+    // Create fresh repository and session for isolation
+    const freshRepository = new MemoryRepository();
+    const freshBot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository: freshRepository,
+      username: "testbot",
+    });
+    const freshCtx = createMockContext(freshBot, "https://example.com");
+    const freshSession = new SessionImpl(freshBot, freshCtx);
+
+    const endTime = Temporal.Now.instant().add({ hours: 1 });
+
+    // 1. Create a poll
+    const poll = await freshSession.publish(
+      text`What should we have for lunch?`,
+      {
+        class: Question,
+        poll: {
+          multiple: false,
+          options: ["Pizza", "Burgers", "Salad"],
+          endTime,
+        },
+      },
+    );
+
+    // Verify poll was created correctly
+    assert.deepStrictEqual(freshCtx.sentActivities.length, 1);
+    const { activity: createActivity } = freshCtx.sentActivities[0];
+    assert.ok(createActivity instanceof Create);
+    const pollObject = await createActivity.getObject(freshCtx);
+    assert.ok(pollObject instanceof Question);
+    assert.deepStrictEqual(pollObject.endTime, endTime);
+
+    // Get poll options
+    const options = await Array.fromAsync(
+      pollObject.getExclusiveOptions(freshCtx),
+    );
+    assert.deepStrictEqual(options.length, 3);
+    assert.deepStrictEqual(options[0].name?.toString(), "Pizza");
+    assert.deepStrictEqual(options[1].name?.toString(), "Burgers");
+    assert.deepStrictEqual(options[2].name?.toString(), "Salad");
+
+    // 2. Verify poll is accessible via getOutbox
+    const outbox = freshSession.getOutbox({ order: "newest" });
+    const messages = await Array.fromAsync(outbox);
+    assert.deepStrictEqual(messages.length, 1);
+    assert.deepStrictEqual(messages[0].id, poll.id);
+    assert.deepStrictEqual(messages[0].text, "What should we have for lunch?");
+
+    // 3. Verify poll structure
+    assert.deepStrictEqual(poll.visibility, "public");
+    assert.deepStrictEqual(poll.mentions, []);
   });
 });
 

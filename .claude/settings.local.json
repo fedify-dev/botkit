@@ -7,7 +7,8 @@
       "Bash(awk:*)",
       "Bash(sed:*)",
       "Bash(deno task:*)",
-      "Bash(deno test:*)"
+      "Bash(deno test:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": []
   }
