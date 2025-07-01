@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fedify/fedify':
-      specifier: ^1.7.1
-      version: 1.7.1
+      specifier: ^1.8.0-dev.910
+      version: 1.8.0-dev.910
 
 importers:
 
@@ -16,7 +16,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.7.1(web-streams-polyfill@3.3.3)
+        version: 1.8.0-dev.910(web-streams-polyfill@3.3.3)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -65,7 +65,7 @@ importers:
         version: link:..
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.7.1(web-streams-polyfill@3.3.3)
+        version: 1.8.0-dev.910(web-streams-polyfill@3.3.3)
       '@fedify/postgres':
         specifier: ^0.3.0
         version: 0.3.0(web-streams-polyfill@3.3.3)
@@ -410,8 +410,8 @@ packages:
     resolution: {integrity: sha512-gGD8+mwkLsavBoj/qyfhMD8Tnv9+hid59NrQ6ZrD5Zn5rWvq4LleU09GF78OqPWdSLY03ihxb6+EArcsb5VZCA==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=20.0.0'}
 
-  '@fedify/fedify@1.7.1':
-    resolution: {integrity: sha512-j/Pq3CvINorEpltQFbILNZg39KTY1pIb7PscqE5/pTwi7W/9iiTlSlS8bAcvO63WIJdo1PRn/2OLlm3XzzmQrw==}
+  '@fedify/fedify@1.8.0-dev.910':
+    resolution: {integrity: sha512-m3b87E8e3z6r5eErhXUN6zhEko3bTTanO9v+91hUzOmGGhYq7UoLOSfQqmWbJEemG808/D1CoAy6aoRij7ivrQ==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -1096,8 +1096,8 @@ packages:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
 
-  es-toolkit@1.39.4:
-    resolution: {integrity: sha512-hHqQ0yJERMNrJUyYHnf02qDuIxjRnnJlx1CFdR9Ia6tw6jPA7kXmb+tWzc7trJDHwMsc393hZ/m2XMxYXGAfqQ==}
+  es-toolkit@1.39.5:
+    resolution: {integrity: sha512-z9V0qU4lx1TBXDNFWfAASWk6RNU6c6+TJBKE+FLIg8u0XJ6Yw58Hi0yX8ftEouj6p1QARRlXLFfHbIli93BdQQ==}
 
   esbuild@0.21.5:
     resolution: {integrity: sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==}
@@ -2211,10 +2211,9 @@ snapshots:
     transitivePeerDependencies:
       - web-streams-polyfill
 
-  '@fedify/fedify@1.7.1(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.8.0-dev.910(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
-      '@es-toolkit/es-toolkit': es-toolkit@1.39.4
       '@hugoalh/http-header-link': 1.0.3
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.0.0
@@ -2224,6 +2223,7 @@ snapshots:
       '@phensley/language-tag': 1.12.2
       asn1js: 3.0.6
       byte-encodings: 1.0.11
+      es-toolkit: 1.39.5
       json-canon: 1.0.1
       jsonld: 8.3.3(web-streams-polyfill@3.3.3)
       multicodec: 3.2.1
@@ -2889,7 +2889,7 @@ snapshots:
 
   entities@4.5.0: {}
 
-  es-toolkit@1.39.4: {}
+  es-toolkit@1.39.5: {}
 
   esbuild@0.21.5:
     optionalDependencies:

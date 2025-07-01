@@ -689,5 +689,85 @@ for (const name in factories) {
       await repo.removeFollowee(followeeId);
       assert.deepStrictEqual(await repo.getFollowee(followeeId), undefined);
     });
+
+    test("poll voting", async () => {
+      const messageId1 = "01945678-1234-7890-abcd-ef0123456789";
+      const messageId2 = "01945678-5678-7890-abcd-ef0123456789";
+      const voter1 = new URL("https://example.com/ap/actor/alice");
+      const voter2 = new URL("https://example.com/ap/actor/bob");
+      const voter3 = new URL("https://example.com/ap/actor/charlie");
+
+      // Initially, no votes exist
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 0);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {});
+      assert.deepStrictEqual(await repo.countVoters(messageId2), 0);
+      assert.deepStrictEqual(await repo.countVotes(messageId2), {});
+
+      // Single voter, single option
+      await repo.vote(messageId1, voter1, "option1");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 1);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 1,
+      });
+
+      // Same voter votes for same option again (should be ignored)
+      await repo.vote(messageId1, voter1, "option1");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 1);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 1,
+      });
+
+      // Same voter votes for different option (multiple choice)
+      await repo.vote(messageId1, voter1, "option2");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 1);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 1,
+        "option2": 1,
+      });
+
+      // Different voter votes for same option
+      await repo.vote(messageId1, voter2, "option1");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 2);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 2,
+        "option2": 1,
+      });
+
+      // Third voter votes for new option
+      await repo.vote(messageId1, voter3, "option3");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 3);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 2,
+        "option2": 1,
+        "option3": 1,
+      });
+
+      // Votes for different message should be separate
+      await repo.vote(messageId2, voter1, "optionA");
+      await repo.vote(messageId2, voter2, "optionB");
+      assert.deepStrictEqual(await repo.countVoters(messageId2), 2);
+      assert.deepStrictEqual(await repo.countVotes(messageId2), {
+        "optionA": 1,
+        "optionB": 1,
+      });
+
+      // Original message votes should remain unchanged
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 3);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 2,
+        "option2": 1,
+        "option3": 1,
+      });
+
+      // Test with empty options (edge case)
+      await repo.vote(messageId1, voter1, "");
+      assert.deepStrictEqual(await repo.countVoters(messageId1), 3);
+      assert.deepStrictEqual(await repo.countVotes(messageId1), {
+        "option1": 2,
+        "option2": 1,
+        "option3": 1,
+        "": 1,
+      });
+    });
   });
 }

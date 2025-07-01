@@ -673,12 +673,16 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       messageClasses.includes(replyTarget.class) &&
       object.name != null
     ) {
-      if (create.actorId?.href === session.actorId.href) return;
+      if (
+        create.actorId == null || create.actorId.href === session.actorId.href
+      ) {
+        return;
+      }
+      const actorId = create.actorId;
       const actor = await create.getActor(ctx);
       if (actor == null) return;
-      const pollMessage = await this.repository.getMessage(
-        replyTarget.values.id as Uuid,
-      );
+      const messageId = replyTarget.values.id as Uuid;
+      const pollMessage = await this.repository.getMessage(messageId);
       if (!(pollMessage instanceof Create)) return;
       const question = await pollMessage.getObject(ctx);
       if (
@@ -702,34 +706,37 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       }
       const option = object.name.toString();
       if (!options.includes(option)) return;
-      const updatedOptionNotes: Note[] = [...optionNotes];
-      let i = 0;
-      for (const note of updatedOptionNotes) {
-        if (note.name === option) {
-          const replies = await note.getReplies(ctx);
-          if (replies != null && replies.totalItems != null) {
-            updatedOptionNotes[i] = note.clone({
-              replies: replies.clone({
-                // FIXME: This way of updating vote count is not only inefficient,
-                // but also can lead to incorrect counts if multiple votes are
-                // cast at the same time.
-                totalItems: replies.totalItems + 1,
-              }),
-            });
-          }
-        }
-        i++;
-      }
-      const updatedQuestion = question.clone({
-        inclusiveOptions: multiple ? updatedOptionNotes : [],
-        exclusiveOptions: !multiple ? updatedOptionNotes : [],
-      });
-      const updatedPollMessage = pollMessage.clone({
-        object: updatedQuestion,
-      });
+      let updatedQuestion: Question = question;
+      let updatedPollMessage = pollMessage;
+      await this.repository.vote(messageId, actorId, option);
       await this.repository.updateMessage(
         replyTarget.values.id as Uuid,
-        () => updatedPollMessage,
+        async () => {
+          const votes = await this.repository.countVotes(messageId);
+          const updatedOptionNotes: Note[] = [...optionNotes];
+          let i = 0;
+          for (const note of updatedOptionNotes) {
+            if (note.name != null) {
+              const replies = await note.getReplies(ctx);
+              if (replies != null && replies.totalItems != null) {
+                updatedOptionNotes[i] = note.clone({
+                  replies: replies.clone({
+                    totalItems: votes[note.name.toString()],
+                  }),
+                });
+              }
+            }
+            i++;
+          }
+          updatedQuestion = question.clone({
+            inclusiveOptions: multiple ? updatedOptionNotes : [],
+            exclusiveOptions: !multiple ? updatedOptionNotes : [],
+            voters: await this.repository.countVoters(messageId),
+          });
+          return updatedPollMessage = pollMessage.clone({
+            object: updatedQuestion,
+          });
+        },
       );
       const message = await createMessage(updatedQuestion, session, {});
       const vote: Vote<TContextData> = {

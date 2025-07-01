@@ -1,8 +1,8 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@es-toolkit/es-toolkit@^1.38.0": "1.39.5",
-    "jsr:@fedify/fedify@^1.7.1": "1.7.1",
+    "jsr:@es-toolkit/es-toolkit@^1.39.5": "1.39.5",
+    "jsr:@fedify/fedify@^1.8.0-dev.910+8a000b1c": "1.8.0-dev.910+8a000b1c",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
@@ -44,8 +44,8 @@
     "@es-toolkit/es-toolkit@1.39.5": {
       "integrity": "f16bef4e1eff94f74981d8ad04dab27d35568bc7088454a0a0269d6c36b215c0"
     },
-    "@fedify/fedify@1.7.1": {
-      "integrity": "a168bfd0124e8962abfa073df1926baca87eae0a88a8f42b78ec0b3a7a09a47d",
+    "@fedify/fedify@1.8.0-dev.910+8a000b1c": {
+      "integrity": "3c923975be17e42853fbfce7433ba6cd394a4fd164d1294b3f34d4a0322f535e",
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
         "jsr:@hugoalh/http-header-link",
@@ -860,7 +860,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/fedify@^1.7.1",
+      "jsr:@fedify/fedify@^1.8.0-dev.910+8a000b1c",
       "jsr:@fedify/markdown-it-hashtag@0.3",
       "jsr:@fedify/markdown-it-mention@0.3",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",

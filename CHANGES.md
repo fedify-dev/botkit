@@ -18,6 +18,7 @@ To be released.
      -  Added `SessionPublishOptionsWithQuestion` interface.
      -  Added `Bot.onVote` event.
      -  Added `VoteEventHandler` type.
+     -  Added `KvStoreRepositoryPrefixes.polls` option.
 
  -  Added `@fedify/botkit/repository` module that provides repository
     implementations for BotKit.
@@ -32,7 +33,7 @@ To be released.
      -  Added `Create` class.
      -  Added `MemoryCachedRepository` class.
 
- -  Upgraded Fedify to 1.7.1.
+ -  Upgraded Fedify to 1.8.0.
 
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
