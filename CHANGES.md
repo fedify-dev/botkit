@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.2.1
 -------------
 
-To be released.
+Released on July 8, 2025.
 
  -  Fixed a bug where messages from `Session.getOutbox()` didn't have `update()`
     and `delete()` methods.  [[#9]]

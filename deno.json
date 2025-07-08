@@ -37,6 +37,7 @@
     ".github",
     ".vscode",
     "docs",
+    "junit.xml",
     "src/css"
   ],
   "fmt": {
@@ -50,7 +51,7 @@
   "tasks": {
     "embed-css": "deno run -A jsr:@smallweb/embed src/css src/static",
     "check": "deno check src/ && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty",
-    "test": "deno test --allow-net=hollo.social --parallel",
+    "test": "deno test --allow-env --allow-net=hollo.social --parallel",
     "test-all": "deno task check && deno task test",
     "coverage": "deno task test --coverage --clean && deno coverage --html",
     "hooks:install": "deno run --allow-read=deno.json,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",
