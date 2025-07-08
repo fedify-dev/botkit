@@ -6,6 +6,11 @@ Version 0.2.1
 
 To be released.
 
+ -  Fixed a bug where messages from `Session.getOutbox()` didn't have `update()`
+    and `delete()` methods.  [[#9]]
+
+[[#9]]: https://github.com/fedify-dev/botkit/issues/9
+
 
 Version 0.2.0
 -------------

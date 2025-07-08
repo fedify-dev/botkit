@@ -658,6 +658,17 @@ Deno.test("SessionImpl.getOutbox()", async (t) => {
       "https://example.com/ap/note/01941f29-7c00-7fe8-ab0a-7b593990a3c0",
     ]);
   });
+
+  await t.step("messages should have update and delete methods", async () => {
+    const outbox = session.getOutbox({ order: "oldest" });
+    const messages = await Array.fromAsync(outbox);
+    assertEquals(messages.length, 4);
+
+    for (const message of messages) {
+      assertEquals(typeof message.update, "function");
+      assertEquals(typeof message.delete, "function");
+    }
+  });
 });
 
 export interface SentActivity {
