@@ -40,6 +40,7 @@
     ".vscode",
     "dist",
     "docs",
+    "junit.xml",
     "src/css"
   ],
   "fmt": {

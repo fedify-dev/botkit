@@ -601,9 +601,9 @@ export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,
   session: SessionImpl<TContextData>,
   cachedObjects: Record<string, Object>,
-  replyTarget?: Message<MessageClass, TContextData>,
-  quote?: Message<MessageClass, TContextData>,
-  authorized?: true,
+  replyTarget: Message<MessageClass, TContextData> | undefined,
+  quote: Message<MessageClass, TContextData> | undefined,
+  authorized: true,
 ): Promise<AuthorizedMessage<T, TContextData>>;
 export async function createMessage<T extends MessageClass, TContextData>(
   raw: T,

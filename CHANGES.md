@@ -39,6 +39,17 @@ To be released.
 [#8]: https://github.com/fedify-dev/botkit/pull/8
 
 
+Version 0.2.1
+-------------
+
+Released on July 8, 2025.
+
+ -  Fixed a bug where messages from `Session.getOutbox()` didn't have `update()`
+    and `delete()` methods.  [[#9]]
+
+[[#9]]: https://github.com/fedify-dev/botkit/issues/9
+
+
 Version 0.2.0
 -------------
 

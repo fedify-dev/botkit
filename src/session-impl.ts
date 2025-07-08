@@ -399,7 +399,14 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         continue;
       }
       if (object == null || !isMessageObject(object)) continue;
-      const message = await createMessage(object, this, {});
+      const message = await createMessage(
+        object,
+        this,
+        {},
+        undefined,
+        undefined,
+        true,
+      );
       yield message;
     }
   }
