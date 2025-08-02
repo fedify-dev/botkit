@@ -3,4 +3,4 @@ packages:
 - docs
 
 catalog:
-  "@fedify/fedify": ^1.8.0-dev.910
+  "@fedify/fedify": 1.8.1-dev.1262

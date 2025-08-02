@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fedify/fedify':
-      specifier: ^1.8.0-dev.910
-      version: 1.8.0-dev.910
+      specifier: 1.8.1-dev.1262
+      version: 1.8.1-dev.1262
 
 importers:
 
@@ -16,7 +16,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.8.0-dev.910(web-streams-polyfill@3.3.3)
+        version: 1.8.1-dev.1262(web-streams-polyfill@3.3.3)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -65,7 +65,7 @@ importers:
         version: link:..
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.8.0-dev.910(web-streams-polyfill@3.3.3)
+        version: 1.8.1-dev.1262(web-streams-polyfill@3.3.3)
       '@fedify/postgres':
         specifier: ^0.3.0
         version: 0.3.0(web-streams-polyfill@3.3.3)
@@ -410,8 +410,8 @@ packages:
     resolution: {integrity: sha512-gGD8+mwkLsavBoj/qyfhMD8Tnv9+hid59NrQ6ZrD5Zn5rWvq4LleU09GF78OqPWdSLY03ihxb6+EArcsb5VZCA==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=20.0.0'}
 
-  '@fedify/fedify@1.8.0-dev.910':
-    resolution: {integrity: sha512-m3b87E8e3z6r5eErhXUN6zhEko3bTTanO9v+91hUzOmGGhYq7UoLOSfQqmWbJEemG808/D1CoAy6aoRij7ivrQ==}
+  '@fedify/fedify@1.8.1-dev.1262':
+    resolution: {integrity: sha512-rxM52p3H/3xKnfZ3qHTUi8BPQPdR2TnA5BZ1Mlr+KT1QnIqywaf1VWjdHMTKhgdQ9KIv8q+XDhTQacl0qKnejg==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -2211,7 +2211,7 @@ snapshots:
     transitivePeerDependencies:
       - web-streams-polyfill
 
-  '@fedify/fedify@1.8.0-dev.910(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.8.1-dev.1262(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@hugoalh/http-header-link': 1.0.3
