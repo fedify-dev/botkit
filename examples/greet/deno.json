@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "deno serve --allow-net --allow-env --watch greet.ts",
+    "prod": "deno serve --allow-net --allow-env greet.ts"
+  }
+}

@@ -134,12 +134,12 @@
     "@js-temporal/polyfill": "^0.5.1",
     "@logtape/logtape": "^1.0.0",
     "@phensley/language-tag": "^1.12.2",
-    "hono": "^4.8.2",
+    "hono": "catalog:",
     "html-entities": "^2.6.0",
     "markdown-it": "^14.1.0",
     "mime-db": "^1.54.0",
     "uuid": "^11.1.0",
-    "x-forwarded-fetch": "^0.2.0",
+    "x-forwarded-fetch": "catalog:",
     "xss": "^1.0.15"
   },
   "devDependencies": {

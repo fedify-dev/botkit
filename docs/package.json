@@ -20,8 +20,8 @@
     "vitepress-plugin-llms": "^1.1.0"
   },
   "scripts": {
-    "dev": "cd ../ && pnpm build && cd docs/ && vitepress dev",
-    "build": "cd ../ && pnpm build && cd docs/ && vitepress build",
-    "preview": "cd ../ && pnpm build && cd docs/ && vitepress preview"
+    "dev": "cd ../ && pnpm run -r build && cd docs/ && vitepress dev",
+    "build": "cd ../ && pnpm run -r build && cd docs/ && vitepress build",
+    "preview": "cd ../ && pnpm run -r build && cd docs/ && vitepress preview"
   }
 }

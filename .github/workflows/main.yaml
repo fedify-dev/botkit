@@ -40,7 +40,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.lcov
     - run: pnpm install
-    - run: pnpm test
+    - run: pnpm run -r test
     - run: deno task check
 
   publish:
@@ -68,14 +68,14 @@ jobs:
           --arg build "$GITHUB_RUN_NUMBER" \
           --arg commit "${GITHUB_SHA::8}" \
           '.version = .version + "-dev." + $build + "+" + $commit' \
-          deno.json > deno.json.tmp
-        mv deno.json.tmp deno.json
+          packages/botkit/deno.json > deno.json.tmp
+        mv deno.json.tmp packages/botkit/deno.json
         jq \
           --arg build "$GITHUB_RUN_NUMBER" \
           --arg commit "${GITHUB_SHA::8}" \
           '.version = .version + "-dev." + $build + "+" + $commit' \
-          package.json > package.json.tmp
-        mv package.json.tmp package.json
+          packages/botkit/package.json > package.json.tmp
+        mv package.json.tmp packages/botkit/package.json
     - if: github.ref_type == 'tag'
       run: |
         set -euo pipefail
@@ -86,9 +86,9 @@ jobs:
         pnpm config set //registry.npmjs.org/:_authToken "$NPM_AUTH_TOKEN"
         pnpm install
         if [[ "$GITHUB_REF_TYPE" = tag ]]; then
-          pnpm publish --access public --no-git-checks
+          pnpm publish --recursive --access public --no-git-checks
         else
-          pnpm publish --access public --no-git-checks --tag dev
+          pnpm publish --recursive --access public --no-git-checks --tag dev
         fi
       env:
         NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

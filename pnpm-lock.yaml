@@ -9,60 +9,20 @@ catalogs:
     '@fedify/fedify':
       specifier: 1.8.1-dev.1262
       version: 1.8.1-dev.1262
+    hono:
+      specifier: ^4.8.2
+      version: 4.8.2
+    x-forwarded-fetch:
+      specifier: ^0.2.0
+      version: 0.2.0
 
 importers:
-
-  .:
-    dependencies:
-      '@fedify/fedify':
-        specifier: 'catalog:'
-        version: 1.8.1-dev.1262(web-streams-polyfill@3.3.3)
-      '@fedify/markdown-it-hashtag':
-        specifier: ^0.3.0
-        version: 0.3.0
-      '@fedify/markdown-it-mention':
-        specifier: ^0.3.0
-        version: 0.3.0
-      '@js-temporal/polyfill':
-        specifier: ^0.5.1
-        version: 0.5.1
-      '@logtape/logtape':
-        specifier: ^1.0.0
-        version: 1.0.0
-      '@phensley/language-tag':
-        specifier: ^1.12.2
-        version: 1.12.2
-      hono:
-        specifier: ^4.8.2
-        version: 4.8.2
-      html-entities:
-        specifier: ^2.6.0
-        version: 2.6.0
-      markdown-it:
-        specifier: ^14.1.0
-        version: 14.1.0
-      mime-db:
-        specifier: ^1.54.0
-        version: 1.54.0
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
-      x-forwarded-fetch:
-        specifier: ^0.2.0
-        version: 0.2.0
-      xss:
-        specifier: ^1.0.15
-        version: 1.0.15
-    devDependencies:
-      tsdown:
-        specifier: ^0.12.8
-        version: 0.12.8(typescript@5.8.3)
 
   docs:
     devDependencies:
       '@fedify/botkit':
         specifier: 'workspace:'
-        version: link:..
+        version: link:../packages/botkit
       '@fedify/fedify':
         specifier: 'catalog:'
         version: 1.8.1-dev.1262(web-streams-polyfill@3.3.3)
@@ -114,6 +74,52 @@ importers:
       vitepress-plugin-llms:
         specifier: ^1.1.0
         version: 1.5.1
+
+  packages/botkit:
+    dependencies:
+      '@fedify/fedify':
+        specifier: 'catalog:'
+        version: 1.8.1-dev.1262(web-streams-polyfill@3.3.3)
+      '@fedify/markdown-it-hashtag':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@fedify/markdown-it-mention':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@js-temporal/polyfill':
+        specifier: ^0.5.1
+        version: 0.5.1
+      '@logtape/logtape':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@phensley/language-tag':
+        specifier: ^1.12.2
+        version: 1.12.2
+      hono:
+        specifier: 'catalog:'
+        version: 4.8.2
+      html-entities:
+        specifier: ^2.6.0
+        version: 2.6.0
+      markdown-it:
+        specifier: ^14.1.0
+        version: 14.1.0
+      mime-db:
+        specifier: ^1.54.0
+        version: 1.54.0
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
+      x-forwarded-fetch:
+        specifier: 'catalog:'
+        version: 0.2.0
+      xss:
+        specifier: ^1.0.15
+        version: 1.0.15
+    devDependencies:
+      tsdown:
+        specifier: ^0.12.8
+        version: 0.12.8(typescript@5.8.3)
 
 packages:
 

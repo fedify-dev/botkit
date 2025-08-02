@@ -1,60 +1,35 @@
 {
-  "name": "@fedify/botkit",
-  "version": "0.3.0",
-  "license": "AGPL-3.0-only",
+  "workspace": [
+    "packages/*",
+    "examples/*"
+  ],
   "unstable": [
     "kv",
     "temporal"
   ],
-  "exports": {
-    ".": "./src/mod.ts",
-    "./bot": "./src/bot.ts",
-    "./emoji": "./src/emoji.ts",
-    "./events": "./src/events.ts",
-    "./follow": "./src/follow.ts",
-    "./message": "./src/message.ts",
-    "./poll": "./src/poll.ts",
-    "./reaction": "./src/reaction.ts",
-    "./repository": "./src/repository.ts",
-    "./session": "./src/session.ts",
-    "./text": "./src/text.ts"
-  },
   "imports": {
     "@fedify/fedify": "jsr:@fedify/fedify@1.8.1-dev.1262+8e4bd2e7",
-    "@fedify/markdown-it-hashtag": "jsr:@fedify/markdown-it-hashtag@^0.3.0",
-    "@fedify/markdown-it-mention": "jsr:@fedify/markdown-it-mention@^0.3.0",
-    "@logtape/logtape": "jsr:@logtape/logtape@^1.0.0",
-    "@phensley/language-tag": "npm:@phensley/language-tag@^1.12.2",
     "hono": "jsr:@hono/hono@^4.8.2",
-    "html-entities": "npm:html-entities@^2.6.0",
-    "markdown-it": "npm:markdown-it@^14.1.0",
-    "mime-db": "npm:mime-db@^1.54.0",
-    "tsdown": "npm:tsdown@^0.12.8",
-    "uuid": "npm:uuid@^11.1.0",
-    "x-forwarded-fetch": "jsr:@hongminhee/x-forwarded-fetch@^0.2.0",
-    "xss": "npm:xss@^1.0.15"
+    "x-forwarded-fetch": "jsr:@hongminhee/x-forwarded-fetch@^0.2.0"
   },
   "nodeModulesDir": "none",
   "exclude": [
     ".github",
-    ".vscode",
-    "dist",
     "docs",
-    "junit.xml",
-    "src/css"
+    "dist",
+    "junit.xml"
   ],
   "fmt": {
     "exclude": [
       "*.md",
       "*.yaml",
-      "*.yml",
-      "src/static/*.ts"
+      "*.yml"
     ]
   },
   "tasks": {
-    "check": "deno check src/ && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty && deno run scripts/check_versions.ts",
+    "check": "deno check && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty && deno run scripts/check_versions.ts",
     "test": "deno test --allow-env=NODE_V8_COVERAGE,JEST_WORKER_ID --allow-net=hollo.social --parallel",
-    "test:node": "pnpm install && pnpm test",
+    "test:node": "pnpm install && pnpm run -r test",
     "test-all": {
       "dependencies": [
         "check",

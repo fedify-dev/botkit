@@ -20,7 +20,7 @@ BotKit.  The bot performs the following actions:
 
 ::: code-group
 
-<<< @/../examples/greet.ts [greet.ts]
+<<< @/../examples/greet/greet.ts [greet.ts]
 
 :::
 
@@ -69,7 +69,7 @@ interactions with traditional web applications.
 
 ::: code-group
 
-<<< @/../examples/otp.tsx [otp.tsx]
+<<< @/../examples/otp/otp.tsx [otp.tsx]
 
 :::
 
