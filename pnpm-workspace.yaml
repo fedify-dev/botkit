@@ -3,6 +3,6 @@ packages:
 - docs
 
 catalog:
-  "@fedify/fedify": 1.8.1-dev.1262
+  "@fedify/fedify": 1.8.2
   hono: ^4.8.2
   x-forwarded-fetch: ^0.2.0

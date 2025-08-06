@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@es-toolkit/es-toolkit@^1.39.5": "1.39.8",
-    "jsr:@fedify/fedify@1.8.1-dev.1262+8e4bd2e7": "1.8.1-dev.1262+8e4bd2e7",
+    "jsr:@fedify/fedify@1.8.2": "1.8.2",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
@@ -42,8 +42,8 @@
     "@es-toolkit/es-toolkit@1.39.8": {
       "integrity": "4c03332b6dea5f1597827e3aec426a88b8b0ba18aa1899102f4c1126fb4a42b4"
     },
-    "@fedify/fedify@1.8.1-dev.1262+8e4bd2e7": {
-      "integrity": "306c3a02187c89fa64b63731cb09828c3f416b9baf06b2e9978806942f180bdb",
+    "@fedify/fedify@1.8.2": {
+      "integrity": "8eb0a922451b114773408fa0c7a3c39926d00996a578e657001cb2d3edb85e86",
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
         "jsr:@hugoalh/http-header-link",
@@ -590,8 +590,8 @@
     "html-entities@2.6.0": {
       "integrity": "sha512-kig+rMn/QOVRvr7c86gQ8lWXq+Hkv6CbAH1hLu+RG338StTpE8Z0b44SDVaqVu7HGKf27frdmUYEs9hTUX/cLQ=="
     },
-    "jiti@2.5.0": {
-      "integrity": "sha512-NWDAhdnATItTnRhip9VTd8oXDjVcbhetRN6YzckApnXGxpGUooKMAaf0KVvlZG0+KlJMGkeLElVn4M1ReuxKUQ==",
+    "jiti@2.5.1": {
+      "integrity": "sha512-twQoecYPiVA5K/h6SxtORw/Bs3ar+mLUtoPSc7iMXzQzK8d7eJ/R09wmTwAjiamETn1cXYPGfNnu7DMoHgu12w==",
       "bin": true
     },
     "jsbi@4.3.2": {
@@ -863,7 +863,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/fedify@1.8.1-dev.1262+8e4bd2e7",
+      "jsr:@fedify/fedify@1.8.2",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2"
     ],

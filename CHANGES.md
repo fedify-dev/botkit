@@ -33,7 +33,7 @@ To be released.
      -  Added `Create` class.
      -  Added `MemoryCachedRepository` class.
 
- -  Upgraded Fedify to 1.8.0.
+ -  Upgraded Fedify to 1.8.2.
 
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
