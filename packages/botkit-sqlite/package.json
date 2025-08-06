@@ -1,0 +1,62 @@
+{
+  "name": "@fedify/botkit-sqlite",
+  "version": "0.3.0",
+  "description": "SQLite-based repository for BotKit",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Hong Minhee",
+    "email": "hong@minhee.org",
+    "url": "https://hongminhee.org/"
+  },
+  "homepage": "https://botkit.fedify.dev/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fedify-dev/botkit.git",
+    "directory": "packages/botkit-sqlite"
+  },
+  "bugs": {
+    "url": "https://github.com/fedify-dev/botkit/issues"
+  },
+  "funding": [
+    "https://opencollective.com/fedify",
+    "https://github.com/sponsors/dahlia"
+  ],
+  "engines": {
+    "deno": ">=2.0.0",
+    "node": ">=22.0.0"
+  },
+  "type": "module",
+  "module": "./dist/mod.js",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@fedify/botkit": "workspace:"
+  },
+  "dependencies": {
+    "@fedify/fedify": "catalog:",
+    "@js-temporal/polyfill": "catalog:",
+    "@logtape/logtape": "catalog:"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepack": "tsdown",
+    "prepublish": "deno task check && tsdown",
+    "test": "tsdown && cd src/ && node --test --experimental-transform-types"
+  }
+}

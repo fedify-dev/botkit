@@ -8,8 +8,12 @@
     "temporal"
   ],
   "imports": {
-    "@fedify/fedify": "jsr:@fedify/fedify@1.8.2",
+    "@fedify/fedify": "jsr:@fedify/fedify@^1.8.3",
+    "@logtape/logtape": "jsr:@logtape/logtape@^1.0.0",
+    "@std/fs": "jsr:@std/fs@^1.0.19",
+    "@std/path": "jsr:@std/path@^1.1.1",
     "hono": "jsr:@hono/hono@^4.8.2",
+    "tsdown": "npm:tsdown@^0.12.8",
     "x-forwarded-fetch": "jsr:@hongminhee/x-forwarded-fetch@^0.2.0"
   },
   "nodeModulesDir": "none",
@@ -17,7 +21,8 @@
     ".github",
     "docs",
     "dist",
-    "junit.xml"
+    "junit.xml",
+    "package.json"
   ],
   "fmt": {
     "exclude": [
@@ -27,9 +32,15 @@
     ]
   },
   "tasks": {
-    "check": "deno check && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty && deno run scripts/check_versions.ts",
+    "check": {
+      "dependencies": [
+        "check-versions"
+      ],
+      "command": "deno check && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty"
+    },
+    "check-versions": "deno run --allow-read --allow-write scripts/check_versions.ts",
     "install": "deno cache packages/*/src/*.ts",
-    "test": "deno test --allow-env=NODE_V8_COVERAGE,JEST_WORKER_ID --allow-net=hollo.social --parallel",
+    "test": "deno test --allow-read --allow-write --allow-env --allow-net=hollo.social --parallel",
     "test:node": "pnpm install && pnpm run -r test",
     "test-all": {
       "dependencies": [

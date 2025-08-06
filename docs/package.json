@@ -1,10 +1,11 @@
 {
   "devDependencies": {
     "@fedify/botkit": "workspace:",
+    "@fedify/botkit-sqlite": "workspace:",
     "@fedify/fedify": "catalog:",
-    "@fedify/postgres": "^0.3.0",
-    "@fedify/redis": "^0.4.0",
-    "@js-temporal/polyfill": "^0.5.1",
+    "@fedify/postgres": "^1.8.3",
+    "@fedify/redis": "^1.8.3",
+    "@js-temporal/polyfill": "catalog:",
     "@shikijs/vitepress-twoslash": "^3.7.0",
     "@types/deno": "^2.3.0",
     "@types/node": "^24.0.3",

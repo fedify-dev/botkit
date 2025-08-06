@@ -3,6 +3,9 @@ packages:
 - docs
 
 catalog:
-  "@fedify/fedify": 1.8.2
+  "@fedify/fedify": ^1.8.3
+  "@js-temporal/polyfill": ^0.5.1
+  "@logtape/logtape": ^1.0.0
   hono: ^4.8.2
+  tsdown: ^0.12.8
   x-forwarded-fetch: ^0.2.0

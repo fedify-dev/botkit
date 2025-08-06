@@ -11,7 +11,8 @@
   "homepage": "https://botkit.fedify.dev/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fedify-dev/botkit.git"
+    "url": "git+https://github.com/fedify-dev/botkit.git",
+    "directory": "packages/botkit"
   },
   "bugs": {
     "url": "https://github.com/fedify-dev/botkit/issues"
@@ -27,96 +28,51 @@
   },
   "type": "module",
   "module": "./dist/mod.js",
-  "main": "./dist/mod.cjs",
   "types": "./dist/mod.d.ts",
   "exports": {
     ".": {
-      "types": {
-        "import": "./dist/mod.d.ts",
-        "require": "./dist/mod.d.cts"
-      },
-      "import": "./dist/mod.js",
-      "require": "./dist/mod.cjs"
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js"
     },
     "./bot": {
-      "types": {
-        "import": "./dist/bot.d.ts",
-        "require": "./dist/bot.d.cts"
-      },
-      "import": "./dist/bot.js",
-      "require": "./dist/bot.cjs"
+      "types": "./dist/bot.d.ts",
+      "import": "./dist/bot.js"
     },
     "./emoji": {
-      "types": {
-        "import": "./dist/emoji.d.ts",
-        "require": "./dist/emoji.d.cts"
-      },
-      "import": "./dist/emoji.js",
-      "require": "./dist/emoji.cjs"
+      "types": "./dist/emoji.d.ts",
+      "import": "./dist/emoji.js"
     },
     "./events": {
-      "types": {
-        "import": "./dist/events.d.ts",
-        "require": "./dist/events.d.cts"
-      },
-      "import": "./dist/events.js",
-      "require": "./dist/events.cjs"
+      "types": "./dist/events.d.ts",
+      "import": "./dist/events.js"
     },
     "./follow": {
-      "types": {
-        "import": "./dist/follow.d.ts",
-        "require": "./dist/follow.d.cts"
-      },
-      "import": "./dist/follow.js",
-      "require": "./dist/follow.cjs"
+      "types": "./dist/follow.d.ts",
+      "import": "./dist/follow.js"
     },
     "./message": {
-      "types": {
-        "import": "./dist/message.d.ts",
-        "require": "./dist/message.d.cts"
-      },
-      "import": "./dist/message.js",
-      "require": "./dist/message.cjs"
+      "types": "./dist/message.d.ts",
+      "import": "./dist/message.js"
     },
     "./poll": {
-      "types": {
-        "import": "./dist/poll.d.ts",
-        "require": "./dist/poll.d.cts"
-      },
-      "import": "./dist/poll.js",
-      "require": "./dist/poll.cjs"
+      "types": "./dist/poll.d.ts",
+      "import": "./dist/poll.js"
     },
     "./reaction": {
-      "types": {
-        "import": "./dist/reaction.d.ts",
-        "require": "./dist/reaction.d.cts"
-      },
-      "import": "./dist/reaction.js",
-      "require": "./dist/reaction.cjs"
+      "types": "./dist/reaction.d.ts",
+      "import": "./dist/reaction.js"
     },
     "./repository": {
-      "types": {
-        "import": "./dist/repository.d.ts",
-        "require": "./dist/repository.d.cts"
-      },
-      "import": "./dist/repository.js",
-      "require": "./dist/repository.cjs"
+      "types": "./dist/repository.d.ts",
+      "import": "./dist/repository.js"
     },
     "./session": {
-      "types": {
-        "import": "./dist/session.d.ts",
-        "require": "./dist/session.d.cts"
-      },
-      "import": "./dist/session.js",
-      "require": "./dist/session.cjs"
+      "types": "./dist/session.d.ts",
+      "import": "./dist/session.js"
     },
     "./text": {
-      "types": {
-        "import": "./dist/text.d.ts",
-        "require": "./dist/text.d.cts"
-      },
-      "import": "./dist/text.js",
-      "require": "./dist/text.cjs"
+      "types": "./dist/text.d.ts",
+      "import": "./dist/text.js"
     },
     "./package.json": "./package.json"
   },
@@ -131,8 +87,8 @@
     "@fedify/fedify": "catalog:",
     "@fedify/markdown-it-hashtag": "^0.3.0",
     "@fedify/markdown-it-mention": "^0.3.0",
-    "@js-temporal/polyfill": "^0.5.1",
-    "@logtape/logtape": "^1.0.0",
+    "@js-temporal/polyfill": "catalog:",
+    "@logtape/logtape": "catalog:",
     "@phensley/language-tag": "^1.12.2",
     "hono": "catalog:",
     "html-entities": "^2.6.0",
@@ -143,7 +99,7 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
-    "tsdown": "^0.12.8"
+    "tsdown": "catalog:"
   },
   "scripts": {
     "build": "tsdown",

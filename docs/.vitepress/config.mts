@@ -53,6 +53,17 @@ const deploy = {
   ],
 };
 
+const references = {
+  text: "References",
+  items: [
+    { text: "@fedify/botkit", link: "https://jsr.io/@fedify/botkit/doc" },
+    {
+      text: "@fedify/botkit-sqlite",
+      link: "https://jsr.io/@fedify/botkit-sqlite/doc",
+    },
+  ],
+};
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "BotKit by Fedify",
@@ -66,6 +77,7 @@ export default defineConfig({
       { text: "Start", link: "/start.md" },
       concepts,
       deploy,
+      references,
       { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
     ],
@@ -75,6 +87,7 @@ export default defineConfig({
       { text: "Getting started", link: "/start.md" },
       concepts,
       deploy,
+      references,
       { text: "Recipes", link: "/recipes.md" },
       { text: "Examples", link: "/examples.md" },
       { text: "Changelog", link: "/changelog.md" },

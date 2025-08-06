@@ -81,6 +81,60 @@ There are several [`KvStore`] implementations available in the Fedify:
 [`MemoryKvStore`]: https://fedify.dev/manual/kv#memorykvstore
 
 
+`SqliteRepository`
+------------------
+
+*This API is available since BotKit 0.3.0.*
+
+The `SqliteRepository` is a repository that stores data in a SQLite database
+using the [`node:sqlite`] module. It provides a production-ready storage
+solution with excellent performance and reliability, while maintaining
+compatibility with both Deno and Node.js environments.
+
+Unlike [`KvRepository`](#kvrepository) which requires a separate key–value store
+setup, `SqliteRepository` can operate with either an in-memory database for
+development/testing or a file-based database for production use.  It offers ACID
+compliance through transactions, write-ahead logging (WAL) mode for optimal
+performance, and proper indexing for efficient data retrieval.
+
+In order to use `SqliteRepository`, you need to install the
+*@fedify/botkit-sqlite* package:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/botkit-sqlite
+~~~~
+
+:::
+
+The `SqliteRepository` constructor accepts an options object with the following
+properties:
+
+`path` (optional)
+:   Path to the SQLite database file.  Defaults to `":memory:"` for an
+    in-memory database.  Use a file path for persistent storage.
+
+`wal` (optional)
+:   Whether to enable write-ahead logging (WAL) mode for better performance.
+    Defaults to `true` for file-based databases.  WAL mode is not applicable
+    for in-memory databases.
+
+[`node:sqlite`]: https://nodejs.org/api/sqlite.html
+
+
 `MemoryRepository`
 ------------------
 

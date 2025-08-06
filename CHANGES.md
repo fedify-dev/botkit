@@ -9,6 +9,8 @@ To be released.
  -  BotKit now supports Node.js alongside of Deno.  The minimum required
     version of Node.js is 22.0.0.
 
+### @fedify/botkit
+
  -  BotKit now supports publishing polls.  [[#7], [#8]]
 
      -  Added `Poll` interface.
@@ -37,6 +39,12 @@ To be released.
 
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
+
+### @fedify/botkit-sqlite
+
+ -  Added `SqliteRepository` class that implements a SQLite-based repository
+    for BotKit.
+ -  Added `SqliteRepositoryOptions` interface.
 
 
 Version 0.2.1

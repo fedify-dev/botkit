@@ -1,0 +1,32 @@
+{
+  "name": "@fedify/botkit-sqlite",
+  "version": "0.3.0",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/mod.ts"
+  },
+  "exclude": [
+    "dist",
+    "junit.xml",
+    "package.json"
+  ],
+  "fmt": {
+    "exclude": [
+      "*.md",
+      "*.yaml",
+      "*.yml"
+    ]
+  },
+  "tasks": {
+    "test": "deno test --allow-write --allow-read --allow-env --parallel",
+    "test:node": "pnpm install && pnpm test",
+    "test-all": {
+      "dependencies": [
+        "check",
+        "test",
+        "test:node"
+      ]
+    },
+    "coverage": "deno task test --coverage --clean && deno coverage --html"
+  }
+}

@@ -1,8 +1,11 @@
 name: main
 on:
   push:
-    branches: "*"
-    tags: "*"
+    branches:
+    - "main"
+    - "*.*-maintenance"
+    tags:
+    - "*.*.*"
   pull_request:
 
 jobs:
@@ -70,17 +73,12 @@ jobs:
           '.version = .version + "-dev." + $build + "+" + $commit' \
           packages/botkit/deno.json > deno.json.tmp
         mv deno.json.tmp packages/botkit/deno.json
-        jq \
-          --arg build "$GITHUB_RUN_NUMBER" \
-          --arg commit "${GITHUB_SHA::8}" \
-          '.version = .version + "-dev." + $build + "+" + $commit' \
-          packages/botkit/package.json > package.json.tmp
-        mv package.json.tmp packages/botkit/package.json
+        deno task check-versions --fix
     - if: github.ref_type == 'tag'
       run: |
         set -euo pipefail
         [[ "$(jq -r .version deno.json)" = "$GITHUB_REF_NAME" ]]
-        [[ "$(jq -r .version package.json)" = "$GITHUB_REF_NAME" ]]
+        deno task check-versions
     - run: |
         set -euo pipefail
         pnpm config set //registry.npmjs.org/:_authToken "$NPM_AUTH_TOKEN"
@@ -113,7 +111,6 @@ jobs:
         body_path: ${{ steps.extract-changelog.outputs.output-file }}
         name: BotKit ${{ github.ref_name }}
         generate_release_notes: false
-        files: fedify-botkit-*.tgz
 
   publish-docs:
     if: github.event_name == 'push'
@@ -147,4 +144,4 @@ jobs:
     - id: deploy
       uses: actions/deploy-pages@v4
 
-# cSpell: ignore denoland submark softprops
+# cSpell: ignore denoland submark softprops pipefail npmjs
