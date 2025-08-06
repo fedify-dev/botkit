@@ -9,8 +9,8 @@ Key–value store and message queue
 
 BotKit requires two main backend services for operation:
 
-1. A key–value store for persistent data storage
-2. A message queue for handling background tasks
+ 1. A key–value store for persistent data storage
+ 2. A message queue for handling background tasks
 
 This guide covers configuration options for different deployment environments
 and provides recommendations for production use.
@@ -27,7 +27,11 @@ BotKit supports the following key–value store implementations:
 
 ### [Deno KV] (Deno Deploy)
 
-[Deno KV] is the simplest option when running on [Deno Deploy]:
+[Deno KV] is the simplest option when running on [Deno Deploy]. It's built into
+the Deno runtime with no additional infrastructure needed, provides automatic
+replication on Deno Deploy, and supports ACID transactions.  However, it's only
+available in Deno environments, has limited querying capabilities, and size
+limits per value (64KB on Deno Deploy).
 
 ~~~~ typescript
 import { DenoKvStore } from "@fedify/fedify/x/deno";
@@ -41,32 +45,69 @@ const bot = createBot<void>({
 });
 ~~~~
 
-> [!NOTE]
-> Since [`DenoKvStore`] is provided by [Fedify], you need to install the
-> *@fedify/fedify* package to use it.
+Since [`DenoKvStore`] is provided by [Fedify], you need to install the
+*@fedify/fedify* package to use it:
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/fedify
+~~~~
 
 [Deno KV]: https://deno.land/manual/runtime/kv
 [Deno Deploy]: https://deno.com/deploy
 [`DenoKvStore`]: https://fedify.dev/manual/kv#denokvstore-deno-only
 [Fedify]: https://fedify.dev/
 
-#### Advantages
+### [SQLite]
 
-- Built into Deno runtime
-- No additional infrastructure needed
-- Automatic replication on Deno Deploy
-- ACID transactions support
+[SQLite] is a good choice for local development and testing, as well as for
+small-scale production deployments.  It's lightweight and easy to set up,
+provides ACID compliance and transaction support, making it excellent for
+development and testing environments.  However, it's not suitable for
+high-concurrency production use and has limited scalability.
 
-#### Limitations
+~~~~ typescript twoslash
+import { createBot } from "@fedify/botkit";
+import { SqliteKvStore } from "@fedify/sqlite";
+import { DatabaseSync } from "node:sqlite";
 
-- Only available in Deno environments
-- Limited querying capabilities
-- Size limits per value (64KB on Deno Deploy)
+const sqlite = new DatabaseSync("bot-data.db");
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new SqliteKvStore(sqlite),
+});
+~~~~
+
+You need to install the *@fedify/sqlite* package to use the [`SqliteKvStore`]:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/sqlite
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/sqlite
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/sqlite
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/sqlite
+~~~~
+
+:::
+
+[SQLite]: https://www.sqlite.org/
+[`SqliteKvStore`]: https://fedify.dev/manual/kv#sqlitekvstore
 
 ### [Redis] or [Valkey]
 
 [Redis] (or its open source fork [Valkey]) is recommended for production
-deployments needing high performance:
+deployments needing high performance.  It offers excellent performance,
+clustering support, and wide hosting options, making it ideal for scalable
+production environments.
 
 ::: code-group
 
@@ -108,56 +149,38 @@ const bot = createBot<void>({
 
 :::
 
-> [!NOTE]
-> You need to install the [@fedify/redis] package to use the [`RedisKvStore`].
+You need to install the *@fedify/redis* package to use the [`RedisKvStore`]:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/redis
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/redis
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/redis
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/redis
+~~~~
+
+:::
 
 [Redis]: https://redis.io/
 [Valkey]: https://valkey.io/
-[@fedify/redis]: https://github.com/fedify-dev/redis
 [`RedisKvStore`]: https://fedify.dev/manual/kv#rediskvstore
-
-#### Advantages
-
-- High performance
-- Rich data structures
-- Clustering support
-- Wide hosting options
-
-#### Setup examples
-
-Docker Compose:
-
-~~~~ yaml [compose.yaml]
-version: '3'
-services:
-  valkey:
-    image: valkey/valkey:8-alpine
-    command: valkey-server --appendonly yes
-    volumes:
-    - valkey-data:/data
-    ports:
-    - "6379:6379"
-
-volumes:
-  valkey-data:
-~~~~
-
-Managed services:
-
- -  [Upstash] (serverless Redis, works well with Deno Deploy)
- -  [Redis Cloud]
- -  [Amazon ElastiCache]
- -  [Azure Cache for Redis]
-
-[Upstash]: https://upstash.com/
-[Redis Cloud]: https://redis.com/redis-enterprise-cloud/overview/
-[Amazon ElastiCache]: https://aws.amazon.com/elasticache/
-[Azure Cache for Redis]: https://azure.microsoft.com/products/cache
 
 ### [PostgreSQL]
 
-[PostgreSQL] is suitable for deployments needing complex queries or
-transactions:
+[PostgreSQL] is suitable for deployments needing complex queries or transactions.
+It provides ACID compliance, complex query support, robust backup solutions,
+and a mature ecosystem, making it an excellent choice when you need advanced
+database features.
 
 ::: code-group
 
@@ -189,54 +212,31 @@ const bot = createBot<void>({
 
 :::
 
-> [!TIP]
-> You need to install the [@fedify/postgres] package to use
-> the [`PostgresKvStore`].
+You need to install the *@fedify/postgres* package to use
+the [`PostgresKvStore`]:
 
-[PostgreSQL]: https://www.postgresql.org/
-[@fedify/postgres]: https://github.com/fedify-dev/postgres
-[`PostgresKvStore`]: https://fedify.dev/manual/kv#postgreskvstore
+::: code-group
 
-#### Advantages
-
- -  ACID compliance
- -  Complex query support
- -  Robust backup solutions
- -  Mature ecosystem
-
-#### Setup examples
-
-Docker Compose:
-
-~~~~ yaml [compose.yaml]
-version: '3'
-services:
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: botkit
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: botkit
-    volumes:
-    - postgres-data:/var/lib/postgresql/data
-    ports:
-    - "5432:5432"
-
-volumes:
-  postgres-data:
+~~~~ sh [Deno]
+deno add jsr:@fedify/postgres
 ~~~~
 
-Managed services:
+~~~~ sh [npm]
+npm add @fedify/postgres
+~~~~
 
- -  [Neon] (serverless PostgreSQL)
- -  [Amazon RDS]
- -  [Azure Database for PostgreSQL]
- -  [Google Cloud SQL]
+~~~~ sh [pnpm]
+pnpm add @fedify/postgres
+~~~~
 
-[Neon]: https://neon.tech/
-[Amazon RDS]: https://aws.amazon.com/rds/postgresql/
-[Azure Database for PostgreSQL]: https://azure.microsoft.com/products/postgresql
-[Google Cloud SQL]: https://cloud.google.com/sql
+~~~~ sh [Yarn]
+yarn add @fedify/postgres
+~~~~
+
+:::
+
+[PostgreSQL]: https://www.postgresql.org/
+[`PostgresKvStore`]: https://fedify.dev/manual/kv#postgreskvstore
 
 
 Message queues
@@ -248,7 +248,11 @@ queue with a key–value store for a compact and complete backend solution.
 
 ### [Deno KV Queue] (Deno Deploy)
 
-Built on top of [Deno KV], suitable for [Deno Deploy]:
+Built on top of [Deno KV], suitable for [Deno Deploy].  It requires no
+additional infrastructure, works seamlessly with Deno Deploy,
+and provides automatic scaling.  However, it's only available in Deno
+environments and has limited throughput compared to dedicated message queue
+solutions.
 
 ~~~~ typescript
 import { DenoKvMessageQueue } from "@fedify/fedify/x/deno";
@@ -264,27 +268,21 @@ const bot = createBot<void>({
 bot.federation.startQueue();
 ~~~~
 
-> [!NOTE]
-> Since [`DenoKvMessageQueue`] is provided by [Fedify], you need to install the
-> *@fedify/fedify* package to use it.
+Since [`DenoKvMessageQueue`] is provided by [Fedify], you need to install the
+*@fedify/fedify* package to use it:
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/fedify
+~~~~
 
 [Deno KV Queue]: https://docs.deno.com/deploy/kv/manual/queue_overview/
 [`DenoKvMessageQueue`]: https://fedify.dev/manual/mq#denokvmessagequeue-deno-only
 
-#### Advantages
-
- -  No additional infrastructure needed
- -  Works well with Deno Deploy
- -  Automatic scaling on Deno Deploy
-
-#### Limitations
-
- -  Only available in Deno environments
- -  Limited throughput
-
 ### [Redis] or [Valkey]
 
-Recommended for production deployments:
+Recommended for production deployments, offering high performance,
+reliable message delivery, the ability to share infrastructure with your
+key–value store, and good monitoring tools.
 
 ::: code-group
 
@@ -332,22 +330,37 @@ const bot = createBot<void>({
 
 :::
 
-> [!NOTE]
-> You need to install the [@fedify/redis] package to use
-> the [`RedisMessageQueue`].
+You need to install the *@fedify/redis* package to use
+the [`RedisMessageQueue`]:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/redis
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/redis
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/redis
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/redis
+~~~~
+
+:::
 
 [`RedisMessageQueue`]: https://fedify.dev/manual/mq#redismessagequeue
 
-#### Advantages
-
- -  High performance
- -  Reliable message delivery
- -  Can be shared with KV store
- -  Good monitoring tools
-
 ### [PostgreSQL]
 
-Suitable when already using [PostgreSQL] for storage:
+Suitable when already using [PostgreSQL] for storage.  It provides ACID
+compliance, can share infrastructure with your key–value store,
+offers good long-term persistence, and supports transactions, making it ideal
+when you want to consolidate your backend infrastructure.
 
 ::: code-group
 
@@ -381,17 +394,29 @@ const bot = createBot<void>({
 
 :::
 
-> [!NOTE]
-> You need to install the [@fedify/postgres] package to use
-> the [`PostgresMessageQueue`].
+You need to install the *@fedify/postgres* package to use
+the [`PostgresMessageQueue`]:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/postgres
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/postgres
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/postgres
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/postgres
+~~~~
+
+:::
 
 [`PostgresMessageQueue`]: https://fedify.dev/manual/mq#postgresmessagequeue
-
-#### Advantages
-
- -  ACID compliance
- -  Can be shared with KV store
- -  Good for long-term persistence
- -  Transaction support
 
 <!-- cSpell: ignore mybot Valkey appendonly -->

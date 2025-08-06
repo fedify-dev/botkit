@@ -473,7 +473,7 @@ BEHIND_PROXY=true deno serve -A --port 8000 ./bot.ts
 ~~~~
 
 ~~~~ bash [Node.js]
-node --experimental-transform-types ./bot.ts
+BEHIND_PROXY=true node --experimental-transform-types ./bot.ts
 ~~~~
 
 :::

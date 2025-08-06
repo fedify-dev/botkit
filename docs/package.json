@@ -5,6 +5,7 @@
     "@fedify/fedify": "catalog:",
     "@fedify/postgres": "^1.8.3",
     "@fedify/redis": "^1.8.3",
+    "@fedify/sqlite": "^1.8.3",
     "@js-temporal/polyfill": "catalog:",
     "@shikijs/vitepress-twoslash": "^3.7.0",
     "@types/deno": "^2.3.0",
