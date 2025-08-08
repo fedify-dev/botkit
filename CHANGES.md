@@ -47,6 +47,16 @@ To be released.
  -  Added `SqliteRepositoryOptions` interface.
 
 
+Version 0.2.2
+-------------
+
+Released on August 8, 2025.
+
+ -  Upgrade Fedify to 1.5.5, which includes a critical security
+    fix [CVE-2025-54888] that addresses an authentication bypass
+    vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
+
+
 Version 0.2.1
 -------------
 
@@ -114,6 +124,18 @@ Released on April 21, 2025.
         to the author of the original message as well if it is a reply.
      -  The `AuthorizedMessage.delete()` method now sends the `Delete` activity
         to the author of the original message as well if it is a reply.
+
+
+Version 0.1.2
+-------------
+
+Released on August 8, 2025.
+
+ -  Upgrade Fedify to 1.4.13, which includes a critical security
+    fix [CVE-2025-54888] that addresses an authentication bypass
+    vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
+
+[CVE-2025-54888]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-6jcc-xgcr-q3h4
 
 
 Version 0.1.1

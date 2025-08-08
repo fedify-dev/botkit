@@ -8,7 +8,7 @@
     "temporal"
   ],
   "imports": {
-    "@fedify/fedify": "jsr:@fedify/fedify@^1.8.3",
+    "@fedify/fedify": "jsr:@fedify/fedify@^1.8.5",
     "@logtape/logtape": "jsr:@logtape/logtape@^1.0.0",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.1",
@@ -22,7 +22,9 @@
     "docs",
     "dist",
     "junit.xml",
-    "package.json"
+    "logo.svg",
+    "package.json",
+    "src/css"
   ],
   "fmt": {
     "exclude": [

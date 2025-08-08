@@ -2,11 +2,11 @@
   "version": "5",
   "specifiers": {
     "jsr:@es-toolkit/es-toolkit@^1.39.5": "1.39.8",
-    "jsr:@fedify/fedify@^1.8.3": "1.8.3",
+    "jsr:@fedify/fedify@^1.8.5": "1.8.5",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
-    "jsr:@hono/hono@^4.8.2": "4.8.12",
+    "jsr:@hono/hono@^4.8.2": "4.9.0",
     "jsr:@hugoalh/http-header-link@^1.0.2": "1.0.3",
     "jsr:@hugoalh/is-string-singleline@^1.0.4": "1.0.5",
     "jsr:@logtape/logtape@1": "1.0.4",
@@ -43,8 +43,8 @@
     "@es-toolkit/es-toolkit@1.39.8": {
       "integrity": "4c03332b6dea5f1597827e3aec426a88b8b0ba18aa1899102f4c1126fb4a42b4"
     },
-    "@fedify/fedify@1.8.3": {
-      "integrity": "2751490ea65e7469fff9ae0e16c3cd682fb1ce210df15761210717087874e794",
+    "@fedify/fedify@1.8.5": {
+      "integrity": "7331e8a210b2c76d75849f65929777b7ebd087b04fffdea05273234811e93da9",
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
         "jsr:@hugoalh/http-header-link",
@@ -83,6 +83,9 @@
     },
     "@hono/hono@4.8.12": {
       "integrity": "078037693c3ae9dece93ddd771d52ab61197231cc7633f741ac031eb3b28eb64"
+    },
+    "@hono/hono@4.9.0": {
+      "integrity": "49df671bca96af6ab7899ea5ec1f4776b43c4cf864e472affe847bed3bb6b9a1"
     },
     "@hugoalh/http-header-link@1.0.3": {
       "integrity": "3372096a73d755e3351f7fbd7155db7725874c2682a594a655580e3866563024",
@@ -732,7 +735,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/fedify@^1.8.3",
+      "jsr:@fedify/fedify@^1.8.5",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2",
       "jsr:@logtape/logtape@1",
