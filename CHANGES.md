@@ -6,6 +6,12 @@ Version 0.1.2
 
 To be released.
 
+ -  Upgrade Fedify to 1.4.13, which includes a critical security
+    fix [CVE-2025-54888] that addresses an authentication bypass
+    vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
+
+[CVE-2025-54888]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-6jcc-xgcr-q3h4
+
 
 Version 0.1.1
 -------------

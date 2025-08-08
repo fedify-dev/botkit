@@ -17,7 +17,7 @@
     "./text": "./src/text.ts"
   },
   "imports": {
-    "@fedify/fedify": "jsr:@fedify/fedify@^1.4.0",
+    "@fedify/fedify": "jsr:@fedify/fedify@^1.4.13",
     "@fedify/markdown-it-hashtag": "jsr:@fedify/markdown-it-hashtag@^0.3.0",
     "@fedify/markdown-it-mention": "jsr:@fedify/markdown-it-mention@^0.2.0",
     "@hongminhee/x-forwarded-fetch": "jsr:@hongminhee/x-forwarded-fetch@^0.2.0",
