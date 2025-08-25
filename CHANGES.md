@@ -35,7 +35,7 @@ To be released.
      -  Added `Create` class.
      -  Added `MemoryCachedRepository` class.
 
- -  Upgraded Fedify to 1.8.7.
+ -  Upgraded Fedify to 1.8.8.
 
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
@@ -47,12 +47,23 @@ To be released.
  -  Added `SqliteRepositoryOptions` interface.
 
 
+Version 0.2.4
+-------------
+
+Released on August 26, 2025.
+
+ -  Upgraded Fedifyh to 1.5.7 which fixes a bug where HTTP Signature
+    verification failed for requests having `created` or `expires` fields
+    in their `Signature` header, causing `500 Internal Server Error` responses
+    in inbox handlers.
+
+
 Version 0.2.3
 -------------
 
 Released on August 25, 2025.
 
- -  Upgraded Fedify to 1.4.6, which fixes a bug where ActivityPub Discovery
+ -  Upgraded Fedify to 1.5.6, which fixes a bug where ActivityPub Discovery
     failed to recognize XHTML self-closing `<link>` tags.  The HTML/XHTML parser
     now correctly handles whitespace before the self-closing slash (`/>`),
     improving compatibility with XHTML documents that follow the self-closing
@@ -136,6 +147,17 @@ Released on April 21, 2025.
         to the author of the original message as well if it is a reply.
      -  The `AuthorizedMessage.delete()` method now sends the `Delete` activity
         to the author of the original message as well if it is a reply.
+
+
+Version 0.1.4
+-------------
+
+Released on August 26, 2025.
+
+ -  Upgraded Fedifyh to 1.4.15 which fixes a bug where HTTP Signature
+    verification failed for requests having `created` or `expires` fields
+    in their `Signature` header, causing `500 Internal Server Error` responses
+    in inbox handlers.
 
 
 Version 0.1.3

@@ -8,7 +8,7 @@
     "temporal"
   ],
   "imports": {
-    "@fedify/fedify": "jsr:@fedify/fedify@^1.8.7",
+    "@fedify/fedify": "jsr:@fedify/fedify@^1.8.8",
     "@logtape/logtape": "jsr:@logtape/logtape@^1.0.4",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.1",
