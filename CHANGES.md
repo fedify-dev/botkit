@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.1.4
 -------------
 
-To be released.
+Released on August 26, 2025.
 
  -  Upgraded Fedifyh to 1.4.15 which fixes a bug where HTTP Signature
     verification failed for requests having `created` or `expires` fields
