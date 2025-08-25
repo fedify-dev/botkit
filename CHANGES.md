@@ -35,7 +35,7 @@ To be released.
      -  Added `Create` class.
      -  Added `MemoryCachedRepository` class.
 
- -  Upgraded Fedify to 1.8.2.
+ -  Upgraded Fedify to 1.8.7.
 
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
@@ -45,6 +45,18 @@ To be released.
  -  Added `SqliteRepository` class that implements a SQLite-based repository
     for BotKit.
  -  Added `SqliteRepositoryOptions` interface.
+
+
+Version 0.2.3
+-------------
+
+Released on August 25, 2025.
+
+ -  Upgraded Fedify to 1.4.6, which fixes a bug where ActivityPub Discovery
+    failed to recognize XHTML self-closing `<link>` tags.  The HTML/XHTML parser
+    now correctly handles whitespace before the self-closing slash (`/>`),
+    improving compatibility with XHTML documents that follow the self-closing
+    tag format.
 
 
 Version 0.2.2
@@ -126,12 +138,24 @@ Released on April 21, 2025.
         to the author of the original message as well if it is a reply.
 
 
+Version 0.1.3
+-------------
+
+Released on August 25, 2025.
+
+ -  Upgraded Fedify to 1.4.14, which fixes a bug where ActivityPub Discovery
+    failed to recognize XHTML self-closing `<link>` tags.  The HTML/XHTML parser
+    now correctly handles whitespace before the self-closing slash (`/>`),
+    improving compatibility with XHTML documents that follow the self-closing
+    tag format.
+
+
 Version 0.1.2
 -------------
 
 Released on August 8, 2025.
 
- -  Upgrade Fedify to 1.4.13, which includes a critical security
+ -  Upgraded Fedify to 1.4.13, which includes a critical security
     fix [CVE-2025-54888] that addresses an authentication bypass
     vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
 

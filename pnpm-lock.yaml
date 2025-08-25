@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@fedify/fedify':
-      specifier: ^1.8.5
-      version: 1.8.5
+      specifier: ^1.8.7
+      version: 1.8.7
     '@js-temporal/polyfill':
       specifier: ^0.5.1
       version: 0.5.1
@@ -37,16 +37,16 @@ importers:
         version: link:../packages/botkit-sqlite
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.8.5(web-streams-polyfill@3.3.3)
+        version: 1.8.7(web-streams-polyfill@3.3.3)
       '@fedify/postgres':
-        specifier: ^1.8.3
-        version: 1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))(postgres@3.4.7)
+        specifier: ^1.8.7
+        version: 1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))(postgres@3.4.7)
       '@fedify/redis':
-        specifier: ^1.8.3
-        version: 1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))(ioredis@5.6.1)
+        specifier: ^1.8.7
+        version: 1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))(ioredis@5.6.1)
       '@fedify/sqlite':
-        specifier: ^1.8.3
-        version: 1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))
+        specifier: ^1.8.7
+        version: 1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -94,7 +94,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.8.5(web-streams-polyfill@3.3.3)
+        version: 1.8.7(web-streams-polyfill@3.3.3)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -143,7 +143,7 @@ importers:
         version: link:../botkit
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.8.5(web-streams-polyfill@3.3.3)
+        version: 1.8.7(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -443,8 +443,8 @@ packages:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
 
-  '@fedify/fedify@1.8.5':
-    resolution: {integrity: sha512-Bmx28+F8xEgepI4XVRZUiSERAH2kOx8TWRMds9zTihVCsuwN4WuAYUqJ24M5bis3dXsHQjitiUwAVeI/T+FgcA==}
+  '@fedify/fedify@1.8.7':
+    resolution: {integrity: sha512-5gOVGGFPYlkgzxbpmrStRYtqawxRlAPO2VfNjNu6tfTBU2ta7MA8OM7gfsO7NesoHfNdkpsOxu61Gzef1mmNLQ==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -453,22 +453,22 @@ packages:
   '@fedify/markdown-it-mention@0.3.0':
     resolution: {integrity: sha512-4uVELsxh9AW0hzC6BVFqN59YWj6M/p6AZpwb/CQDjvcinfHyQp2yYtGDV4fBgsE5WC/ukpvU1pBNH20ts8TK4w==}
 
-  '@fedify/postgres@1.8.3':
-    resolution: {integrity: sha512-cn8nfRcTSsNyUXa7qaNXl2UgP6O31Lqk+9da5h1rvshp86RkXVzczon1qtH6w3ss/RpzvVKsYKqGpV2cn9ddMg==}
+  '@fedify/postgres@1.8.7':
+    resolution: {integrity: sha512-sTWB/Fo5WPsP/bWYhQFVvvuNIQVlr5hxgYC8JnOJsecWypPUKDnm+yB7BclQELfDW1xdng/cvLQ3hDPo7UqHgA==}
     peerDependencies:
-      '@fedify/fedify': 1.8.3
+      '@fedify/fedify': 1.8.7
       postgres: ^3.4.7
 
-  '@fedify/redis@1.8.3':
-    resolution: {integrity: sha512-JXBcru2A8rjrTrhkzZcnqmIcFmmt0YQD7JrUb5WGJtTtPbH/OLATUv9Wh4SdGP4V1wdA9iM67DNP+djwjvBtnw==}
+  '@fedify/redis@1.8.7':
+    resolution: {integrity: sha512-5JhmuhiSfJs/AfnClyTRvnbacRZXzKCbXCLFHFIEQ6mk+fITQs/9g+hRXjaebSLKGJN569eLmm3gsFHyyn/cMw==}
     peerDependencies:
-      '@fedify/fedify': 1.8.3
+      '@fedify/fedify': 1.8.7
       ioredis: ^5.6.1
 
-  '@fedify/sqlite@1.8.3':
-    resolution: {integrity: sha512-x5OvchLRGDS2lHvoNbfhxBQtXr6Il1q+u5PjOL5bZc3y2HYkrUrmZrtgO4MGHU5ti2b1vT5BtK87sXQwvSvGuA==}
+  '@fedify/sqlite@1.8.7':
+    resolution: {integrity: sha512-1/bV1LD8y5Ce+2fqBV4snlslD4TGzCXvjjSHjcE5UPwMtfQgH6kxeySYa7vdm/BgmPdwJiyJV+I9Tm74KauFkw==}
     peerDependencies:
-      '@fedify/fedify': 1.8.3
+      '@fedify/fedify': 1.8.7
 
   '@floating-ui/core@1.7.1':
     resolution: {integrity: sha512-azI0DrjMMfIug/ExbBaeDVJXcY0a7EPvPjb2xAJPa4HeimBX+Z18HK8QQR3jb6356SnDDdxx+hinMLcJEDdOjw==}
@@ -2222,7 +2222,7 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       '@hugoalh/http-header-link': 1.0.3
@@ -2254,23 +2254,23 @@ snapshots:
     dependencies:
       markdown-it: 14.1.0
 
-  '@fedify/postgres@1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))(postgres@3.4.7)':
+  '@fedify/postgres@1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))(postgres@3.4.7)':
     dependencies:
-      '@fedify/fedify': 1.8.5(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.8.7(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.0.0
       postgres: 3.4.7
 
-  '@fedify/redis@1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))(ioredis@5.6.1)':
+  '@fedify/redis@1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))(ioredis@5.6.1)':
     dependencies:
-      '@fedify/fedify': 1.8.5(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.8.7(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.0.0
       ioredis: 5.6.1
 
-  '@fedify/sqlite@1.8.3(@fedify/fedify@1.8.5(web-streams-polyfill@3.3.3))':
+  '@fedify/sqlite@1.8.7(@fedify/fedify@1.8.7(web-streams-polyfill@3.3.3))':
     dependencies:
-      '@fedify/fedify': 1.8.5(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.8.7(web-streams-polyfill@3.3.3)
       '@logtape/logtape': 1.0.0
       es-toolkit: 1.39.5
 
