@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.2.3
 -------------
 
-To be released.
+Released on August 25, 2025.
 
  -  Upgraded Fedify to 1.4.6, which fixes a bug where ActivityPub Discovery
     failed to recognize XHTML self-closing `<link>` tags.  The HTML/XHTML parser
