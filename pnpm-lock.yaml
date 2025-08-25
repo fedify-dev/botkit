@@ -13,8 +13,8 @@ catalogs:
       specifier: ^0.5.1
       version: 0.5.1
     '@logtape/logtape':
-      specifier: ^1.0.0
-      version: 1.0.0
+      specifier: ^1.0.4
+      version: 1.0.4
     hono:
       specifier: ^4.8.2
       version: 4.8.2
@@ -106,7 +106,7 @@ importers:
         version: 0.5.1
       '@logtape/logtape':
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.0.4
       '@phensley/language-tag':
         specifier: ^1.12.2
         version: 1.12.2
@@ -149,7 +149,7 @@ importers:
         version: 0.5.1
       '@logtape/logtape':
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.0.4
     devDependencies:
       tsdown:
         specifier: 'catalog:'
@@ -536,6 +536,9 @@ packages:
 
   '@logtape/logtape@1.0.0':
     resolution: {integrity: sha512-GOOiaJcHSJQfFt+khrtoxfQ29klDiG8UxrgC+lPt7K6HhwEMQnB47j7V0GQ6F8bnS7JIZgYQmbXb+yGUF2pKhA==}
+
+  '@logtape/logtape@1.0.4':
+    resolution: {integrity: sha512-YvNVrXIxVpnY528zoiEjX8PqTfr0UCtKXyssvaWL8AE+OByFTCooKuKMdPlm6g65YUI9fPXrHn4UnogSskABnA==}
 
   '@multiformats/base-x@4.0.1':
     resolution: {integrity: sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==}
@@ -2347,6 +2350,8 @@ snapshots:
       jsbi: 4.3.2
 
   '@logtape/logtape@1.0.0': {}
+
+  '@logtape/logtape@1.0.4': {}
 
   '@multiformats/base-x@4.0.1': {}
 

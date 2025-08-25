@@ -10,6 +10,7 @@
     "jsr:@hugoalh/http-header-link@^1.0.2": "1.0.3",
     "jsr:@hugoalh/is-string-singleline@^1.0.4": "1.0.5",
     "jsr:@logtape/logtape@1": "1.0.4",
+    "jsr:@logtape/logtape@^1.0.4": "1.0.4",
     "jsr:@std/fs@^1.0.19": "1.0.19",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.9": "1.0.9",
@@ -48,7 +49,7 @@
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
         "jsr:@hugoalh/http-header-link",
-        "jsr:@logtape/logtape",
+        "jsr:@logtape/logtape@1",
         "npm:@multiformats/base-x",
         "npm:@opentelemetry/api",
         "npm:@opentelemetry/semantic-conventions",
@@ -741,7 +742,7 @@
       "jsr:@fedify/fedify@^1.8.7",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2",
-      "jsr:@logtape/logtape@1",
+      "jsr:@logtape/logtape@^1.0.4",
       "jsr:@std/fs@^1.0.19",
       "jsr:@std/path@^1.1.1",
       "npm:tsdown@~0.12.8"
