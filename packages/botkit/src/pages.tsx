@@ -31,6 +31,7 @@ import { decode } from "html-entities";
 import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
+import { Follower } from "./components/Follower.tsx";
 import { getMessageClass, isMessageObject, textXss } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
@@ -142,9 +143,11 @@ app.get("/", async (c) => {
             </a>{" "}
             &middot;{" "}
             <span>
-              {followersCount === 1
-                ? `1 follower`
-                : `${followersCount.toLocaleString("en")} followers`}
+              <a href="/followers">
+                {followersCount === 1
+                  ? `1 follower`
+                  : `${followersCount.toLocaleString("en")} followers`}
+              </a>
             </span>{" "}
             &middot;{" "}
             <span>
@@ -203,6 +206,41 @@ app.get("/", async (c) => {
             : ""),
       },
     },
+  );
+});
+
+app.get("/followers", async (c) => {
+  const { bot } = c.env;
+  const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const session = bot.getSession(ctx);
+  const followersCount = await bot.repository.countFollowers();
+  const followers = await Array.fromAsync(bot.repository.getFollowers());
+
+  const url = new URL(c.req.url);
+  const activityLink = ctx.getActorUri(bot.identifier);
+  const feedLink = new URL("/feed.xml", url);
+
+  return c.html(
+    <Layout
+      bot={bot}
+      host={url.host}
+      activityLink={activityLink}
+      feedLink={feedLink}
+    >
+      <header class="container">
+        <h1>
+          <a href="/">&larr;</a>{" "}
+          {followersCount === 1
+            ? `1 follower`
+            : `${followersCount.toLocaleString("en")} followers`}
+        </h1>
+      </header>
+      <main class="container">
+        {followers.map((follower, index) => (
+          <Follower key={follower.id?.href ?? index} actor={follower} session={session} />
+        ))}
+      </main>
+    </Layout>,
   );
 });
 
