@@ -1,6 +1,6 @@
 {
   "name": "@fedify/botkit-sqlite",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "SQLite-based repository for BotKit",
   "license": "AGPL-3.0-only",
   "author": {
