@@ -237,7 +237,11 @@ app.get("/followers", async (c) => {
       </header>
       <main class="container">
         {followers.map((follower, index) => (
-          <Follower key={follower.id?.href ?? index} actor={follower} session={session} />
+          <Follower
+            key={follower.id?.href ?? index}
+            actor={follower}
+            session={session}
+          />
         ))}
       </main>
     </Layout>,
