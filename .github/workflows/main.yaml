@@ -77,7 +77,7 @@ jobs:
     - if: github.ref_type == 'tag'
       run: |
         set -euo pipefail
-        [[ "$(jq -r .version deno.json)" = "$GITHUB_REF_NAME" ]]
+        [[ "$(jq -r .version packages/botkit/deno.json)" = "$GITHUB_REF_NAME" ]]
         deno task check-versions
     - run: |
         set -euo pipefail

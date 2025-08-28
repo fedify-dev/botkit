@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.3.0
 -------------
 
-To be released.
+Released on August 28, 2025.
 
  -  BotKit now supports Node.js alongside of Deno.  The minimum required
     version of Node.js is 22.0.0.
