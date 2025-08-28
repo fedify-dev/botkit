@@ -35,10 +35,17 @@ To be released.
      -  Added `Create` class.
      -  Added `MemoryCachedRepository` class.
 
+ -  Added web frontend followers page.  [[#2], [#13] by Hyeonseo Kim]
+
+     -  Added `/followers` route that displays a list of bot followers.
+     -  Made follower count on the main page clickable, linking to `/followers`.
+
  -  Upgraded Fedify to 1.8.8.
 
+[#2]: https://github.com/fedify-dev/botkit/issues/2
 [#7]: https://github.com/fedify-dev/botkit/issues/7
 [#8]: https://github.com/fedify-dev/botkit/pull/8
+[#13]: https://github.com/fedify-dev/botkit/pull/13
 
 ### @fedify/botkit-sqlite
 
