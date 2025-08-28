@@ -1,6 +1,6 @@
 {
   "name": "@fedify/botkit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/mod.ts",
