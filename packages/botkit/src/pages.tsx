@@ -29,10 +29,10 @@ import {
 import { Hono } from "hono";
 import { decode } from "html-entities";
 import type { BotImpl } from "./bot-impl.ts";
+import { FollowButton } from "./components/FollowButton.tsx";
+import { Follower } from "./components/Follower.tsx";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
-import { Follower } from "./components/Follower.tsx";
-import { FollowButton } from "./components/FollowButton.tsx";
 import { getMessageClass, isMessageObject, textXss } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
@@ -156,8 +156,7 @@ app.get("/", async (c) => {
                 ? `1 post`
                 : `${postsCount.toLocaleString("en")} posts`}
             </span>{" "}
-            &middot;{" "}
-            <FollowButton bot={bot} />
+            &middot; <FollowButton bot={bot} />
           </p>
         </hgroup>
         {summary &&
@@ -431,6 +430,69 @@ app.get("/feed.xml", async (c) => {
   );
   response.headers.set("Content-Type", "application/atom+xml; charset=utf-8");
   return response;
+});
+
+app.post("/follow", async (c) => {
+  const { bot } = c.env;
+  const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const url = new URL(c.req.url);
+  const botHandle = `@${bot.username}@${url.host}`;
+
+  const formData = await c.req.formData();
+  let followerHandle = formData.get("handle")?.toString();
+
+  try {
+    if (!followerHandle) {
+      throw new Error("No followerHandle!");
+    }
+
+    if (followerHandle.startsWith("@")) {
+      followerHandle = followerHandle.slice(1);
+    }
+
+    const webfingerData = await ctx
+      .lookupWebFinger(`acct:${followerHandle}`);
+
+    if (!webfingerData?.links) {
+      return c.json({ error: "No links found in webfinger data" }, 400);
+    }
+
+    console.log(webfingerData);
+
+    const subscribeLink = webfingerData.links.find(
+      (link) => link.rel === "http://ostatus.org/schema/1.0/subscribe",
+    ) as { template?: string } | undefined;
+
+    if (subscribeLink?.template) {
+      const botActorUri = ctx.getActorUri(bot.identifier);
+      const followUrl = subscribeLink.template.replace(
+        "{uri}",
+        encodeURIComponent(botActorUri.href),
+      );
+      return c.redirect(followUrl);
+    }
+
+    const profileLink = webfingerData.links.find(
+      (link) => link.rel === "http://webfinger.net/rel/profile-page",
+    ) as { href?: string } | undefined;
+
+    if (profileLink?.href) {
+      const followerUsername = followerHandle.split("@")[0];
+      const followUrl = profileLink.href.replace(
+        `@${followerUsername}`,
+        botHandle,
+      );
+      return c.redirect(followUrl);
+    }
+
+    return c.json({
+      error: "No follow link found in webfinger data",
+      data: webfingerData,
+    }, 400);
+  } catch (error) {
+    console.error("Follow request error:", error);
+    return c.json({ error: error }, 400);
+  }
 });
 
 interface GetPostsOptions {
