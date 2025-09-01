@@ -443,7 +443,7 @@ app.post("/follow", async (c) => {
 
   try {
     if (!followerHandle) {
-      throw new Error("No followerHandle!");
+      return c.json({ error: "Follower handle is required." }, 400);
     }
 
     if (followerHandle.startsWith("@")) {
@@ -473,10 +473,7 @@ app.post("/follow", async (c) => {
     return c.json({
       error: "No follow link found in WebFinger data.",
     }, 400);
-  } catch (error) {
-    if (error instanceof Error && error.message === "No followerHandle!") {
-      return c.json({ error: "Follower handle is required." }, 400);
-    }
+  } catch (_error) {
     return c.json({ error: "An internal server error occurred." }, 500);
   }
 });
