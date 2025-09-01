@@ -470,25 +470,10 @@ app.post("/follow", async (c) => {
       return c.redirect(followUrl);
     }
 
-    const profileLink = webfingerData.links.find(
-      (link) => link.rel === "http://webfinger.net/rel/profile-page",
-    ) as { href?: string } | undefined;
-
-    if (profileLink?.href) {
-      const followerUsername = followerHandle.split("@")[0];
-      const followUrl = profileLink.href.replace(
-        `@${followerUsername}`,
-        botHandle,
-      );
-      return c.redirect(followUrl);
-    }
-
     return c.json({
       error: "No follow link found in webfinger data",
-      data: webfingerData,
     }, 400);
   } catch (error) {
-    console.error("Follow request error:", error);
     if (error instanceof Error && error.message === "No followerHandle!") {
       return c.json({ error: "Follower handle is required." }, 400);
     }
