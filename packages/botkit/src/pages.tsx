@@ -471,7 +471,7 @@ app.post("/follow", async (c) => {
     }
 
     return c.json({
-      error: "No follow link found in webfinger data",
+      error: "No follow link found in WebFinger data.",
     }, 400);
   } catch (error) {
     if (error instanceof Error && error.message === "No followerHandle!") {
