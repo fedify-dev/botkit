@@ -457,8 +457,6 @@ app.post("/follow", async (c) => {
       return c.json({ error: "No links found in webfinger data" }, 400);
     }
 
-    console.log(webfingerData);
-
     const subscribeLink = webfingerData.links.find(
       (link) => link.rel === "http://ostatus.org/schema/1.0/subscribe",
     ) as { template?: string } | undefined;
