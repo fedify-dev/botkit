@@ -436,8 +436,6 @@ app.get("/feed.xml", async (c) => {
 app.post("/follow", async (c) => {
   const { bot } = c.env;
   const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
-  const url = new URL(c.req.url);
-  const botHandle = `@${bot.username}@${url.host}`;
 
   const formData = await c.req.formData();
   let followerHandle = formData.get("handle")?.toString();
