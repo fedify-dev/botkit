@@ -6,6 +6,15 @@ Version 0.4.0
 
 To be released.
 
+### @fedify/botkit
+
+ -  Added remote follow button.  [[#10], [#14] by Hyeonseo Kim]
+
+     -  Added Follow button and modal on main page.
+     -  Added `POST /follow` route to handle remote follow action.
+
+[#10]: https://github.com/fedify-dev/botkit/issues/10
+[#14]: https://github.com/fedify-dev/botkit/pull/14
 
 Version 0.3.0
 -------------
