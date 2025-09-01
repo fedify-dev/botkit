@@ -757,6 +757,7 @@
           "npm:markdown-it@^14.1.0",
           "npm:mime-db@^1.54.0",
           "npm:tsdown@~0.12.8",
+          "npm:url-template@^3.1.1",
           "npm:uuid@^11.1.0",
           "npm:xss@^1.0.15"
         ],
@@ -768,6 +769,7 @@
             "npm:html-entities@^2.6.0",
             "npm:markdown-it@^14.1.0",
             "npm:mime-db@^1.54.0",
+            "npm:url-template@^3.1.1",
             "npm:uuid@^11.1.0",
             "npm:xss@^1.0.15"
           ]
