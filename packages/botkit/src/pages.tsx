@@ -491,7 +491,10 @@ app.post("/follow", async (c) => {
     }, 400);
   } catch (error) {
     console.error("Follow request error:", error);
-    return c.json({ error: error }, 400);
+    if (error instanceof Error && error.message === "No followerHandle!") {
+      return c.json({ error: "Follower handle is required." }, 400);
+    }
+    return c.json({ error: "An internal server error occurred." }, 500);
   }
 });
 
