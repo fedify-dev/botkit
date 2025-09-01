@@ -32,6 +32,7 @@ import type { BotImpl } from "./bot-impl.ts";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
 import { Follower } from "./components/Follower.tsx";
+import { FollowButton } from "./components/FollowButton.tsx";
 import { getMessageClass, isMessageObject, textXss } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
@@ -154,8 +155,9 @@ app.get("/", async (c) => {
               {postsCount === 1
                 ? `1 post`
                 : `${postsCount.toLocaleString("en")} posts`}
-            </span>
-            {" "}
+            </span>{" "}
+            &middot;{" "}
+            <FollowButton bot={bot} />
           </p>
         </hgroup>
         {summary &&
