@@ -28,6 +28,7 @@ import {
 } from "@fedify/fedify/vocab";
 import { Hono } from "hono";
 import { decode } from "html-entities";
+import { parseTemplate } from "url-template";
 import type { BotImpl } from "./bot-impl.ts";
 import { FollowButton } from "./components/FollowButton.tsx";
 import { Follower } from "./components/Follower.tsx";
@@ -463,10 +464,10 @@ app.post("/follow", async (c) => {
 
     if (subscribeLink?.template) {
       const botActorUri = ctx.getActorUri(bot.identifier);
-      const followUrl = subscribeLink.template.replace(
-        "{uri}",
-        encodeURIComponent(botActorUri.href),
-      );
+      const followUrlTemplate = parseTemplate(subscribeLink.template);
+      const followUrl = followUrlTemplate.expand({
+        uri: botActorUri.href,
+      });
       return c.redirect(followUrl);
     }
 
