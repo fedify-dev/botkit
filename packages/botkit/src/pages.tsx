@@ -436,13 +436,25 @@ app.get("/feed.xml", async (c) => {
 app.post("/follow", async (c) => {
   const { bot } = c.env;
   const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const url = new URL(c.req.url);
 
   const formData = await c.req.formData();
   let followerHandle = formData.get("handle")?.toString();
 
   try {
     if (!followerHandle) {
-      return c.json({ error: "Follower handle is required." }, 400);
+      return c.html(
+        <Layout bot={bot} host={url.host} title="Error">
+          <main class="container">
+            <h1>Error</h1>
+            <p>Follower handle is required.</p>
+            <p>
+              <a href="/">Go back</a>
+            </p>
+          </main>
+        </Layout>,
+        400,
+      );
     }
 
     if (followerHandle.startsWith("@")) {
@@ -453,7 +465,21 @@ app.post("/follow", async (c) => {
       .lookupWebFinger(`acct:${followerHandle}`);
 
     if (!webfingerData?.links) {
-      return c.json({ error: "No links found in webfinger data" }, 400);
+      return c.html(
+        <Layout bot={bot} host={url.host} title="Error">
+          <main class="container">
+            <h1>Error</h1>
+            <p>
+              No links found in webfinger data for{" "}
+              <code>@{followerHandle}</code>.
+            </p>
+            <p>
+              <a href="/">Go back</a>
+            </p>
+          </main>
+        </Layout>,
+        400,
+      );
     }
 
     const subscribeLink = webfingerData.links.find(
@@ -469,11 +495,36 @@ app.post("/follow", async (c) => {
       return c.redirect(followUrl);
     }
 
-    return c.json({
-      error: "No follow link found in WebFinger data.",
-    }, 400);
+    return c.html(
+      <Layout bot={bot} host={url.host} title="Error">
+        <main class="container">
+          <h1>Error</h1>
+          <p>
+            No follow link found in WebFinger data for{" "}
+            <code>@{followerHandle}</code>.
+          </p>
+          <p>
+            <a href="/">Go back</a>
+          </p>
+        </main>
+      </Layout>,
+      400,
+    );
   } catch (_error) {
-    return c.json({ error: "An internal server error occurred." }, 500);
+    return c.html(
+      <Layout bot={bot} host={url.host} title="Error">
+        <main class="container">
+          <h1>Internal Server Error</h1>
+          <p>
+            An internal server error occurred while processing your request.
+          </p>
+          <p>
+            <a href="/">Go back</a>
+          </p>
+        </main>
+      </Layout>,
+      500,
+    );
   }
 });
 
