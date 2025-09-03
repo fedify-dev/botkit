@@ -484,7 +484,7 @@ app.post("/follow", async (c) => {
 
     const subscribeLink = webfingerData.links.find(
       (link) => link.rel === "http://ostatus.org/schema/1.0/subscribe",
-    ) as { template?: string } | undefined;
+    );
 
     if (subscribeLink?.template) {
       const botActorUri = ctx.getActorUri(bot.identifier);
