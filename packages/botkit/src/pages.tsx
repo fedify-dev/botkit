@@ -28,10 +28,12 @@ import {
 } from "@fedify/fedify/vocab";
 import { Hono } from "hono";
 import { decode } from "html-entities";
+import { parseTemplate } from "url-template";
 import type { BotImpl } from "./bot-impl.ts";
+import { FollowButton } from "./components/FollowButton.tsx";
+import { Follower } from "./components/Follower.tsx";
 import { Layout } from "./components/Layout.tsx";
 import { Message } from "./components/Message.tsx";
-import { Follower } from "./components/Follower.tsx";
 import { getMessageClass, isMessageObject, textXss } from "./message-impl.ts";
 import type { MessageClass } from "./message.ts";
 import type { Uuid } from "./repository.ts";
@@ -154,8 +156,8 @@ app.get("/", async (c) => {
               {postsCount === 1
                 ? `1 post`
                 : `${postsCount.toLocaleString("en")} posts`}
-            </span>
-            {" "}
+            </span>{" "}
+            &middot; <FollowButton bot={bot} />
           </p>
         </hgroup>
         {summary &&
@@ -429,6 +431,101 @@ app.get("/feed.xml", async (c) => {
   );
   response.headers.set("Content-Type", "application/atom+xml; charset=utf-8");
   return response;
+});
+
+app.post("/follow", async (c) => {
+  const { bot } = c.env;
+  const ctx = bot.federation.createContext(c.req.raw, c.env.contextData);
+  const url = new URL(c.req.url);
+
+  const formData = await c.req.formData();
+  let followerHandle = formData.get("handle")?.toString();
+
+  try {
+    if (!followerHandle) {
+      return c.html(
+        <Layout bot={bot} host={url.host} title="Error">
+          <main class="container">
+            <h1>Error</h1>
+            <p>Follower handle is required.</p>
+            <p>
+              <a href="/">Go back</a>
+            </p>
+          </main>
+        </Layout>,
+        400,
+      );
+    }
+
+    if (followerHandle.startsWith("@")) {
+      followerHandle = followerHandle.slice(1);
+    }
+
+    const webfingerData = await ctx
+      .lookupWebFinger(`acct:${followerHandle}`);
+
+    if (!webfingerData?.links) {
+      return c.html(
+        <Layout bot={bot} host={url.host} title="Error">
+          <main class="container">
+            <h1>Error</h1>
+            <p>
+              No links found in webfinger data for{" "}
+              <code>@{followerHandle}</code>.
+            </p>
+            <p>
+              <a href="/">Go back</a>
+            </p>
+          </main>
+        </Layout>,
+        400,
+      );
+    }
+
+    const subscribeLink = webfingerData.links.find(
+      (link) => link.rel === "http://ostatus.org/schema/1.0/subscribe",
+    );
+
+    if (subscribeLink?.template) {
+      const botActorUri = ctx.getActorUri(bot.identifier);
+      const followUrlTemplate = parseTemplate(subscribeLink.template);
+      const followUrl = followUrlTemplate.expand({
+        uri: botActorUri.href,
+      });
+      return c.redirect(followUrl);
+    }
+
+    return c.html(
+      <Layout bot={bot} host={url.host} title="Error">
+        <main class="container">
+          <h1>Error</h1>
+          <p>
+            No follow link found in WebFinger data for{" "}
+            <code>@{followerHandle}</code>.
+          </p>
+          <p>
+            <a href="/">Go back</a>
+          </p>
+        </main>
+      </Layout>,
+      400,
+    );
+  } catch (_error) {
+    return c.html(
+      <Layout bot={bot} host={url.host} title="Error">
+        <main class="container">
+          <h1>Internal Server Error</h1>
+          <p>
+            An internal server error occurred while processing your request.
+          </p>
+          <p>
+            <a href="/">Go back</a>
+          </p>
+        </main>
+      </Layout>,
+      500,
+    );
+  }
 });
 
 interface GetPostsOptions {

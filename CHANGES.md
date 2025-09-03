@@ -6,6 +6,23 @@ Version 0.4.0
 
 To be released.
 
+### @fedify/botkit
+
+ -  Added a remote follow button to the web interface.
+    [[#10], [#14] by Hyeonseo Kim]
+
+     -  Added a Follow button on the bot's profile page that allows users to
+        follow the bot from their own fediverse instance without manual
+        searching.
+     -  When clicked, the button opens a modal dialog where users can enter
+        their fediverse handle (e.g., `@username@instance.com`).
+     -  The feature uses WebFinger to discover the user's instance and
+        automatically redirects to the appropriate follow page using the OStatus
+        subscribe protocol.
+
+[#10]: https://github.com/fedify-dev/botkit/issues/10
+[#14]: https://github.com/fedify-dev/botkit/pull/14
+
 
 Version 0.3.0
 -------------
