@@ -63,7 +63,8 @@ jobs:
         node-version: "22"
     - uses: pnpm/action-setup@v4
       with:
-        version: 10
+        version: latest
+    - run: npm install -g npm@latest && npm --version
     - if: github.ref_type == 'branch'
       run: |
         set -euo pipefail
@@ -81,7 +82,6 @@ jobs:
         deno task check-versions
     - run: |
         set -euo pipefail
-        pnpm config set //registry.npmjs.org/:_authToken "$NPM_AUTH_TOKEN"
         pnpm install
         if [[ "$GITHUB_REF_TYPE" = tag ]]; then
           pnpm publish --recursive --access public --no-git-checks
@@ -89,7 +89,6 @@ jobs:
           pnpm publish --recursive --access public --no-git-checks --tag dev
         fi
       env:
-        NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
         NPM_CONFIG_PROVENANCE: "true"
     - run: deno publish --allow-dirty
     - if: github.ref_type == 'tag'
