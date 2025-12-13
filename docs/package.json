@@ -7,7 +7,7 @@
     "@fedify/redis": "^1.8.7",
     "@fedify/sqlite": "^1.8.7",
     "@js-temporal/polyfill": "catalog:",
-    "@shikijs/vitepress-twoslash": "^3.7.0",
+    "@shikijs/vitepress-twoslash": "^3.20.0",
     "@types/deno": "^2.3.0",
     "@types/node": "^24.0.3",
     "ioredis": "^5.6.1",
@@ -17,7 +17,7 @@
     "postgres": "^3.4.7",
     "srvx": "^0.8.0",
     "typescript": "^5.8.3",
-    "vitepress": "^1.5.0",
+    "vitepress": "^2.0.0-alpha.15",
     "vitepress-plugin-group-icons": "^1.3.3",
     "vitepress-plugin-llms": "^1.1.0"
   },

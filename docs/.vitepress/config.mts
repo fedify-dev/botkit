@@ -168,6 +168,7 @@ export default defineConfig({
   ignoreDeadLinks: true,
 
   markdown: {
+    languages: ["js", "jsx", "ts", "tsx", "typescript", "bash", "sh", "shell", "json", "text", "html"],
     codeTransformers: [
       transformerTwoslash({
         twoslashOptions: {
