@@ -7,14 +7,14 @@ settings:
 catalogs:
   default:
     '@fedify/fedify':
-      specifier: 1.9.0-dev.1516+8f42bff1
-      version: 1.9.0-dev.1516
+      specifier: 1.9.2
+      version: 1.9.2
     '@js-temporal/polyfill':
       specifier: ^0.5.1
       version: 0.5.1
     '@logtape/logtape':
       specifier: ^1.0.4
-      version: 1.0.4
+      version: 1.3.5
     hono:
       specifier: ^4.8.2
       version: 4.8.2
@@ -37,16 +37,16 @@ importers:
         version: link:../packages/botkit-sqlite
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+        version: 1.9.2(web-streams-polyfill@3.3.3)
       '@fedify/postgres':
         specifier: ^1.8.7
-        version: 1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))(postgres@3.4.7)
+        version: 1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))(postgres@3.4.7)
       '@fedify/redis':
         specifier: ^1.8.7
-        version: 1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))(ioredis@5.6.1)
+        version: 1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))(ioredis@5.6.1)
       '@fedify/sqlite':
         specifier: ^1.8.7
-        version: 1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))
+        version: 1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -94,7 +94,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+        version: 1.9.2(web-streams-polyfill@3.3.3)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -106,7 +106,7 @@ importers:
         version: 0.5.1
       '@logtape/logtape':
         specifier: 'catalog:'
-        version: 1.0.4
+        version: 1.3.5
       '@phensley/language-tag':
         specifier: ^1.12.2
         version: 1.12.2
@@ -146,13 +146,13 @@ importers:
         version: link:../botkit
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+        version: 1.9.2(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
       '@logtape/logtape':
         specifier: 'catalog:'
-        version: 1.0.4
+        version: 1.3.5
     devDependencies:
       tsdown:
         specifier: 'catalog:'
@@ -388,8 +388,8 @@ packages:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
 
-  '@fedify/fedify@1.9.0-dev.1516':
-    resolution: {integrity: sha512-nxXynvlgylYVwVgPmduIpjK99b5b/617qMQjfmtDVHNsdYXtjGqqipxVc+tz1uXwbsEzLO/z+o4jNo9lyF4BDQ==}
+  '@fedify/fedify@1.9.2':
+    resolution: {integrity: sha512-+v6XuhrwRwYeYQDSLnpuo70TydjzprqufMa1A5zEy1kQVe2sFJgZXpMjpu1zY2wfjb2nCVzBSZ4K6VEEkIq9Rw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -423,13 +423,6 @@ packages:
 
   '@floating-ui/utils@0.2.9':
     resolution: {integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==}
-
-  '@hugoalh/http-header-link@1.0.3':
-    resolution: {integrity: sha512-x4jzzKSzZQY115H/GxUWaAHzT5eqLXt99uSKY7+0O/h3XrV248+CkZA7cA274QahXzWkGQYYug/AF6QUkTnLEw==}
-    engines: {node: '>=16.13.0'}
-
-  '@hugoalh/is-string-singleline@1.0.5':
-    resolution: {integrity: sha512-mFCgmAUK+xnWgst2qxXKSJc3b7sQSZ9z3Chen1fh7TonInMhHYvy3Dk6fpKPXX/rTrs0wCRSrR93Q/9C7Ger8A==}
 
   '@iconify-json/logos@1.2.4':
     resolution: {integrity: sha512-XC4If5D/hbaZvUkTV8iaZuGlQCyG6CNOlaAaJaGa13V5QMYwYjgtKk3vPP8wz3wtTVNVEVk3LRx1fOJz+YnSMw==}
@@ -469,9 +462,6 @@ packages:
     resolution: {integrity: sha512-R8gLRTZeyp03ymzP/6Lil/28tGeGEzhx1q2k703KGWRAI1VdvPIXdG70VJc2pAMw3NA6JKL5hhFu1sJX0Mnn/A==}
     engines: {node: '>=6.0.0'}
 
-  '@jridgewell/sourcemap-codec@1.5.0':
-    resolution: {integrity: sha512-gv3ZRaISU3fjPAgNsriBRqGWQL6quFx04YMPW/zD8XMLsU32mhCCbfbO6KZFLjvYpCZ8zyDEgqsgf+PwPaM7GQ==}
-
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
@@ -485,8 +475,8 @@ packages:
   '@logtape/logtape@1.0.0':
     resolution: {integrity: sha512-GOOiaJcHSJQfFt+khrtoxfQ29klDiG8UxrgC+lPt7K6HhwEMQnB47j7V0GQ6F8bnS7JIZgYQmbXb+yGUF2pKhA==}
 
-  '@logtape/logtape@1.0.4':
-    resolution: {integrity: sha512-YvNVrXIxVpnY528zoiEjX8PqTfr0UCtKXyssvaWL8AE+OByFTCooKuKMdPlm6g65YUI9fPXrHn4UnogSskABnA==}
+  '@logtape/logtape@1.3.5':
+    resolution: {integrity: sha512-G+MxWB7Tbv/2764519+Cp6rKXUdRbe/GiRwTvlm/Wv/sNsiquRnx9Hzr9eXaIpAYLT4PrBlkthjJ4gmqdSPrFg==}
 
   '@multiformats/base-x@4.0.1':
     resolution: {integrity: sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==}
@@ -929,9 +919,6 @@ packages:
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
 
-  birpc@2.4.0:
-    resolution: {integrity: sha512-5IdNxTyhXHv2UlgnPHQ0h+5ypVmkrYHzL8QT+DwFZ//2N/oNV8Ch+BCRmTJ3x6/z9Axo/cXYBc9eprsUVK/Jsg==}
-
   birpc@2.9.0:
     resolution: {integrity: sha512-KrayHS5pBi69Xi9JmvoqrIgYGDkD6mcSe/i6YKi3w5kekCLzrX4+nawcXqrj2tIp50Kw/mT/s3p+GVK0A0sKxw==}
 
@@ -1108,14 +1095,6 @@ packages:
 
   fault@2.0.1:
     resolution: {integrity: sha512-WtySTkS4OKev5JtpHXnib4Gxiurzh5NCGvWrFaZ34m6JehfTUhKZvn9njTfw48t6JumVQOmrKqpmGcdwxnhqBQ==}
-
-  fdir@6.4.6:
-    resolution: {integrity: sha512-hiFoqpyZcfNm1yc4u8oWCf9A2c4D3QjCrks3zmoVKVxpQRzmPNar1hUJcBG2RQHvEVGDN+Jm81ZheVLAQMK6+w==}
-    peerDependencies:
-      picomatch: ^3 || ^4
-    peerDependenciesMeta:
-      picomatch:
-        optional: true
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -1673,10 +1652,6 @@ packages:
   tinyexec@1.0.1:
     resolution: {integrity: sha512-5uC6DDlmeqiOwCPmK9jMSdOuZTh8bU39Ys6yidB+UTt5hfZUPGAypSgFRiEp+jbi9qH40BLDvy85jIU88wKSqw==}
 
-  tinyglobby@0.2.14:
-    resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
-    engines: {node: '>=12.0.0'}
-
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
     engines: {node: '>=12.0.0'}
@@ -1773,8 +1748,8 @@ packages:
   unist-util-visit@5.0.0:
     resolution: {integrity: sha512-MR04uvD+07cwl/yhVuVWAtw+3GOR/knlL55Nd/wAdblk27GCVt3lqpTivy/tkJcZoNPzTwS1Y+KMojlLDhoTzg==}
 
-  uri-template-router@0.0.17:
-    resolution: {integrity: sha512-5h2I/eSN+XFRAFaSR72KTFWg5rf8GB6Ur5+yWHjtwEqmn6cfZqoWsoWTh6NhxW8pIlFq144G2J23OCg3CeAaSg==}
+  uri-template-router@1.0.0:
+    resolution: {integrity: sha512-WKcL9ZSIEhHE3f5P4Z47Tf0nWbcgV1ISb/OBuF8YKEYi0SQOyTLCzM6B/gAKFWZhRhqA+C/Ks8UXe2qU5W0FVg==}
 
   url-template@3.1.1:
     resolution: {integrity: sha512-4oszoaEKE/mQOtAmdMWqIRHmkxWkUZMnXFnjQ5i01CuRSK3uluxcH1MRVVVWmhlnzT1SCDfKxxficm2G37qzCA==}
@@ -1923,8 +1898,8 @@ snapshots:
 
   '@babel/generator@7.27.5':
     dependencies:
-      '@babel/parser': 7.27.5
-      '@babel/types': 7.27.6
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
       '@jridgewell/gen-mapping': 0.3.8
       '@jridgewell/trace-mapping': 0.3.25
       jsesc: 3.1.0
@@ -2072,12 +2047,11 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3)':
+  '@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3)':
     dependencies:
       '@cfworker/json-schema': 4.1.1
-      '@hugoalh/http-header-link': 1.0.3
       '@js-temporal/polyfill': 0.5.1
-      '@logtape/logtape': 1.0.4
+      '@logtape/logtape': 1.3.5
       '@multiformats/base-x': 4.0.1
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.34.0
@@ -2090,7 +2064,7 @@ snapshots:
       multicodec: 3.2.1
       pkijs: 3.2.5
       structured-field-values: 2.0.4
-      uri-template-router: 0.0.17
+      uri-template-router: 1.0.0
       url-template: 3.1.1
       urlpattern-polyfill: 10.1.0
     transitivePeerDependencies:
@@ -2104,23 +2078,23 @@ snapshots:
     dependencies:
       markdown-it: 14.1.0
 
-  '@fedify/postgres@1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))(postgres@3.4.7)':
+  '@fedify/postgres@1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))(postgres@3.4.7)':
     dependencies:
-      '@fedify/fedify': 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.9.2(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.0.0
       postgres: 3.4.7
 
-  '@fedify/redis@1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))(ioredis@5.6.1)':
+  '@fedify/redis@1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))(ioredis@5.6.1)':
     dependencies:
-      '@fedify/fedify': 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.9.2(web-streams-polyfill@3.3.3)
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 1.0.0
       ioredis: 5.6.1
 
-  '@fedify/sqlite@1.8.7(@fedify/fedify@1.9.0-dev.1516(web-streams-polyfill@3.3.3))':
+  '@fedify/sqlite@1.8.7(@fedify/fedify@1.9.2(web-streams-polyfill@3.3.3))':
     dependencies:
-      '@fedify/fedify': 1.9.0-dev.1516(web-streams-polyfill@3.3.3)
+      '@fedify/fedify': 1.9.2(web-streams-polyfill@3.3.3)
       '@logtape/logtape': 1.0.0
       es-toolkit: 1.39.5
 
@@ -2133,12 +2107,6 @@ snapshots:
       '@floating-ui/core': 1.7.1
 
   '@floating-ui/utils@0.2.9': {}
-
-  '@hugoalh/http-header-link@1.0.3':
-    dependencies:
-      '@hugoalh/is-string-singleline': 1.0.5
-
-  '@hugoalh/is-string-singleline@1.0.5': {}
 
   '@iconify-json/logos@1.2.4':
     dependencies:
@@ -2178,21 +2146,19 @@ snapshots:
   '@jridgewell/gen-mapping@0.3.8':
     dependencies:
       '@jridgewell/set-array': 1.2.1
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
       '@jridgewell/trace-mapping': 0.3.25
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
   '@jridgewell/set-array@1.2.1': {}
 
-  '@jridgewell/sourcemap-codec@1.5.0': {}
-
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
   '@jridgewell/trace-mapping@0.3.25':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   '@js-temporal/polyfill@0.5.1':
     dependencies:
@@ -2200,7 +2166,7 @@ snapshots:
 
   '@logtape/logtape@1.0.0': {}
 
-  '@logtape/logtape@1.0.4': {}
+  '@logtape/logtape@1.3.5': {}
 
   '@multiformats/base-x@4.0.1': {}
 
@@ -2609,12 +2575,10 @@ snapshots:
 
   ast-kit@2.1.0:
     dependencies:
-      '@babel/parser': 7.27.5
+      '@babel/parser': 7.28.5
       pathe: 2.0.3
 
   bail@2.0.2: {}
-
-  birpc@2.4.0: {}
 
   birpc@2.9.0: {}
 
@@ -2754,10 +2718,6 @@ snapshots:
   fault@2.0.1:
     dependencies:
       format: 0.2.2
-
-  fdir@6.4.6(picomatch@4.0.2):
-    optionalDependencies:
-      picomatch: 4.0.2
 
   fdir@6.5.0(picomatch@4.0.3):
     optionalDependencies:
@@ -3380,10 +3340,10 @@ snapshots:
   rolldown-plugin-dts@0.13.12(rolldown@1.0.0-beta.15)(typescript@5.8.3):
     dependencies:
       '@babel/generator': 7.27.5
-      '@babel/parser': 7.27.5
-      '@babel/types': 7.27.6
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
       ast-kit: 2.1.0
-      birpc: 2.4.0
+      birpc: 2.9.0
       debug: 4.4.1
       dts-resolver: 2.1.1
       get-tsconfig: 4.10.1
@@ -3501,11 +3461,6 @@ snapshots:
 
   tinyexec@1.0.1: {}
 
-  tinyglobby@0.2.14:
-    dependencies:
-      fdir: 6.4.6(picomatch@4.0.2)
-      picomatch: 4.0.2
-
   tinyglobby@0.2.15:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3530,7 +3485,7 @@ snapshots:
       rolldown-plugin-dts: 0.13.12(rolldown@1.0.0-beta.15)(typescript@5.8.3)
       semver: 7.7.2
       tinyexec: 1.0.1
-      tinyglobby: 0.2.14
+      tinyglobby: 0.2.15
       unconfig: 7.3.2
     optionalDependencies:
       typescript: 5.8.3
@@ -3623,7 +3578,7 @@ snapshots:
       unist-util-is: 6.0.0
       unist-util-visit-parents: 6.0.1
 
-  uri-template-router@0.0.17: {}
+  uri-template-router@1.0.0: {}
 
   url-template@3.1.1: {}
 
