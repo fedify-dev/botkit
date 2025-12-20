@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.3.1
 -------------
 
-To be released.
+Released on December 20, 2025.
 
  -  Upgraded Fedify to 1.8.15, which includes a critical security
     fix [CVE-2025-68475] that addresses a ReDoS (Regular Expression Denial
