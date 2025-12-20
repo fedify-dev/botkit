@@ -1,16 +1,14 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@es-toolkit/es-toolkit@^1.39.5": "1.39.10",
-    "jsr:@fedify/fedify@^1.8.8": "1.8.8",
+    "jsr:@es-toolkit/es-toolkit@^1.39.5": "1.43.0",
+    "jsr:@fedify/fedify@^1.8.15": "1.9.1",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
     "jsr:@hono/hono@^4.8.2": "4.9.4",
-    "jsr:@hugoalh/http-header-link@^1.0.2": "1.0.3",
-    "jsr:@hugoalh/is-string-singleline@^1.0.4": "1.0.5",
-    "jsr:@logtape/logtape@1": "1.0.4",
-    "jsr:@logtape/logtape@^1.0.4": "1.0.4",
+    "jsr:@logtape/logtape@^1.0.4": "1.3.5",
+    "jsr:@logtape/logtape@^1.1.1": "1.3.5",
     "jsr:@std/fs@^1.0.19": "1.0.19",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.9": "1.0.9",
@@ -19,12 +17,12 @@
     "npm:@fedify/markdown-it-mention@0.3": "0.3.0",
     "npm:@multiformats/base-x@^4.0.1": "4.0.1",
     "npm:@opentelemetry/api@^1.9.0": "1.9.0",
-    "npm:@opentelemetry/semantic-conventions@^1.27.0": "1.36.0",
-    "npm:@phensley/language-tag@^1.12.2": "1.13.1",
-    "npm:@phensley/language-tag@^1.9.0": "1.13.1",
+    "npm:@opentelemetry/semantic-conventions@^1.27.0": "1.38.0",
+    "npm:@phensley/language-tag@^1.12.2": "1.14.0",
+    "npm:@phensley/language-tag@^1.9.0": "1.14.0",
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:@types/node@*": "22.15.15",
-    "npm:asn1js@^3.0.5": "3.0.6",
+    "npm:asn1js@^3.0.5": "3.0.7",
     "npm:byte-encodings@^1.0.11": "1.0.11",
     "npm:html-entities@^2.6.0": "2.6.0",
     "npm:json-canon@^1.0.1": "1.0.1",
@@ -32,24 +30,23 @@
     "npm:markdown-it@^14.1.0": "14.1.0",
     "npm:mime-db@^1.54.0": "1.54.0",
     "npm:multicodec@^3.2.1": "3.2.1",
-    "npm:pkijs@^3.2.4": "3.2.5",
+    "npm:pkijs@^3.2.4": "3.3.3",
     "npm:structured-field-values@^2.0.4": "2.0.4",
     "npm:tsdown@~0.12.8": "0.12.9_rolldown@1.0.0-beta.34",
-    "npm:uri-template-router@^0.0.17": "0.0.17",
+    "npm:uri-template-router@1": "1.0.0",
     "npm:url-template@^3.1.1": "3.1.1",
     "npm:uuid@^11.1.0": "11.1.0",
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@es-toolkit/es-toolkit@1.39.10": {
-      "integrity": "8757072a13aa64b3b349ba2b9d7d22fbe7ea6f138506c6cd2222d767cd79918f"
+    "@es-toolkit/es-toolkit@1.43.0": {
+      "integrity": "ce62274cd14ad9317290b5d77e2c2bf752b78a96e393c0306640f59753e7e043"
     },
-    "@fedify/fedify@1.8.8": {
-      "integrity": "6f8d83e26771415e2b062a264a6d09bc4800eff2519ea23cbb26e6e38c6a0396",
+    "@fedify/fedify@1.9.1": {
+      "integrity": "d17d3813359d9d53e6ebdfdb4c56c51f73e9a3d017fcadcfa3981be86661b37f",
       "dependencies": [
         "jsr:@es-toolkit/es-toolkit",
-        "jsr:@hugoalh/http-header-link",
-        "jsr:@logtape/logtape@1",
+        "jsr:@logtape/logtape@^1.1.1",
         "npm:@multiformats/base-x",
         "npm:@opentelemetry/api",
         "npm:@opentelemetry/semantic-conventions",
@@ -91,17 +88,8 @@
     "@hono/hono@4.9.4": {
       "integrity": "de006e32f3bab18e5a5bed4c75c5e0aaa46958d3653e6646b534a874d690dccc"
     },
-    "@hugoalh/http-header-link@1.0.3": {
-      "integrity": "3372096a73d755e3351f7fbd7155db7725874c2682a594a655580e3866563024",
-      "dependencies": [
-        "jsr:@hugoalh/is-string-singleline"
-      ]
-    },
-    "@hugoalh/is-string-singleline@1.0.5": {
-      "integrity": "3409f64eaad51e4afccea0f21853cedf7b0b5b147e3606e585e5e88ba2b03b32"
-    },
-    "@logtape/logtape@1.0.4": {
-      "integrity": "6ada87764d995b1033c352a17fd9e20b217f3672083bc2d8debe356eac03fe10"
+    "@logtape/logtape@1.3.5": {
+      "integrity": "a5cdb130daf1a9d384006b0f850cc4443bfc2e163dadc6fa667875e79770beb3"
     },
     "@std/fs@1.0.19": {
       "integrity": "051968c2b1eae4d2ea9f79a08a3845740ef6af10356aff43d3e2ef11ed09fb06",
@@ -227,14 +215,14 @@
         "@tybys/wasm-util"
       ]
     },
-    "@noble/hashes@1.8.0": {
-      "integrity": "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="
+    "@noble/hashes@1.4.0": {
+      "integrity": "sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg=="
     },
     "@opentelemetry/api@1.9.0": {
       "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="
     },
-    "@opentelemetry/semantic-conventions@1.36.0": {
-      "integrity": "sha512-TtxJSRD8Ohxp6bKkhrm27JRHAxPczQA7idtcTOMYI+wQRRrfgqxHv1cFbCApcSnNjtXkmzFozn6jQtFrOmbjPQ=="
+    "@opentelemetry/semantic-conventions@1.38.0": {
+      "integrity": "sha512-kocjix+/sSggfJhwXqClZ3i9Y/MI0fp7b+g7kCRm6psy2dsf8uApTRclwG18h8Avm7C9+fnt+O36PspJ/OzoWg=="
     },
     "@oxc-project/runtime@0.82.3": {
       "integrity": "sha512-LNh5GlJvYHAnMurO+EyA8jJwN1rki7l3PSHuosDh2I7h00T6/u9rCkUjg/SvPmT1CZzvhuW0y+gf7jcqUy/Usg=="
@@ -242,8 +230,8 @@
     "@oxc-project/types@0.82.3": {
       "integrity": "sha512-6nCUxBnGX0c6qfZW5MaF6/fmu5dHJDMiMPaioKHKs5mi5+8/FHQ7WGjgQIz1zxpmceMYfdIXkOaLYE+ejbuOtA=="
     },
-    "@phensley/language-tag@1.13.1": {
-      "integrity": "sha512-0cqJT7yC1wz0LlT63gs6lfTSgvedWA+Msg2tDbp9b5NCF9CTyLZ/9UbncBlXRHHvugbhtlT3NjM6lvwK3mrIoA==",
+    "@phensley/language-tag@1.14.0": {
+      "integrity": "sha512-FJak93PHAWlleOeAt0JBLplkAy/BhrEhK8zuNX1PHca7I+Pdzj3N1lWZD8ZLmDqlYHIBhHkf6PLOrOcjBD1DHg==",
       "dependencies": [
         "tslib"
       ]
@@ -366,8 +354,8 @@
     "argparse@2.0.1": {
       "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q=="
     },
-    "asn1js@3.0.6": {
-      "integrity": "sha512-UOCGPYbl0tv8+006qks/dTgV9ajs97X2p0FAbyS2iyCRrmLSRolDaHdp+v/CLgnzHc3fVB+CwYiUmei7ndFcgA==",
+    "asn1js@3.0.7": {
+      "integrity": "sha512-uLvq6KJu04qoQM6gvBfKFjlh6Gl0vOKQuR5cJMDHQkmwfMOQeN3F3SHCv9SNYSL+CRoHvOGFfllDlVz03GQjvQ==",
       "dependencies": [
         "pvtsutils",
         "pvutils",
@@ -562,8 +550,8 @@
     "picomatch@4.0.3": {
       "integrity": "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="
     },
-    "pkijs@3.2.5": {
-      "integrity": "sha512-WX0la7n7CbnguuaIQoT4Fc0IJckPDOUldzOwlZ0nwpOcySS+Six/tXBdc0RX17J5o1To0SAr3xDJjDLsOfDFQA==",
+    "pkijs@3.3.3": {
+      "integrity": "sha512-+KD8hJtqQMYoTuL1bbGOqxb4z+nZkTAwVdNtWwe8Tc2xNbEmdJYIYoc6Qt0uF55e6YW6KuTHw1DjQ18gMhzepw==",
       "dependencies": [
         "@noble/hashes",
         "asn1js",
@@ -582,8 +570,8 @@
         "tslib"
       ]
     },
-    "pvutils@1.1.3": {
-      "integrity": "sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ=="
+    "pvutils@1.1.5": {
+      "integrity": "sha512-KTqnxsgGiQ6ZAzZCVlJH5eOjSnvlyEgx1m8bkRJfOhmGRqfo5KLvmAlACQkrjEtOQ4B7wF9TdSLIs9O90MX9xA=="
     },
     "quansync@0.2.11": {
       "integrity": "sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA=="
@@ -709,8 +697,8 @@
         "@fastify/busboy"
       ]
     },
-    "uri-template-router@0.0.17": {
-      "integrity": "sha512-5h2I/eSN+XFRAFaSR72KTFWg5rf8GB6Ur5+yWHjtwEqmn6cfZqoWsoWTh6NhxW8pIlFq144G2J23OCg3CeAaSg=="
+    "uri-template-router@1.0.0": {
+      "integrity": "sha512-WKcL9ZSIEhHE3f5P4Z47Tf0nWbcgV1ISb/OBuF8YKEYi0SQOyTLCzM6B/gAKFWZhRhqA+C/Ks8UXe2qU5W0FVg=="
     },
     "url-template@3.1.1": {
       "integrity": "sha512-4oszoaEKE/mQOtAmdMWqIRHmkxWkUZMnXFnjQ5i01CuRSK3uluxcH1MRVVVWmhlnzT1SCDfKxxficm2G37qzCA=="
@@ -739,7 +727,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/fedify@^1.8.8",
+      "jsr:@fedify/fedify@^1.8.15",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2",
       "jsr:@logtape/logtape@^1.0.4",

@@ -6,6 +6,12 @@ Version 0.3.1
 
 To be released.
 
+ -  Upgraded Fedify to 1.8.15, which includes a critical security
+    fix [CVE-2025-68475] that addresses a ReDoS (Regular Expression Denial
+    of Service) vulnerability in HTML parsing.  [[CVE-2025-68475]]
+
+[CVE-2025-68475]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-rchf-xwx2-hm93
+
 
 Version 0.3.0
 -------------

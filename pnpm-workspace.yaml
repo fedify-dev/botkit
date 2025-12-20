@@ -3,7 +3,7 @@ packages:
 - docs
 
 catalog:
-  "@fedify/fedify": ^1.8.8
+  "@fedify/fedify": ^1.8.15
   "@js-temporal/polyfill": ^0.5.1
   "@logtape/logtape": ^1.0.4
   hono: ^4.8.2
