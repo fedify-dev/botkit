@@ -85,7 +85,10 @@ export {
 export {
   Announce,
   Create,
+  createLegacyPrefixes,
+  createScopedPrefixes,
   KvRepository,
+  type KvStoreRepositoryPrefixes,
   MemoryCachedRepository,
   MemoryRepository,
   type Repository,
