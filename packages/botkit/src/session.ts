@@ -23,7 +23,7 @@ import type {
   Question,
 } from "@fedify/fedify";
 import type { LanguageTag } from "@phensley/language-tag";
-import type { Bot } from "./bot.ts";
+import type { Bot, BotInfo } from "./bot.ts";
 import type {
   AuthorizedMessage,
   Message,
@@ -41,6 +41,18 @@ export interface Session<TContextData> {
    * The bot to which the session belongs.
    */
   readonly bot: Bot<TContextData>;
+
+  /**
+   * Information about the current bot's identity.  This provides a lightweight
+   * way to access the bot's identity (identifier, username, name, class)
+   * without needing to access the full bot object.
+   *
+   * This is particularly useful for dynamic bots where handlers need to
+   * determine which specific bot is being invoked.
+   *
+   * @since 0.4.0
+   */
+  readonly botInfo: BotInfo;
 
   /**
    * The Fedify context of the session.

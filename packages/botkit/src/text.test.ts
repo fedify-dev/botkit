@@ -20,7 +20,14 @@ import {
 } from "@fedify/fedify/federation";
 import { getDocumentLoader } from "@fedify/fedify/runtime";
 import { importJwk } from "@fedify/fedify/sig";
-import { Emoji, Hashtag, Image, Mention, Person } from "@fedify/fedify/vocab";
+import {
+  Emoji,
+  Hashtag,
+  Image,
+  Mention,
+  Person,
+  Service,
+} from "@fedify/fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
@@ -120,6 +127,12 @@ const bot: BotWithVoidContextData = {
       : origin;
     return {
       bot,
+      botInfo: {
+        identifier: "bot",
+        username: "bot",
+        name: undefined,
+        class: Service,
+      },
       context: ctx,
       actorId: ctx.getActorUri(bot.identifier),
       actorHandle: `@bot@${ctx.host}` as const,
