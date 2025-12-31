@@ -329,6 +329,55 @@ export interface KvStoreRepositoryPrefixes {
 }
 
 /**
+ * Creates repository prefixes scoped to a specific bot identifier.
+ * This is used for multi-bot instances where each bot needs isolated storage.
+ *
+ * @example
+ * ```typescript
+ * const prefixes = createScopedPrefixes("mybot");
+ * // prefixes.keyPairs = ["_botkit", "bots", "mybot", "keyPairs"]
+ * // prefixes.messages = ["_botkit", "bots", "mybot", "messages"]
+ * // etc.
+ * ```
+ *
+ * @param identifier The bot identifier to scope the prefixes to.
+ * @returns The scoped prefixes for the bot.
+ * @since 0.4.0
+ */
+export function createScopedPrefixes(
+  identifier: string,
+): KvStoreRepositoryPrefixes {
+  return {
+    keyPairs: ["_botkit", "bots", identifier, "keyPairs"],
+    messages: ["_botkit", "bots", identifier, "messages"],
+    followers: ["_botkit", "bots", identifier, "followers"],
+    followRequests: ["_botkit", "bots", identifier, "followRequests"],
+    followees: ["_botkit", "bots", identifier, "followees"],
+    follows: ["_botkit", "bots", identifier, "follows"],
+    polls: ["_botkit", "bots", identifier, "polls"],
+  };
+}
+
+/**
+ * Creates legacy (unscoped) repository prefixes.
+ * This is used for backward compatibility with single-bot instances.
+ *
+ * @returns The legacy prefixes without bot scoping.
+ * @since 0.4.0
+ */
+export function createLegacyPrefixes(): KvStoreRepositoryPrefixes {
+  return {
+    keyPairs: ["_botkit", "keyPairs"],
+    messages: ["_botkit", "messages"],
+    followers: ["_botkit", "followers"],
+    followRequests: ["_botkit", "followRequests"],
+    followees: ["_botkit", "followees"],
+    follows: ["_botkit", "follows"],
+    polls: ["_botkit", "polls"],
+  };
+}
+
+/**
  * A repository for storing bot data using a key-value store.
  */
 export class KvRepository implements Repository {

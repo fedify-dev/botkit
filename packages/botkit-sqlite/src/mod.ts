@@ -50,6 +50,19 @@ export interface SqliteRepositoryOptions {
    * @default true
    */
   readonly wal?: boolean;
+
+  /**
+   * The bot identifier to scope the repository to.
+   * When provided, all data will be scoped to this bot identifier,
+   * allowing multiple bots to share the same database.
+   *
+   * If not provided, the repository will use an empty string as the bot ID,
+   * which is suitable for single-bot instances.
+   *
+   * @default ""
+   * @since 0.4.0
+   */
+  readonly botId?: string;
 }
 
 /**
@@ -58,15 +71,17 @@ export interface SqliteRepositoryOptions {
  */
 export class SqliteRepository implements Repository, Disposable {
   private readonly db: DatabaseSync;
+  private readonly botId: string;
 
   /**
    * Creates a new SQLite repository.
    * @param options The options for creating the repository.
    */
   constructor(options: SqliteRepositoryOptions = {}) {
-    const { path = ":memory:", wal = true } = options;
+    const { path = ":memory:", wal = true, botId = "" } = options;
 
     this.db = new DatabaseSync(path);
+    this.botId = botId;
 
     // Enable foreign key constraints
     this.db.exec("PRAGMA foreign_keys = ON;");
@@ -90,94 +105,162 @@ export class SqliteRepository implements Repository, Disposable {
   }
 
   private initializeTables(): void {
-    // Key pairs table
+    // Key pairs table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS key_pairs (
         id INTEGER PRIMARY KEY,
+        bot_id TEXT NOT NULL DEFAULT '',
         private_key_jwk TEXT NOT NULL,
         public_key_jwk TEXT NOT NULL
       )
     `);
 
-    // Messages table
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("key_pairs");
+
+    // Create index on bot_id for key_pairs
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_key_pairs_bot_id ON key_pairs(bot_id)
+    `);
+
+    // Messages table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
         activity_json TEXT NOT NULL,
-        published INTEGER
+        published INTEGER,
+        PRIMARY KEY (id, bot_id)
       )
     `);
+
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("messages");
 
     // Create index on published timestamp for efficient ordering
     this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_messages_published ON messages(published)
+      CREATE INDEX IF NOT EXISTS idx_messages_bot_published
+      ON messages(bot_id, published)
     `);
 
-    // Followers table
+    // Followers table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS followers (
-        follower_id TEXT PRIMARY KEY,
-        actor_json TEXT NOT NULL
+        follower_id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
+        actor_json TEXT NOT NULL,
+        PRIMARY KEY (follower_id, bot_id)
       )
     `);
 
-    // Follow requests mapping table
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("followers");
+
+    // Follow requests mapping table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS follow_requests (
-        follow_request_id TEXT PRIMARY KEY,
+        follow_request_id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
         follower_id TEXT NOT NULL,
-        FOREIGN KEY (follower_id) REFERENCES followers(follower_id)
+        PRIMARY KEY (follow_request_id, bot_id)
       )
     `);
 
-    // Sent follows table
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("follow_requests");
+
+    // Sent follows table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS sent_follows (
-        id TEXT PRIMARY KEY,
-        follow_json TEXT NOT NULL
+        id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
+        follow_json TEXT NOT NULL,
+        PRIMARY KEY (id, bot_id)
       )
     `);
 
-    // Followees table
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("sent_follows");
+
+    // Followees table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS followees (
-        followee_id TEXT PRIMARY KEY,
-        follow_json TEXT NOT NULL
+        followee_id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
+        follow_json TEXT NOT NULL,
+        PRIMARY KEY (followee_id, bot_id)
       )
     `);
 
-    // Poll votes table
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("followees");
+
+    // Poll votes table (with bot_id for multi-bot support)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS poll_votes (
         message_id TEXT NOT NULL,
+        bot_id TEXT NOT NULL DEFAULT '',
         voter_id TEXT NOT NULL,
         option TEXT NOT NULL,
-        PRIMARY KEY (message_id, voter_id, option)
+        PRIMARY KEY (message_id, bot_id, voter_id, option)
       )
     `);
 
+    // Add bot_id column if it doesn't exist (migration)
+    this.migrateAddBotIdColumn("poll_votes");
+
     // Create index for efficient vote counting
     this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_poll_votes_message_option 
-      ON poll_votes(message_id, option)
+      CREATE INDEX IF NOT EXISTS idx_poll_votes_bot_message_option
+      ON poll_votes(bot_id, message_id, option)
     `);
   }
 
+  /**
+   * Migrates a table to add bot_id column if it doesn't exist.
+   * This is for backward compatibility with existing databases.
+   */
+  private migrateAddBotIdColumn(tableName: string): void {
+    try {
+      const stmt = this.db.prepare(
+        `SELECT COUNT(*) as count FROM pragma_table_info('${tableName}') WHERE name = 'bot_id'`,
+      );
+      const row = stmt.get() as { count: number };
+      if (row.count === 0) {
+        // bot_id column doesn't exist, add it
+        this.db.exec(
+          `ALTER TABLE ${tableName} ADD COLUMN bot_id TEXT NOT NULL DEFAULT ''`,
+        );
+        logger.info(
+          `Migrated table ${tableName} to add bot_id column for multi-bot support`,
+        );
+      }
+    } catch {
+      // Table might have been just created with bot_id, ignore
+    }
+  }
+
   async setKeyPairs(keyPairs: CryptoKeyPair[]): Promise<void> {
-    const deleteStmt = this.db.prepare("DELETE FROM key_pairs");
+    const deleteStmt = this.db.prepare(
+      "DELETE FROM key_pairs WHERE bot_id = ?",
+    );
     const insertStmt = this.db.prepare(`
-      INSERT INTO key_pairs (private_key_jwk, public_key_jwk) 
-      VALUES (?, ?)
+      INSERT INTO key_pairs (bot_id, private_key_jwk, public_key_jwk)
+      VALUES (?, ?, ?)
     `);
 
     this.db.exec("BEGIN TRANSACTION");
     try {
-      deleteStmt.run();
+      deleteStmt.run(this.botId);
 
       for (const keyPair of keyPairs) {
         const privateJwk = await exportJwk(keyPair.privateKey);
         const publicJwk = await exportJwk(keyPair.publicKey);
-        insertStmt.run(JSON.stringify(privateJwk), JSON.stringify(publicJwk));
+        insertStmt.run(
+          this.botId,
+          JSON.stringify(privateJwk),
+          JSON.stringify(publicJwk),
+        );
       }
 
       this.db.exec("COMMIT");
@@ -189,9 +272,9 @@ export class SqliteRepository implements Repository, Disposable {
 
   async getKeyPairs(): Promise<CryptoKeyPair[] | undefined> {
     const stmt = this.db.prepare(`
-      SELECT private_key_jwk, public_key_jwk FROM key_pairs
+      SELECT private_key_jwk, public_key_jwk FROM key_pairs WHERE bot_id = ?
     `);
-    const rows = stmt.all() as Array<{
+    const rows = stmt.all(this.botId) as Array<{
       private_key_jwk: string;
       public_key_jwk: string;
     }>;
@@ -214,8 +297,8 @@ export class SqliteRepository implements Repository, Disposable {
 
   async addMessage(id: Uuid, activity: Create | Announce): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT INTO messages (id, activity_json, published) 
-      VALUES (?, ?, ?)
+      INSERT INTO messages (id, bot_id, activity_json, published)
+      VALUES (?, ?, ?, ?)
     `);
 
     const activityJson = JSON.stringify(
@@ -223,7 +306,7 @@ export class SqliteRepository implements Repository, Disposable {
     );
     const published = activity.published?.epochMilliseconds ?? null;
 
-    stmt.run(id, activityJson, published);
+    stmt.run(id, this.botId, activityJson, published);
   }
 
   async updateMessage(
@@ -233,9 +316,11 @@ export class SqliteRepository implements Repository, Disposable {
     ) => Create | Announce | undefined | Promise<Create | Announce | undefined>,
   ): Promise<boolean> {
     const selectStmt = this.db.prepare(`
-      SELECT activity_json FROM messages WHERE id = ?
+      SELECT activity_json FROM messages WHERE id = ? AND bot_id = ?
     `);
-    const row = selectStmt.get(id) as { activity_json: string } | undefined;
+    const row = selectStmt.get(id, this.botId) as
+      | { activity_json: string }
+      | undefined;
 
     if (!row) return false;
 
@@ -250,9 +335,9 @@ export class SqliteRepository implements Repository, Disposable {
     if (newActivity == null) return false;
 
     const updateStmt = this.db.prepare(`
-      UPDATE messages 
-      SET activity_json = ?, published = ? 
-      WHERE id = ?
+      UPDATE messages
+      SET activity_json = ?, published = ?
+      WHERE id = ? AND bot_id = ?
     `);
 
     const newActivityJson = JSON.stringify(
@@ -260,22 +345,24 @@ export class SqliteRepository implements Repository, Disposable {
     );
     const published = newActivity.published?.epochMilliseconds ?? null;
 
-    updateStmt.run(newActivityJson, published, id);
+    updateStmt.run(newActivityJson, published, id, this.botId);
     return true;
   }
 
   async removeMessage(id: Uuid): Promise<Create | Announce | undefined> {
     const selectStmt = this.db.prepare(`
-      SELECT activity_json FROM messages WHERE id = ?
+      SELECT activity_json FROM messages WHERE id = ? AND bot_id = ?
     `);
-    const row = selectStmt.get(id) as { activity_json: string } | undefined;
+    const row = selectStmt.get(id, this.botId) as
+      | { activity_json: string }
+      | undefined;
 
     if (!row) return undefined;
 
     const deleteStmt = this.db.prepare(`
-      DELETE FROM messages WHERE id = ?
+      DELETE FROM messages WHERE id = ? AND bot_id = ?
     `);
-    deleteStmt.run(id);
+    deleteStmt.run(id, this.botId);
 
     try {
       const activityData = JSON.parse(row.activity_json);
@@ -296,8 +383,8 @@ export class SqliteRepository implements Repository, Disposable {
   ): AsyncIterable<Create | Announce> {
     const { order = "newest", until, since, limit } = options;
 
-    let sql = "SELECT activity_json FROM messages WHERE 1=1";
-    const params: (number | string)[] = [];
+    let sql = "SELECT activity_json FROM messages WHERE bot_id = ?";
+    const params: (number | string)[] = [this.botId];
 
     if (since != null) {
       sql += " AND published >= ?";
@@ -338,9 +425,11 @@ export class SqliteRepository implements Repository, Disposable {
 
   async getMessage(id: Uuid): Promise<Create | Announce | undefined> {
     const stmt = this.db.prepare(`
-      SELECT activity_json FROM messages WHERE id = ?
+      SELECT activity_json FROM messages WHERE id = ? AND bot_id = ?
     `);
-    const row = stmt.get(id) as { activity_json: string } | undefined;
+    const row = stmt.get(id, this.botId) as
+      | { activity_json: string }
+      | undefined;
 
     if (!row) return undefined;
 
@@ -359,8 +448,10 @@ export class SqliteRepository implements Repository, Disposable {
   }
 
   countMessages(): Promise<number> {
-    const stmt = this.db.prepare("SELECT COUNT(*) as count FROM messages");
-    const row = stmt.get() as { count: number };
+    const stmt = this.db.prepare(
+      "SELECT COUNT(*) as count FROM messages WHERE bot_id = ?",
+    );
+    const row = stmt.get(this.botId) as { count: number };
     return Promise.resolve(row.count);
   }
 
@@ -374,19 +465,19 @@ export class SqliteRepository implements Repository, Disposable {
     );
 
     const insertFollowerStmt = this.db.prepare(`
-      INSERT OR REPLACE INTO followers (follower_id, actor_json) 
-      VALUES (?, ?)
+      INSERT OR REPLACE INTO followers (follower_id, bot_id, actor_json)
+      VALUES (?, ?, ?)
     `);
 
     const insertRequestStmt = this.db.prepare(`
-      INSERT OR REPLACE INTO follow_requests (follow_request_id, follower_id) 
-      VALUES (?, ?)
+      INSERT OR REPLACE INTO follow_requests (follow_request_id, bot_id, follower_id)
+      VALUES (?, ?, ?)
     `);
 
     this.db.exec("BEGIN TRANSACTION");
     try {
-      insertFollowerStmt.run(follower.id.href, followerJson);
-      insertRequestStmt.run(followRequestId.href, follower.id.href);
+      insertFollowerStmt.run(follower.id.href, this.botId, followerJson);
+      insertRequestStmt.run(followRequestId.href, this.botId, follower.id.href);
       this.db.exec("COMMIT");
     } catch (error) {
       this.db.exec("ROLLBACK");
@@ -400,32 +491,34 @@ export class SqliteRepository implements Repository, Disposable {
   ): Promise<Actor | undefined> {
     // Check if the follow request exists and matches the actor
     const checkStmt = this.db.prepare(`
-      SELECT fr.follower_id, f.actor_json 
-      FROM follow_requests fr 
-      JOIN followers f ON fr.follower_id = f.follower_id 
-      WHERE fr.follow_request_id = ? AND fr.follower_id = ?
+      SELECT fr.follower_id, f.actor_json
+      FROM follow_requests fr
+      JOIN followers f ON fr.follower_id = f.follower_id AND fr.bot_id = f.bot_id
+      WHERE fr.follow_request_id = ? AND fr.bot_id = ? AND fr.follower_id = ?
     `);
 
-    const row = checkStmt.get(followRequestId.href, actorId.href) as {
-      follower_id: string;
-      actor_json: string;
-    } | undefined;
+    const row = checkStmt.get(followRequestId.href, this.botId, actorId.href) as
+      | {
+        follower_id: string;
+        actor_json: string;
+      }
+      | undefined;
 
     if (!row) return undefined;
 
     // Remove the follower and follow request
     const deleteRequestStmt = this.db.prepare(`
-      DELETE FROM follow_requests WHERE follow_request_id = ?
+      DELETE FROM follow_requests WHERE follow_request_id = ? AND bot_id = ?
     `);
 
     const deleteFollowerStmt = this.db.prepare(`
-      DELETE FROM followers WHERE follower_id = ?
+      DELETE FROM followers WHERE follower_id = ? AND bot_id = ?
     `);
 
     this.db.exec("BEGIN TRANSACTION");
     try {
-      deleteRequestStmt.run(followRequestId.href);
-      deleteFollowerStmt.run(actorId.href);
+      deleteRequestStmt.run(followRequestId.href, this.botId);
+      deleteFollowerStmt.run(actorId.href, this.botId);
       this.db.exec("COMMIT");
     } catch (error) {
       this.db.exec("ROLLBACK");
@@ -448,9 +541,9 @@ export class SqliteRepository implements Repository, Disposable {
 
   hasFollower(followerId: URL): Promise<boolean> {
     const stmt = this.db.prepare(`
-      SELECT 1 FROM followers WHERE follower_id = ?
+      SELECT 1 FROM followers WHERE follower_id = ? AND bot_id = ?
     `);
-    const row = stmt.get(followerId.href);
+    const row = stmt.get(followerId.href, this.botId);
     return Promise.resolve(row != null);
   }
 
@@ -459,8 +552,9 @@ export class SqliteRepository implements Repository, Disposable {
   ): AsyncIterable<Actor> {
     const { offset = 0, limit } = options;
 
-    let sql = "SELECT actor_json FROM followers ORDER BY follower_id";
-    const params: number[] = [];
+    let sql =
+      "SELECT actor_json FROM followers WHERE bot_id = ? ORDER BY follower_id";
+    const params: (string | number)[] = [this.botId];
 
     if (limit != null) {
       sql += " LIMIT ? OFFSET ?";
@@ -489,39 +583,43 @@ export class SqliteRepository implements Repository, Disposable {
   }
 
   countFollowers(): Promise<number> {
-    const stmt = this.db.prepare("SELECT COUNT(*) as count FROM followers");
-    const row = stmt.get() as { count: number };
+    const stmt = this.db.prepare(
+      "SELECT COUNT(*) as count FROM followers WHERE bot_id = ?",
+    );
+    const row = stmt.get(this.botId) as { count: number };
     return Promise.resolve(row.count);
   }
 
   async addSentFollow(id: Uuid, follow: Follow): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO sent_follows (id, follow_json) 
-      VALUES (?, ?)
+      INSERT OR REPLACE INTO sent_follows (id, bot_id, follow_json)
+      VALUES (?, ?, ?)
     `);
 
     const followJson = JSON.stringify(
       await follow.toJsonLd({ format: "compact" }),
     );
 
-    stmt.run(id, followJson);
+    stmt.run(id, this.botId, followJson);
   }
 
   async removeSentFollow(id: Uuid): Promise<Follow | undefined> {
     const follow = await this.getSentFollow(id);
     if (follow == null) return undefined;
 
-    const stmt = this.db.prepare("DELETE FROM sent_follows WHERE id = ?");
-    stmt.run(id);
+    const stmt = this.db.prepare(
+      "DELETE FROM sent_follows WHERE id = ? AND bot_id = ?",
+    );
+    stmt.run(id, this.botId);
 
     return follow;
   }
 
   async getSentFollow(id: Uuid): Promise<Follow | undefined> {
     const stmt = this.db.prepare(`
-      SELECT follow_json FROM sent_follows WHERE id = ?
+      SELECT follow_json FROM sent_follows WHERE id = ? AND bot_id = ?
     `);
-    const row = stmt.get(id) as { follow_json: string } | undefined;
+    const row = stmt.get(id, this.botId) as { follow_json: string } | undefined;
 
     if (!row) return undefined;
 
@@ -536,32 +634,34 @@ export class SqliteRepository implements Repository, Disposable {
 
   async addFollowee(followeeId: URL, follow: Follow): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO followees (followee_id, follow_json) 
-      VALUES (?, ?)
+      INSERT OR REPLACE INTO followees (followee_id, bot_id, follow_json)
+      VALUES (?, ?, ?)
     `);
 
     const followJson = JSON.stringify(
       await follow.toJsonLd({ format: "compact" }),
     );
 
-    stmt.run(followeeId.href, followJson);
+    stmt.run(followeeId.href, this.botId, followJson);
   }
 
   async removeFollowee(followeeId: URL): Promise<Follow | undefined> {
     const follow = await this.getFollowee(followeeId);
     if (follow == null) return undefined;
 
-    const stmt = this.db.prepare("DELETE FROM followees WHERE followee_id = ?");
-    stmt.run(followeeId.href);
+    const stmt = this.db.prepare(
+      "DELETE FROM followees WHERE followee_id = ? AND bot_id = ?",
+    );
+    stmt.run(followeeId.href, this.botId);
 
     return follow;
   }
 
   async getFollowee(followeeId: URL): Promise<Follow | undefined> {
     const stmt = this.db.prepare(`
-      SELECT follow_json FROM followees WHERE followee_id = ?
+      SELECT follow_json FROM followees WHERE followee_id = ? AND bot_id = ?
     `);
-    const row = stmt.get(followeeId.href) as
+    const row = stmt.get(followeeId.href, this.botId) as
       | { follow_json: string }
       | undefined;
 
@@ -581,32 +681,32 @@ export class SqliteRepository implements Repository, Disposable {
 
   vote(messageId: Uuid, voterId: URL, option: string): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT OR IGNORE INTO poll_votes (message_id, voter_id, option) 
-      VALUES (?, ?, ?)
+      INSERT OR IGNORE INTO poll_votes (message_id, bot_id, voter_id, option)
+      VALUES (?, ?, ?, ?)
     `);
 
-    stmt.run(messageId, voterId.href, option);
+    stmt.run(messageId, this.botId, voterId.href, option);
     return Promise.resolve();
   }
 
   countVoters(messageId: Uuid): Promise<number> {
     const stmt = this.db.prepare(`
-      SELECT COUNT(DISTINCT voter_id) as count 
-      FROM poll_votes 
-      WHERE message_id = ?
+      SELECT COUNT(DISTINCT voter_id) as count
+      FROM poll_votes
+      WHERE message_id = ? AND bot_id = ?
     `);
-    const row = stmt.get(messageId) as { count: number };
+    const row = stmt.get(messageId, this.botId) as { count: number };
     return Promise.resolve(row.count);
   }
 
   countVotes(messageId: Uuid): Promise<Readonly<Record<string, number>>> {
     const stmt = this.db.prepare(`
-      SELECT option, COUNT(*) as count 
-      FROM poll_votes 
-      WHERE message_id = ? 
+      SELECT option, COUNT(*) as count
+      FROM poll_votes
+      WHERE message_id = ? AND bot_id = ?
       GROUP BY option
     `);
-    const rows = stmt.all(messageId) as Array<{
+    const rows = stmt.all(messageId, this.botId) as Array<{
       option: string;
       count: number;
     }>;
