@@ -21,6 +21,7 @@ import type {
 } from "@fedify/fedify/federation";
 import type { Software } from "@fedify/fedify/nodeinfo";
 import type { Bot, BotProfile, PagesOptions } from "./bot.ts";
+import { InstanceImpl } from "./instance-impl.ts";
 import type { Repository } from "./repository.ts";
 
 /**
@@ -214,7 +215,24 @@ export function createInstance<TContextData = void>(
   options: CreateInstanceOptions<TContextData>,
 ): TContextData extends void ? InstanceWithVoidContextData
   : Instance<TContextData> {
-  // TODO: Implement InstanceImpl and return it here
-  void options;
-  throw new Error("createInstance is not yet implemented");
+  const instance = new InstanceImpl<TContextData>(options);
+  // Since `deno serve` does not recognize a class instance having fetch(),
+  // we wrap an InstanceImpl instance with a plain object.
+  // See also https://github.com/denoland/deno/issues/24062
+  const wrapper = {
+    get federation() {
+      return instance.federation;
+    },
+    createBot(
+      identifierOrDispatcher: string | BotDispatcher<TContextData>,
+      profile?: BotProfile<TContextData>,
+    ): Bot<TContextData> {
+      return instance.createBot(identifierOrDispatcher, profile);
+    },
+    fetch(request: Request, contextData: TContextData): Promise<Response> {
+      return instance.fetch(request, contextData);
+    },
+  } satisfies Instance<TContextData>;
+  // @ts-ignore: the wrapper implements InstanceWithVoidContextData
+  return wrapper;
 }
