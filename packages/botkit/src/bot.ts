@@ -50,6 +50,90 @@ export {
 export { Application, Image, Service } from "@fedify/fedify/vocab";
 
 /**
+ * Information about a bot's identity.  This is used for accessing the current
+ * bot's identity from a {@link Session}.
+ * @since 0.4.0
+ */
+export interface BotInfo {
+  /**
+   * The internal identifier for the bot actor.  It is used for the actor URI.
+   */
+  readonly identifier: string;
+
+  /**
+   * The username of the bot.  It is a part of the fediverse handle.
+   */
+  readonly username: string;
+
+  /**
+   * The display name of the bot.
+   */
+  readonly name: string | undefined;
+
+  /**
+   * The type of the bot actor.  It is either `Service` or `Application`.
+   */
+  readonly class: typeof Service | typeof Application;
+}
+
+/**
+ * Profile configuration for creating a bot.  This is used by
+ * {@link Instance.createBot} for both static and dynamic bot creation.
+ * @since 0.4.0
+ */
+export interface BotProfile<TContextData> {
+  /**
+   * The username of the bot.  It will be a part of the fediverse handle.
+   */
+  readonly username: string;
+
+  /**
+   * The display name of the bot.
+   */
+  readonly name?: string;
+
+  /**
+   * The type of the bot actor.  It should be either `Service` or `Application`.
+   *
+   * If omitted, `Service` will be used.
+   * @default `Service`
+   */
+  readonly class?: typeof Service | typeof Application;
+
+  /**
+   * The description of the bot.
+   */
+  readonly summary?: Text<"block", TContextData>;
+
+  /**
+   * The avatar URL of the bot.
+   */
+  readonly icon?: URL | Image;
+
+  /**
+   * The header image URL of the bot.
+   */
+  readonly image?: URL | Image;
+
+  /**
+   * The custom properties of the bot.
+   */
+  readonly properties?: Record<string, Text<"block" | "inline", TContextData>>;
+
+  /**
+   * How to handle incoming follow requests.  Note that this behavior can be
+   * overridden by manually invoking {@link FollowRequest.accept} or
+   * {@link FollowRequest.reject} in the {@link Bot.onFollow} event handler.
+   *
+   * - `"accept"` (default): Automatically accept all incoming follow requests.
+   * - `"reject"`: Automatically reject all incoming follow requests.
+   * - `"manual"`: Require manual handling of incoming follow requests.
+   * @default `"accept"`
+   */
+  readonly followerPolicy?: "accept" | "reject" | "manual";
+}
+
+/**
  * A bot that can interact with the ActivityPub network.
  */
 export interface Bot<TContextData> {

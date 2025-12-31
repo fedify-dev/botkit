@@ -22,6 +22,8 @@ export {
 export {
   Application,
   type Bot,
+  type BotInfo,
+  type BotProfile,
   type BotWithVoidContextData,
   createBot,
   type CreateBotOptions,
@@ -32,6 +34,13 @@ export {
   Service,
   type Software,
 } from "./bot.ts";
+export {
+  type BotDispatcher,
+  createInstance,
+  type CreateInstanceOptions,
+  type Instance,
+  type InstanceWithVoidContextData,
+} from "./instance.ts";
 export {
   type CustomEmoji,
   type DeferredCustomEmoji,
