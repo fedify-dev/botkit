@@ -102,6 +102,16 @@ import type { Text } from "./text.ts";
 export interface BotImplOptions<TContextData>
   extends CreateBotOptions<TContextData> {
   collectionWindow?: number;
+  /**
+   * An existing federation to use instead of creating a new one.
+   * When provided, `skipInitialize` should also be set to `true`.
+   */
+  federation?: Federation<TContextData>;
+  /**
+   * Whether to skip the initialization of the federation.
+   * Set this to `true` when this bot is managed by an Instance.
+   */
+  skipInitialize?: boolean;
 }
 
 export class BotImpl<TContextData> implements Bot<TContextData> {
@@ -159,7 +169,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       css: "",
       ...(options.pages ?? {}),
     };
-    this.federation = createFederation<TContextData>({
+    this.federation = options.federation ?? createFederation<TContextData>({
       kv: options.kv,
       queue: options.queue,
       userAgent: {
@@ -168,7 +178,9 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     });
     this.behindProxy = options.behindProxy ?? false;
     this.collectionWindow = options.collectionWindow ?? 50;
-    this.initialize();
+    if (!options.skipInitialize) {
+      this.initialize();
+    }
   }
 
   initialize(): void {

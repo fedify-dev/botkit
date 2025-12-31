@@ -232,6 +232,8 @@ export class InstanceImpl<TContextData> implements Instance<TContextData> {
           behindProxy: this.behindProxy,
           pages: this.pages,
           collectionWindow: this.collectionWindow,
+          federation: this.federation,
+          skipInitialize: true,
         });
         // Copy event handlers from template
         bot.onFollow = template.onFollow;
@@ -619,6 +621,8 @@ export class InstanceImpl<TContextData> implements Instance<TContextData> {
         behindProxy: this.behindProxy,
         pages: this.pages,
         collectionWindow: this.collectionWindow,
+        federation: this.federation,
+        skipInitialize: true,
       });
 
       this.#staticBots.set(identifier, bot);
@@ -639,6 +643,8 @@ export class InstanceImpl<TContextData> implements Instance<TContextData> {
         behindProxy: this.behindProxy,
         pages: this.pages,
         collectionWindow: this.collectionWindow,
+        federation: this.federation,
+        skipInitialize: true,
       });
 
       this.#dynamicDispatchers.push({ dispatcher, template });
