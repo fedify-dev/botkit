@@ -9,7 +9,7 @@
   ],
   "imports": {
     "@fedify/fedify": "jsr:@fedify/fedify@1.9.2",
-    "@logtape/logtape": "jsr:@logtape/logtape@^1.0.4",
+    "@logtape/logtape": "jsr:@logtape/logtape@^1.3.5",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.1",
     "hono": "jsr:@hono/hono@^4.8.2",
@@ -41,7 +41,7 @@
       "command": "deno check && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty"
     },
     "check-versions": "deno run --allow-read --allow-write scripts/check_versions.ts",
-    "install": "deno cache packages/*/src/*.ts",
+    "install": "deno cache packages/*/src/*.ts && pnpm install",
     "test": "deno test --allow-read --allow-write --allow-env --allow-net=hollo.social --parallel",
     "test:node": "pnpm install && pnpm run -r test",
     "test-all": {
