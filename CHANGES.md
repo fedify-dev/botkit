@@ -20,6 +20,8 @@ To be released.
         automatically redirects to the appropriate follow page using the OStatus
         subscribe protocol.
 
+ -  Upgraded Fedify to 1.10.0.
+
 [#10]: https://github.com/fedify-dev/botkit/issues/10
 [#14]: https://github.com/fedify-dev/botkit/pull/14
 
