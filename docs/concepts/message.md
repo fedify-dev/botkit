@@ -321,6 +321,8 @@ The poll configuration includes:
 > be called. See the [*Vote* section](./events.md#vote) in the *Events* concept
 > document for more information.
 
+[`Temporal.Instant`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Instant
+
 
 Extracting information from a message
 -------------------------------------
@@ -522,8 +524,6 @@ object.
 You can get the timestamp when the message was last updated through the
 `~Message.updated` property.  It is also represented as a [`Temporal.Instant`]
 object.
-
-[`Temporal.Instant`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal/Instant
 
 ### Quotes
 
@@ -845,7 +845,7 @@ setTimeout(async () => {
 > [!TIP]
 > It does not mention the original author in the reply message by default.
 > However, you can manually [mention them](./text.md#mentions) in the reply
-> message by using the `mention()` function: 
+> message by using the `mention()` function:
 >
 > ~~~~ typescript {2} twoslash
 > import { type Message, type MessageClass, mention, text } from "@fedify/botkit";
@@ -854,6 +854,7 @@ setTimeout(async () => {
 > const reply = await message.reply(
 >   text`${mention(message.actor)} This is a reply to the message.`
 > );
+> ~~~~
 
 > [!TIP]
 > The visibility of the reply message is inherited from the original message

@@ -93,8 +93,8 @@ Architecture
 ### Build system
 
  -  Uses *tsdown* for cross-platform builds (Deno -> Node.js/npm)
- -  Generates ESM (*dist/*.js*) and CommonJS (*dist/*.cjs*) outputs
- -  Creates TypeScript definitions for both (*dist/*.d.ts*, *dist/*.d.cts*)
+ -  Generates ESM (_dist/\*.js_) and CommonJS (_dist/\*.cjs_) outputs
+ -  Creates TypeScript definitions for both (_dist/\*.d.ts_, _dist/\*.d.cts_)
  -  Includes Temporal polyfill injection for Node.js compatibility
 
 ### Dual runtime support
@@ -130,22 +130,25 @@ and Node.js compatibility.
 
 ### When making changes
 
- 1. Run `deno task check` before committing to validate all aspects
- 2. The build process (*tsdown*) generates dual outputs for both runtimes
- 3. Tests should work in both Deno and Node.js environments
- 4. *Update documentation*: New features must be documented in the *docs/*
+1.  Run `deno task check` before committing to validate all aspects
+2.  The build process (*tsdown*) generates dual outputs for both runtimes
+3.  Tests should work in both Deno and Node.js environments
+4.  *Update documentation*: New features must be documented in the *docs/*
     directory
- 5. *Update changelog*: Any user-facing changes must be recorded in
+5.  *Update changelog*: Any user-facing changes must be recorded in
     *CHANGES.md*
 
 ### Commit messages
 
  -  Do not use Conventional Commits (no `fix:`, `feat:`, etc. prefixes).
     Keep the first line under 50 characters when possible.
+
  -  Focus on *why* the change was made, not just *what* changed.
+
  -  When referencing issues or PRs, use permalink URLs instead of just
     numbers (e.g., `#123`).  This preserves context if the repository
     is moved later.
+
  -  When listing items after a colon, add a blank line after the colon:
 
     ~~~~
@@ -249,6 +252,7 @@ Code style
 
  -  All exported APIs must have JSDoc comments describing their purpose,
     parameters, and return values.
+
  -  For APIs added in a specific version, include the `@since` tag with the
     version number:
 
@@ -329,8 +333,8 @@ Code style
 
 ### Log messages
 
- -  This project uses [LogTape] for logging.  Refer to the [LogTape LLM
-    documentation] for detailed usage.
+ -  This project uses [LogTape] for logging.  Refer to the
+    [LogTape LLM documentation] for detailed usage.
 
  -  Use [structured logging] with LogTape instead of string interpolation:
 
@@ -429,7 +433,9 @@ documentation:
 ### Lists
 
  -  Use ` -  ` (space-hyphen-two spaces) for unordered list items
+
  -  Indent nested items with 4 spaces
+
  -  Align continuation text with the item content:
 
     ~~~~
@@ -441,6 +447,7 @@ documentation:
 ### Code blocks
 
  -  Use four tildes (`~~~~`) for code fences instead of backticks
+
  -  Always specify the language identifier:
 
     ~~~~~
@@ -461,6 +468,7 @@ documentation:
 
  -  Use reference-style links placed at the *end of each section*
     (not at document end)
+
  -  Format reference links with consistent spacing:
 
     ~~~~

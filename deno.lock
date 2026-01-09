@@ -9,7 +9,11 @@
     "jsr:@hono/hono@^4.8.2": "4.11.1",
     "jsr:@logtape/logtape@^1.2.2": "1.3.5",
     "jsr:@logtape/logtape@^1.3.5": "1.3.5",
+    "jsr:@std/fs@^1.0.19": "1.0.21",
     "jsr:@std/html@0.224": "0.224.2",
+    "jsr:@std/internal@^1.0.12": "1.0.12",
+    "jsr:@std/path@^1.1.1": "1.1.4",
+    "jsr:@std/path@^1.1.4": "1.1.4",
     "npm:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "npm:@fedify/markdown-it-mention@0.3": "0.3.0",
     "npm:@multiformats/base-x@^4.0.1": "4.0.1",
@@ -20,6 +24,15 @@
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:asn1js@^3.0.5": "3.0.7",
     "npm:byte-encodings@^1.0.11": "1.0.11",
+    "npm:hongdown@~0.1.0-dev.28": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.29": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.30": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.31": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.32": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.33": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.35": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.36": "0.1.0-dev.37",
+    "npm:hongdown@~0.1.0-dev.37": "0.1.0-dev.37",
     "npm:html-entities@^2.6.0": "2.6.0",
     "npm:json-canon@^1.0.1": "1.0.1",
     "npm:jsonld@9": "9.0.0",
@@ -81,8 +94,24 @@
     "@logtape/logtape@1.3.5": {
       "integrity": "a5cdb130daf1a9d384006b0f850cc4443bfc2e163dadc6fa667875e79770beb3"
     },
+    "@std/fs@1.0.21": {
+      "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
+      "dependencies": [
+        "jsr:@std/internal",
+        "jsr:@std/path@^1.1.4"
+      ]
+    },
     "@std/html@0.224.2": {
       "integrity": "2f7bfd71081fad988af9ce991750ed1574917dc8e6fae0e151987ea020d1e21a"
+    },
+    "@std/internal@1.0.12": {
+      "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
+    },
+    "@std/path@1.1.4": {
+      "integrity": "1d2d43f39efb1b42f0b1882a25486647cb851481862dc7313390b2bb044314b5",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
     }
   },
   "npm": {
@@ -153,6 +182,36 @@
       "dependencies": [
         "markdown-it"
       ]
+    },
+    "@hongdown/darwin-arm64@0.1.0-dev.37": {
+      "integrity": "sha512-RHnlo6LF5l+e4gZMkcSWBVr0hMx69w6fmqERhsge0w1UFfBzbc8I5PwezchWFzJlYUWaiYQktsnHtcyPP3sa9w==",
+      "os": ["darwin"],
+      "cpu": ["arm64"]
+    },
+    "@hongdown/darwin-x64@0.1.0-dev.37": {
+      "integrity": "sha512-JiULguAio3luY/WZiVDd0lT9ZO3kiFUt9GZI8pRBtNc0IPOfRxo2ygQjm0dVZA9XOb1AwoHfjetqyfZk+stQ4w==",
+      "os": ["darwin"],
+      "cpu": ["x64"]
+    },
+    "@hongdown/linux-arm64@0.1.0-dev.37": {
+      "integrity": "sha512-an4fU+EbhAWwHD0knuMo90/RCHnOk8eSdvJRi9cl0GlzBK+WeZJ/Lsh08YVrW5fBxQk+xO7cHGUk+dr1JAJ89Q==",
+      "os": ["linux"],
+      "cpu": ["arm64"]
+    },
+    "@hongdown/linux-x64@0.1.0-dev.37": {
+      "integrity": "sha512-7M+SKQtdKQuJOnzNVil8N7qqiC2GWbS+vL05RcNTAXNuZd8BAsBtDCr/XjZdDm4QlpLoefXDWxayEgJqRMcJhQ==",
+      "os": ["linux"],
+      "cpu": ["x64"]
+    },
+    "@hongdown/win32-arm64@0.1.0-dev.37": {
+      "integrity": "sha512-qW/0vHBUeKmv1kU7oQD4Ptw0itCwleP5g+FyEoytbtiJh1PXUnY4C/DQvq+h3acL46c3EPKkr54AzlrPVzclqQ==",
+      "os": ["win32"],
+      "cpu": ["arm64"]
+    },
+    "@hongdown/win32-x64@0.1.0-dev.37": {
+      "integrity": "sha512-rKn8Pjf1Liwr2jaEKvF38HlTsoVe/+FiKa0rHFDFQUuZBPOgftYtI47b5OyTbu7wyff1aOPhiy5lBtNiC9fjfw==",
+      "os": ["win32"],
+      "cpu": ["x64"]
     },
     "@jridgewell/gen-mapping@0.3.13": {
       "integrity": "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==",
@@ -382,6 +441,18 @@
       "dependencies": [
         "resolve-pkg-maps"
       ]
+    },
+    "hongdown@0.1.0-dev.37": {
+      "integrity": "sha512-KhOevs7kBk+qd1PGeuxbaebW1nK6Wx/Hsp5yjr6iT5BWGYh9qc/tB7Tk+WOkNUtgSIvTChgOr22OUx/LOoCVfQ==",
+      "optionalDependencies": [
+        "@hongdown/darwin-arm64",
+        "@hongdown/darwin-x64",
+        "@hongdown/linux-arm64",
+        "@hongdown/linux-x64",
+        "@hongdown/win32-arm64",
+        "@hongdown/win32-x64"
+      ],
+      "bin": true
     },
     "hookable@5.5.3": {
       "integrity": "sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ=="

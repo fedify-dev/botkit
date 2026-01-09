@@ -6,7 +6,6 @@ description: >-
 Getting started
 ===============
 
-
 Installing BotKit
 -----------------
 
@@ -82,9 +81,9 @@ const bot = createBot<void>({
 ~~~~
 
 In the above code snippet, we created a new bot instance named `bot` with
-the [`username`](./concepts/bot.md#createbotoptions-username) `mybot`—the first
-part of the fediverse handle.  The bot will be addressed as `@mybot@your-domain`
-in the fediverse.
+the [`username`](./concepts/bot.md#createbotoptions-username) `mybot`—the
+first part of the fediverse handle.  The bot will be addressed as
+`@mybot@your-domain` in the fediverse.
 
 The [`name`](./concepts/bot.md#createbotoptions-name) and
 [`summary`](./concepts/bot.md#createbotoptions-summary) are the display name and
@@ -242,8 +241,8 @@ Exposing the bot to the public internet
 
 However, other fediverse servers cannot interact with your bot if it is only
 available on your local machine.  To expose your bot to the public internet,
-you can use a tunneling service like [`fedify tunnel`], [ngrok], [Tailscale
-Funnel], etc.
+you can use a tunneling service like [`fedify tunnel`], [ngrok],
+[Tailscale Funnel], etc.
 
 Since those tunneling services practically act as an L7 reverse proxy,
 you need to turn on
@@ -306,8 +305,8 @@ Okay, let's create a new account on ActivityPub.Academy and follow your bot
 account: `@mybot@c4d3933be87bc2.lhr.life`—replace `c4d3933be87bc2.lhr.life`
 with the domain name assigned by the [`fedify tunnel`] command.
 
-Here's how you can follow your bot account—in ActivityPub.Academy's search bar,
-type `@mybot@c4d3933be87bc2.lhr.life` and click the account:
+Here's how you can follow your bot account—in ActivityPub.Academy's search
+bar, type `@mybot@c4d3933be87bc2.lhr.life` and click the account:
 
 ![The search result of the bot account in
 ActivityPub.Academy](./start/academy-search.png)
@@ -321,7 +320,6 @@ Few seconds later, you will receive a direct message from your bot:
 
 ![The direct message from the bot in
 ActivityPub.Academy](./start/academy-message.png)
-
 
 [ActivityPub.Academy]: https://activitypub.academy/
 

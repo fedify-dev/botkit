@@ -4,13 +4,13 @@ description: >-
   BotKit bot across different deployment environments.
 ---
 
-Key–value store and message queue 
+Key–value store and message queue
 =================================
 
 BotKit requires two main backend services for operation:
 
- 1. A key–value store for persistent data storage
- 2. A message queue for handling background tasks
+1.  A key–value store for persistent data storage
+2.  A message queue for handling background tasks
 
 This guide covers configuration options for different deployment environments
 and provides recommendations for production use.
@@ -20,8 +20,8 @@ Key–value stores
 ----------------
 
 Key–value stores are used to store persistent data for your bot, such as
-messages, followers, and followees.  Usually you would want to pair a key–value
-store with the main database for your application.
+messages, followers, and followees.  Usually you would want to pair a
+key–value store with the main database for your application.
 
 BotKit supports the following key–value store implementations:
 
@@ -177,10 +177,10 @@ yarn add @fedify/redis
 
 ### [PostgreSQL]
 
-[PostgreSQL] is suitable for deployments needing complex queries or transactions.
-It provides ACID compliance, complex query support, robust backup solutions,
-and a mature ecosystem, making it an excellent choice when you need advanced
-database features.
+[PostgreSQL] is suitable for deployments needing complex queries or
+transactions. It provides ACID compliance, complex query support, robust backup
+solutions, and a mature ecosystem, making it an excellent choice when you need
+advanced database features.
 
 ::: code-group
 

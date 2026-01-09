@@ -68,11 +68,11 @@ On production, you probably want to use one of the following drivers:
 Or if you want to implement your own custom key–value store,
 [that is also possible!][2]
 
-[1]: https://fedify.dev/manual/kv
 [`MemoryKvStore`]: https://fedify.dev/manual/kv#memorykvstore
 [`DenoKvStore`]: https://fedify.dev/manual/kv#denokvstore-deno-only
 [`RedisKvStore`]: https://fedify.dev/manual/kv#rediskvstore
 [`PostgresKvStore`]: https://fedify.dev/manual/kv#postgreskvstore
+[1]: https://fedify.dev/manual/kv
 [2]: https://fedify.dev/manual/kv#implementing-a-custom-kvstore
 
 
@@ -219,11 +219,11 @@ Or if you want to implement your own custom message queue,
 > recommend to configure the `~CreateBotOptions.queue` to make your bot
 > performant and scalable.
 
-[3]: https://fedify.dev/manual/mq
 [`InProcessMessageQueue`]: https://fedify.dev/manual/mq#inprocessmessagequeue
 [`DenoKvMessageQueue`]: https://fedify.dev/manual/mq#denokvmessagequeue-deno-only
 [`RedisMessageQueue`]: https://fedify.dev/manual/mq#redismessagequeue
 [`PostgresMessageQueue`]: https://fedify.dev/manual/mq#postgresmessagequeue
+[3]: https://fedify.dev/manual/mq
 [4]: https://fedify.dev/manual/mq#implementing-a-custom-messagequeue
 
 ### `~CreateBotOptions.software`
@@ -243,7 +243,7 @@ It consists of the following properties:
     ~~~~ typescript twoslash
     // @noErrors: 2345
     import { createBot, parseSemVer } from "@fedify/botkit";
-
+    
     const bot = createBot<void>({
       // Omitted other options for brevity
       software: {
@@ -496,7 +496,7 @@ https://8eba96f5416581.lhr.life/
 Press ^C to close the tunnel.
 ~~~~
 
-[^1]: You need to install the `fedify` command first.  [There are multiple ways
+[^1]: You need to install the `fedify` command first. [There are multiple ways
       to install it.][5]
 [^2]: The hostname will be different in your case.
 

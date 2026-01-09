@@ -14,9 +14,9 @@ runtime on a Linux server with SSH access.
 Prerequisites
 -------------
 
- 1. A Linux server with SSH access
- 2. Domain name pointing to your server
- 3. [Deno] installed on your server
+1.  A Linux server with SSH access
+2.  Domain name pointing to your server
+3.  [Deno] installed on your server
 
 [Deno]: https://deno.land/
 
@@ -24,20 +24,20 @@ Prerequisites
 Installation steps
 ------------------
 
- 1. Install Deno:
+1.  Install Deno:
 
     ~~~~ bash
     curl -fsSL https://deno.land/install.sh | sh
     ~~~~
 
- 2. Clone your bot repository:
+2.  Clone your bot repository:
 
     ~~~~ bash
     git clone https://github.com/yourusername/your-bot.git
     cd your-bot
     ~~~~
 
- 3. Set up environment variables:
+3.  Set up environment variables:
 
     ~~~~ bash
     echo 'export SERVER_NAME="your-domain.com"' >> ~/.bashrc
@@ -52,7 +52,7 @@ Setting up HTTPS with [Caddy]
 obtains and renews SSL/TLS certificates from [Let's Encrypt] without any manual
 configuration:
 
- 1. [Install Caddy]:
+1.  [Install Caddy]:
 
     ::: code-group
 
@@ -71,6 +71,7 @@ configuration:
     sudo apt install caddy
     ~~~~
 
+
     ~~~~ bash [RHEL/Fedora]
     # Add Caddy repository
     dnf install 'dnf-command(copr)'
@@ -79,6 +80,7 @@ configuration:
     # Install Caddy
     dnf install caddy
     ~~~~
+
 
     ~~~~ bash [Arch Linux]
     # Install from official repositories
@@ -91,7 +93,7 @@ configuration:
     > For other installation methods or operating systems,
     > see the [official Caddy installation docs][Install Caddy].
 
- 2. Create a Caddyfile at */etc/caddy/Caddyfile*:
+2.  Create a Caddyfile at */etc/caddy/Caddyfile*:
 
     ~~~~ caddyfile [/etc/caddy/Caddyfile]
     your-domain.com {
@@ -116,26 +118,27 @@ configuration:
         }
     }
     ~~~~
- 
+
+
     > [!NOTE]
     > Make sure your domain's DNS A record points to your server's IP address
     > before starting Caddy.  Caddy will automatically obtain and manage SSL
     > certificates from Let's Encrypt.
 
- 3. Set proper ownership and permissions:
+3.  Set proper ownership and permissions:
 
     ~~~~ bash
     sudo chown root:root /etc/caddy/Caddyfile
     sudo chmod 644 /etc/caddy/Caddyfile
     ~~~~
 
- 4. Restart Caddy:
+4.  Restart Caddy:
 
     ~~~~ bash
     sudo systemctl restart caddy
     ~~~~
 
- 5. Check Caddy's status:
+5.  Check Caddy's status:
 
     ~~~~ bash
     sudo systemctl status caddy
@@ -148,7 +151,7 @@ configuration:
 
 
 Creating a [systemd] service
---------------------------
+----------------------------
 
 The [systemd] is a system and service manager for Linux that starts and manages
 services.  It is adopted by most modern Linux distributions including Debian,
@@ -156,93 +159,94 @@ Ubuntu, Fedora, and Arch Linux.
 
 To run your bot as a systemd service:
 
-1. Create a dedicated user for your bot (recommended for security):
+1.  Create a dedicated user for your bot (recommended for security):
 
-   ~~~~ bash 
-   sudo useradd -r -s /bin/false botkit
-   ~~~~
+    ~~~~ bash
+    sudo useradd -r -s /bin/false botkit
+    ~~~~
 
-2. Set up the bot's directory:
+2.  Set up the bot's directory:
 
-   ~~~~ bash
-   sudo mkdir -p /opt/botkit
-   sudo chown botkit:botkit /opt/botkit
-   ~~~~
+    ~~~~ bash
+    sudo mkdir -p /opt/botkit
+    sudo chown botkit:botkit /opt/botkit
+    ~~~~
 
-3. Create a service file at */etc/systemd/system/botkit-bot.service*:
+3.  Create a service file at */etc/systemd/system/botkit-bot.service*:
 
-   ~~~~ ini [/etc/systemd/system/botkit-bot.service]
-   [Unit]
-   Description=BotKit Bot
-   After=network.target
-   Wants=caddy.service
+    ~~~~ ini [/etc/systemd/system/botkit-bot.service]
+    [Unit]
+    Description=BotKit Bot
+    After=network.target
+    Wants=caddy.service
 
-   [Service]
-   Type=simple
-   User=botkit
-   Group=botkit
-   Environment=SERVER_NAME=your-domain.com
-   # Add any other environment variables your bot needs
-   Environment=NODE_ENV=production
-   
-   WorkingDirectory=/opt/botkit
-   # Make sure to use the full path to deno
-   ExecStart=/home/botkit/.deno/bin/deno run -A bot.ts
-   
-   # Restart policy
-   Restart=always
-   RestartSec=10
-   
-   # Security settings
-   NoNewPrivileges=true
-   ProtectSystem=strict
-   ProtectHome=true
-   PrivateTmp=true
-   PrivateDevices=true
-   
-   # Resource limits
-   CPUQuota=80%
-   MemoryMax=1G
+    [Service]
+    Type=simple
+    User=botkit
+    Group=botkit
+    Environment=SERVER_NAME=your-domain.com
+    # Add any other environment variables your bot needs
+    Environment=NODE_ENV=production
 
-   [Install]
-   WantedBy=multi-user.target
-   ~~~~
+    WorkingDirectory=/opt/botkit
+    # Make sure to use the full path to deno
+    ExecStart=/home/botkit/.deno/bin/deno run -A bot.ts
 
-4. Set proper permissions:
-   ~~~~ bash
-   sudo chown root:root /etc/systemd/system/botkit-bot.service
-   sudo chmod 644 /etc/systemd/system/botkit-bot.service
-   ~~~~
+    # Restart policy
+    Restart=always
+    RestartSec=10
 
-5. Reload systemd, enable and start the service:
+    # Security settings
+    NoNewPrivileges=true
+    ProtectSystem=strict
+    ProtectHome=true
+    PrivateTmp=true
+    PrivateDevices=true
 
-   ~~~~ bash
-   # Reload systemd to recognize the new service
-   sudo systemctl daemon-reload
-   
-   # Enable service to start on boot
-   sudo systemctl enable botkit-bot
-   
-   # Start the service
-   sudo systemctl start botkit-bot
-   ~~~~
+    # Resource limits
+    CPUQuota=80%
+    MemoryMax=1G
 
-4. Verify the service is running:
+    [Install]
+    WantedBy=multi-user.target
+    ~~~~
 
-   ~~~~ bash
-   # Check service status
-   sudo systemctl status botkit-bot
-   
-   # View logs
-   sudo journalctl -u botkit-bot -f
-   ~~~~
+4.  Set proper permissions:
+
+    ~~~~ bash
+    sudo chown root:root /etc/systemd/system/botkit-bot.service
+    sudo chmod 644 /etc/systemd/system/botkit-bot.service
+    ~~~~
+
+5.  Reload systemd, enable and start the service:
+
+    ~~~~ bash
+    # Reload systemd to recognize the new service
+    sudo systemctl daemon-reload
+
+    # Enable service to start on boot
+    sudo systemctl enable botkit-bot
+
+    # Start the service
+    sudo systemctl start botkit-bot
+    ~~~~
+
+6.  Verify the service is running:
+
+    ~~~~ bash
+    # Check service status
+    sudo systemctl status botkit-bot
+
+    # View logs
+    sudo journalctl -u botkit-bot -f
+    ~~~~
 
 > [!TIP]
 > To update your bot:
 >
->  1. Copy new files to */opt/botkit*
->  2. Set proper ownership: `sudo chown -R botkit:botkit /opt/botkit`
->  3. Restart the service: `sudo systemctl restart botkit-bot`
+> 1.  Copy new files to */opt/botkit*
+> 2.  Set proper ownership: `sudo chown -R botkit:botkit /opt/botkit`
+> 3.  Restart the service: `sudo systemctl restart botkit-bot`
 
 [systemd]: https://systemd.io/
 

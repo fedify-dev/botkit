@@ -35,9 +35,9 @@ parameter](./bot.md#createbotoptions-summary), are usually of the type
 use the `text()` template string tag, which we will discuss in the right next
 section.
 
-[^1]: More precisely, the `Text` type has two type parameters: the first one
-      is the type of the element: `"block"` or `"inline"`, and the second one
-      is [`TContextData`], the [Fedify context data].
+[^1]: More precisely, the `Text` type has two type parameters: the first one is
+      the type of the element: `"block"` or `"inline"`, and the second one is
+      [`TContextData`], the [Fedify context data].
 
 [`TContextData`]: https://fedify.dev/manual/federation#tcontextdata
 [Fedify context data]: https://fedify.dev/manual/context
@@ -115,7 +115,7 @@ See the below sections for more information.
 > The above code will create two paragraphs like this:
 >
 > > Hello!
-> > 
+> >
 > > This is a new paragraph.
 >
 > If you put a block object at the boundary of the block, it will work as
@@ -149,7 +149,9 @@ text`Hello, ${message.actor}.`
 
 The above code will create a text like this:
 
-> Hello, [@fedify@hollo.social](https://hollo.social/@fedify).
+> Hello, [@fedify@hollo.social].
+
+[@fedify@hollo.social]: https://hollo.social/@fedify
 
 ### [`Emoji`]
 
@@ -345,7 +347,7 @@ text`Here's a link: ${link("Fedify", "https://fedify.dev/")}.`
 
 The above code will create a text like this:
 
-> Here's a link: [Fedify](https://fedify.dev/).
+> Here's a link: [Fedify].
 
 The label can have other formatting constructs:
 
@@ -357,7 +359,10 @@ text`Here's a link: ${link(em("Fedify"), "https://fedify.dev/")}.`
 
 The above code will create a text like this:
 
-> Here's a link: [_Fedify_](https://fedify.dev/).
+> Here's a link: [_Fedify_].
+
+[Fedify]: https://fedify.dev/
+[_Fedify_]: https://fedify.dev/
 
 
 Mentions
@@ -374,7 +379,7 @@ text`Hello, ${mention("@fedify@hollo.social")}!`
 
 The above code will create a text like this:
 
-> Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!
+> Hello, [@fedify@hollo.social]!
 
 Or you can mention an account by its actor URI:
 
@@ -386,7 +391,7 @@ text`Hello, ${mention(new URL("https://hollo.social/@fedify"))}!`
 
 The result is equivalent to the previous example:
 
-> Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!
+> Hello, [@fedify@hollo.social]!
 
 You can customize the label of the mention:
 
@@ -398,7 +403,7 @@ text`Hello, ${mention("Fedify", new URL("https://hollo.social/@fedify"))}!`
 
 The above code will create a text like this:
 
-> Hello, [Fedify](https://hollo.social/@fedify)!
+> Hello, [Fedify]!
 
 > [!NOTE]
 > The `mention()` construct does not only format the text but also notifies
@@ -421,7 +426,7 @@ text`Here's a hashtag: ${hashtag("#BotKit")}.`
 
 The above code will create a text like this:
 
-> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+> Here's a hashtag: [#BotKit].
 
 It does not matter if you put the leading `"#"` or not.  The `hashtag()`
 function will add the leading `"#"` if it is not present.  For example:
@@ -434,7 +439,7 @@ text`Here's a hashtag: ${hashtag("BotKit")}.`
 
 The result is equivalent to the previous example:
 
-> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+> Here's a hashtag: [#BotKit].
 
 > [!NOTE]
 > The `hashtag()` function does not only format the hashtag but also denotes
@@ -442,6 +447,8 @@ The result is equivalent to the previous example:
 > The hashtag will be searchable in the fediverse (some software may search it
 > only from public messages though).  If you want to just link to the hashtag
 > without denoting it, use the `link()` construct instead.
+
+[#BotKit]: https://mastodon.social/tags/botkit
 
 
 Code
@@ -558,9 +565,9 @@ The above code will create a text like this:
 >
 > Here's a Markdown text.
 >
-> -  I can have a list.
-> -  I can have a **bold** text.
-> -  I can have an _italic_ text.
+>  -  I can have a list.
+>  -  I can have a **bold** text.
+>  -  I can have an _italic_ text.
 
 Besides the standard Markdown syntax, the `markdown()` function also supports
 mentioning and hashtag syntax for the fediverse.
@@ -577,7 +584,7 @@ markdown(`Hello, @fedify@hollo.social!`)
 
 The above code will create a text like this:
 
-> Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!
+> Hello, [@fedify@hollo.social]!
 
 > [!NOTE]
 > The `markdown()` function does not only format the mention but also notifies
@@ -589,7 +596,7 @@ The above code will create a text like this:
 > import { markdown } from "@fedify/botkit/text";
 > // ---cut-before---
 > markdown(`Hello, [@fedify@hollo.social](https://hollo.social/@fedify)!`)
-> ~~~~ 
+> ~~~~
 
 If you want `@`-syntax to be treated as a normal text, turn off the syntax
 by setting the `mentions` option to `false`:
@@ -616,7 +623,7 @@ markdown(`Here's a hashtag: #BotKit`)
 
 The above code will create a text like this:
 
-> Here's a hashtag: [#BotKit](https://mastodon.social/tags/botkit).
+> Here's a hashtag: [#BotKit].
 
 > [!NOTE]
 > The `markdown()` function does not only format the hashtag but also denotes

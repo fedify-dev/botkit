@@ -18,11 +18,15 @@ BotKit.  The bot performs the following actions:
  -  Publishes a greeting message every minute.
  -  Deletes the greeting message after 30 seconds.
 
+<!-- hongdown-disable -->
+
 ::: code-group
 
 <<< @/../examples/greet/greet.ts [greet.ts]
 
 :::
+
+<!-- hongdown-enable -->
 
 
 One-time passcode authentication bot
@@ -34,24 +38,24 @@ a simple two-factor authentication mechanism through the fediverse.
 
 The authentication flow works as follows:
 
-1. *Initial setup*: The user visits the web interface and enters their fediverse
-   handle (e.g., `@username@server.com`).
+1.  *Initial setup*: The user visits the web interface and enters their fediverse
+    handle (e.g., `@username@server.com`).
 
-2. *Challenge generation*: The system generates a random set of emojis and sends
-   a direct message containing a poll with all available emoji options to
-  the user's fediverse account.
+2.  *Challenge generation*: The system generates a random set of emojis and sends
+    a direct message containing a poll with all available emoji options to
+    the user's fediverse account.
 
-3. *Web interface display*: The correct emoji sequence is displayed on the
-   web page.
+3.  *Web interface display*: The correct emoji sequence is displayed on the
+    web page.
 
-4. *User response*: The user votes for the matching emojis in the poll they
-   received via direct message.
+4.  *User response*: The user votes for the matching emojis in the poll they
+    received via direct message.
 
-5. *Verification*: The system verifies that the user selected exactly
-   the same emojis shown on the web page.
+5.  *Verification*: The system verifies that the user selected exactly
+    the same emojis shown on the web page.
 
-6. *Authentication result*: If the emoji selection matches, authentication is
-   successful.
+6.  *Authentication result*: If the emoji selection matches, authentication is
+    successful.
 
 Key features:
 
@@ -67,11 +71,15 @@ This example showcases how to combine ActivityPub's social features with web
 authentication, demonstrating BotKit's capability to bridge fediverse
 interactions with traditional web applications.
 
+<!-- hongdown-disable -->
+
 ::: code-group
 
 <<< @/../examples/otp/otp.tsx [otp.tsx]
 
 :::
+
+<!-- hongdown-enable -->
 
 [Hono]: https://hono.dev/
 [Pico CSS]: https://picocss.com/

@@ -1,12 +1,6 @@
 {
-  "workspace": [
-    "packages/*",
-    "examples/*"
-  ],
-  "unstable": [
-    "kv",
-    "temporal"
-  ],
+  "workspace": ["packages/*", "examples/*"],
+  "unstable": ["kv", "temporal"],
   "imports": {
     "@fedify/fedify": "jsr:@fedify/fedify@1.10.0",
     "@logtape/logtape": "jsr:@logtape/logtape@^1.3.5",
@@ -27,29 +21,21 @@
     "src/css"
   ],
   "fmt": {
-    "exclude": [
-      "*.md",
-      "*.yaml",
-      "*.yml"
-    ]
+    "exclude": ["*.md", "*.yaml", "*.yml"]
   },
   "tasks": {
+    "hongdown": "deno run -A npm:hongdown@^0.1.0-dev.37",
     "check": {
-      "dependencies": [
-        "check-versions"
-      ],
-      "command": "deno check && deno lint && deno fmt --check && deno publish --dry-run --allow-dirty"
+      "dependencies": ["check-versions"],
+      "command": "deno check && deno lint && deno fmt --check && deno task hongdown --check && deno publish --dry-run --allow-dirty"
     },
     "check-versions": "deno run --allow-read --allow-write scripts/check_versions.ts",
+    "fmt": "deno fmt && deno task hongdown --write",
     "install": "deno cache packages/*/src/*.ts && pnpm install",
     "test": "deno test --allow-read --allow-write --allow-env --allow-net=hollo.social --parallel",
     "test:node": "pnpm install && pnpm run -r test",
     "test-all": {
-      "dependencies": [
-        "check",
-        "test",
-        "test:node"
-      ]
+      "dependencies": ["check", "test", "test:node"]
     },
     "coverage": "deno task test --coverage --clean && deno coverage --html",
     "hooks:install": "deno run --allow-read=deno.json,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",

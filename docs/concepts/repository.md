@@ -91,11 +91,11 @@ using the [`node:sqlite`] module. It provides a production-ready storage
 solution with excellent performance and reliability, while maintaining
 compatibility with both Deno and Node.js environments.
 
-Unlike [`KvRepository`](#kvrepository) which requires a separate key–value store
-setup, `SqliteRepository` can operate with either an in-memory database for
-development/testing or a file-based database for production use.  It offers ACID
-compliance through transactions, write-ahead logging (WAL) mode for optimal
-performance, and proper indexing for efficient data retrieval.
+Unlike [`KvRepository`](#kvrepository) which requires a separate key–value
+store setup, `SqliteRepository` can operate with either an in-memory database
+for development/testing or a file-based database for production use.  It offers
+ACID compliance through transactions, write-ahead logging (WAL) mode for
+optimal performance, and proper indexing for efficient data retrieval.
 
 In order to use `SqliteRepository`, you need to install the
 *@fedify/botkit-sqlite* package:
@@ -202,7 +202,7 @@ Messages
     domain.  Each message has its own UUID and represented by either
     a `Create` object or an `Announce` object (which both are provided by
     Fedify).
-    
+
     You probably want to serialize the messages into JSON before
     storing them, so you can use [`toJsonLd()`] method that belong to
     the `Create` and `Announce` objects, and use [`fromJsonLd()`] method

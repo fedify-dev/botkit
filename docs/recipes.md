@@ -16,8 +16,8 @@ Sending a direct message
 
 It is very simple to send a direct message to a user: set
 the [`visibility`](./concepts/message.md#visibility) option to `"direct"`
-when calling the [`Session.publish()`](./concepts/message.md#publishing-a-message)
-method:
+when calling the
+[`Session.publish()`](./concepts/message.md#publishing-a-message) method:
 
 ~~~~ typescript twoslash
 import { type Bot, text } from "@fedify/botkit";
@@ -63,10 +63,11 @@ Automatically deleting old messages
 -----------------------------------
 
 To automatically delete old messages after a certain period, you can use
-[`Session.getOutbox()`](./concepts/message.md#getting-published-messages) method,
-[`AuthorizedMessage.delete()`](./concepts/message.md#deleting-a-message) method,
-and the [`setInterval()`] function together.  The following example shows how to
-delete all messages older than a week:
+[`Session.getOutbox()`](./concepts/message.md#getting-published-messages)
+method,
+[`AuthorizedMessage.delete()`](./concepts/message.md#deleting-a-message)
+method, and the [`setInterval()`] function together.  The following example
+shows how to delete all messages older than a week:
 
 ~~~~ typescript twoslash
 import type { Bot, Session } from "@fedify/botkit";

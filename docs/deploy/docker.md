@@ -43,21 +43,21 @@ CMD ["deno", "run", "-A", "bot.ts"]
 Deploying to [Fly.io]
 ---------------------
 
- 1. Install the [Fly.io CLI]
+1.  Install the [Fly.io CLI]
 
- 2. Initialize your Fly.io app:
+2.  Initialize your Fly.io app:
 
     ~~~~ bash
     fly launch
     ~~~~
 
- 3. Configure environment variables:
+3.  Configure environment variables:
 
     ~~~~ bash
     fly secrets set SERVER_NAME=your-domain.com
     ~~~~
 
- 4. Deploy your app:
+4.  Deploy your app:
 
     ~~~~ bash
     fly deploy
@@ -69,12 +69,12 @@ Deploying to [Fly.io]
 Deploying to [Railway]
 ----------------------
 
- 1. Create a new project on [Railway]
+1.  Create a new project on [Railway]
 
- 2. Connect your GitHub repository
+2.  Connect your GitHub repository
 
- 3. Configure environment variables in the Railway dashboard
+3.  Configure environment variables in the Railway dashboard
 
- 4. Railway will automatically build and deploy your container
+4.  Railway will automatically build and deploy your container
 
 <!-- cSpell: ignore denoland -->

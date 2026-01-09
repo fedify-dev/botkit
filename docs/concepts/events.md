@@ -207,7 +207,7 @@ document.
 > bot.onReply = async (session, reply) => {
 >   await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 > };
->
+> 
 > bot.onMention = async (session, message) => {
 >   if (message.replyTarget == null) {  // [!code highlight]
 >     await message.reply(text`You called me, ${message.actor}?`);
@@ -225,12 +225,13 @@ document.
 > bot.onMention = async (session, message) => {
 >   await message.reply(text`You called me, ${message.actor}?`);
 > };
->
+> 
 > bot.onReply = async (session, reply) => {
 >   if (!reply.mentions.some(m => m.id?.href === session.actorId.href)) {
 >     await reply.reply(text`Thanks for your reply, ${reply.actor}!`);
 >   }
 > };
+> ~~~~
 
 
 Quote
@@ -306,7 +307,7 @@ bot.onMessage = async (session, message) => {
 > bot.onMention = async (session, message) => {
 >   await message.reply(text`You called me, ${message.actor}?`);
 > };
->
+> 
 > bot.onMessage = async (session, message) => {
 >   if (message.mentions.some(m => m.id?.href === session.actorId.href)) {
 >     return;

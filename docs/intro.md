@@ -54,7 +54,7 @@ which offers several practical benefits:
 
  -  No need to create and maintain a Mastodon or Misskey account
  -  Direct control over your bot's database and message queue
-  - Freedom to define your own message size limits
+ -  Freedom to define your own message size limits
 
 Note that while BotKit bots are standalone, they still need to comply with
 general fediverse protocols and best practices to ensure reliable federation
@@ -91,7 +91,7 @@ Rich content
     // ---cut-before---
     await session.publish(
       text`Check out ${link("BotKit docs", "https://botkit.fedify.dev/")}!
-
+    
         ${hashtag("FediverseBot")}`,
       {
         attachments: [

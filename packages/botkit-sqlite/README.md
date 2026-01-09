@@ -11,12 +11,12 @@ It provides a production-ready data storage solution using the built-in
 in-memory storage while maintaining compatibility with both [Deno] and [Node.js]
 environments.
 
-[JSR]: https://jsr.io/@fedify/botkit-sqlite
 [JSR badge]: https://jsr.io/badges/@fedify/botkit-sqlite
-[npm]: https://www.npmjs.com/package/@fedify/botkit-sqlite
+[JSR]: https://jsr.io/@fedify/botkit-sqlite
 [npm badge]: https://img.shields.io/npm/v/@fedify/botkit-sqlite?logo=npm
-[GitHub Actions]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml
+[npm]: https://www.npmjs.com/package/@fedify/botkit-sqlite
 [GitHub Actions badge]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml/badge.svg
+[GitHub Actions]: https://github.com/fedify-dev/botkit/actions/workflows/main.yaml
 [SQLite]: https://sqlite.org/
 [BotKit]: https://botkit.fedify.dev/
 [Deno]: https://deno.land/
@@ -106,6 +106,6 @@ Features
      -  Follower and following relationship management
      -  Poll voting system
 
-- **Resource management**: Implements `Disposable` interface for proper cleanup
+ -  **Resource management**: Implements `Disposable` interface for proper cleanup
 
 <!-- cSpell: ignore mybot -->

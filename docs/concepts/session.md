@@ -139,7 +139,7 @@ in the *Message* concept document.
 
 
 Getting published messages
-----------------------
+--------------------------
 
 See the [*Getting published messages*
 section](./message.md#getting-published-messages) in the *Message* concept

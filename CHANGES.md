@@ -123,6 +123,8 @@ Released on August 8, 2025.
     fix [CVE-2025-54888] that addresses an authentication bypass
     vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
 
+[CVE-2025-54888]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-6jcc-xgcr-q3h4
+
 
 Version 0.2.1
 -------------
@@ -145,7 +147,7 @@ Released on April 21, 2025.
  -  Added custom emoji support.
 
      -  The return type of `Text.getTags()` method became
-         `AsyncIterable<Link | Object>` (was `AsyncIterable<Link>`).
+        `AsyncIterable<Link | Object>` (was `AsyncIterable<Link>`).
      -  Added `Bot.addCustomEmojis()` method.
      -  Added `CustomEmojiText` class.
      -  Added `customEmoji()` function.
@@ -224,8 +226,6 @@ Released on August 8, 2025.
  -  Upgraded Fedify to 1.4.13, which includes a critical security
     fix [CVE-2025-54888] that addresses an authentication bypass
     vulnerability allowing actor impersonation.  [[CVE-2025-54888]]
-
-[CVE-2025-54888]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-6jcc-xgcr-q3h4
 
 
 Version 0.1.1
