@@ -243,7 +243,7 @@ It consists of the following properties:
     ~~~~ typescript twoslash
     // @noErrors: 2345
     import { createBot, parseSemVer } from "@fedify/botkit";
-    
+
     const bot = createBot<void>({
       // Omitted other options for brevity
       software: {

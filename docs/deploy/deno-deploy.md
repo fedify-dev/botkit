@@ -72,7 +72,6 @@ Deploying your bot
      -  Create the project automatically if it doesn't exist
      -  Look for common entrypoint files like *main.ts* or *src/main.ts*
 
-
     You can also specify these explicitly:
 
     ~~~~ sh

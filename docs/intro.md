@@ -91,7 +91,7 @@ Rich content
     // ---cut-before---
     await session.publish(
       text`Check out ${link("BotKit docs", "https://botkit.fedify.dev/")}!
-    
+
         ${hashtag("FediverseBot")}`,
       {
         attachments: [

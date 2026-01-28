@@ -71,6 +71,10 @@ This example showcases how to combine ActivityPub's social features with web
 authentication, demonstrating BotKit's capability to bridge fediverse
 interactions with traditional web applications.
 
+[Hono]: https://hono.dev/
+[Pico CSS]: https://picocss.com/
+[Deno KV]: https://deno.com/kv
+
 <!-- hongdown-disable -->
 
 ::: code-group
@@ -80,10 +84,6 @@ interactions with traditional web applications.
 :::
 
 <!-- hongdown-enable -->
-
-[Hono]: https://hono.dev/
-[Pico CSS]: https://picocss.com/
-[Deno KV]: https://deno.com/kv
 
 
 FediChatBot

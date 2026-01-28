@@ -24,7 +24,7 @@
     "exclude": ["*.md", "*.yaml", "*.yml"]
   },
   "tasks": {
-    "hongdown": "deno run -A npm:hongdown@^0.1.0-dev.37",
+    "hongdown": "deno run -A npm:hongdown@^0.3.2",
     "check": {
       "dependencies": ["check-versions"],
       "command": "deno check && deno lint && deno fmt --check && deno task hongdown --check && deno publish --dry-run --allow-dirty"
