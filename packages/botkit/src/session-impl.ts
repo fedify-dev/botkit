@@ -29,6 +29,7 @@ import { getLogger } from "@logtape/logtape";
 import { encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import type { BotImpl } from "./bot-impl.ts";
+import type { BotInfo } from "./bot.ts";
 import { createMessage, isMessageObject } from "./message-impl.ts";
 import {
   type AuthorizedMessage,
@@ -82,6 +83,15 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
 
   get actorHandle() {
     return `@${this.bot.username}@${this.context.host}` as const;
+  }
+
+  get botInfo(): BotInfo {
+    return {
+      identifier: this.bot.identifier,
+      username: this.bot.username,
+      name: this.bot.name,
+      class: this.bot.class,
+    };
   }
 
   async getActor(): Promise<Actor> {

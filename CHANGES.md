@@ -8,6 +8,25 @@ To be released.
 
 ### @fedify/botkit
 
+ -  Added support for hosting multiple bots on a single instance.  [[#16]]
+
+     -  Added `createInstance()` function that creates a server instance capable
+        of hosting multiple bots sharing infrastructure (KV store, message queue,
+        HTTP handling).
+     -  Added `Instance` interface for managing multiple bots.
+     -  Added `Instance.createBot()` method for creating static bots with a fixed
+        identifier and profile.
+     -  Added `Instance.createBot()` overload for creating dynamic bots using
+        a dispatcher function.
+     -  Added `BotDispatcher` type for dynamic bot profile resolution.
+     -  Added `BotProfile` interface for bot profile configuration.
+     -  Added `BotInfo` interface for accessing bot identity from sessions.
+     -  Added `Session.botInfo` property for accessing current bot identity.
+     -  Added `CreateInstanceOptions` interface.
+     -  Added `createScopedPrefixes()` function for per-bot repository scoping.
+     -  The existing `createBot()` function continues to work for single-bot
+        use cases.
+
  -  Added a remote follow button to the web interface.
     [[#10], [#14] by Hyeonseo Kim]
 
@@ -24,6 +43,16 @@ To be released.
 
 [#10]: https://github.com/fedify-dev/botkit/issues/10
 [#14]: https://github.com/fedify-dev/botkit/pull/14
+[#16]: https://github.com/fedify-dev/botkit/issues/16
+
+### @fedify/botkit-sqlite
+
+ -  Added bot-scoped data isolation support for multi-bot instances.  [[#16]]
+
+     -  Added `botId` option to `SqliteRepositoryOptions` for per-bot data scoping.
+     -  All database tables now include a `bot_id` column for data isolation.
+     -  Existing single-bot databases are automatically migrated with default
+        empty bot ID for backward compatibility.
 
 
 Version 0.3.1
