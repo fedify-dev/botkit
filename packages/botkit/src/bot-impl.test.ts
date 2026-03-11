@@ -2309,6 +2309,137 @@ test("BotImpl.fetch()", async () => {
   assert.deepStrictEqual(response2.status, 200);
 });
 
+test("BotImpl.fetch() includes FEP-5711 inverse properties", async () => {
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "bot",
+    collectionWindow: 1,
+  });
+  const actorId = new URL("https://example.com/ap/actor/bot");
+
+  await repository.addFollower(
+    new URL("https://example.com/actor/1#follow"),
+    new Person({
+      id: new URL("https://example.com/actor/1"),
+      preferredUsername: "john",
+      inbox: new URL("https://example.com/actor/1/inbox"),
+    }),
+  );
+  await repository.addMessage(
+    "78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
+    new Create({
+      id: new URL(
+        "https://example.com/ap/actor/bot/create/78acb1ea-4ac6-46b7-bcd4-3a8965d8126e",
+      ),
+      actor: actorId,
+      to: PUBLIC_COLLECTION,
+      cc: new URL("https://example.com/ap/actor/bot/followers"),
+      object: new Note({
+        id: new URL("https://example.com/ap/actor/bot/note/1"),
+        attribution: actorId,
+        to: PUBLIC_COLLECTION,
+        cc: new URL("https://example.com/ap/actor/bot/followers"),
+        content: "Hello, world!",
+        published: Temporal.Instant.from("2025-01-01T00:00:00Z"),
+      }),
+      published: Temporal.Instant.from("2025-01-01T00:00:00Z"),
+    }),
+  );
+
+  const actorResponse = await bot.fetch(
+    new Request("https://example.com/ap/actor/bot", {
+      headers: { accept: "application/activity+json" },
+    }),
+  );
+  assert.deepStrictEqual(actorResponse.status, 200);
+  const actorJson = await actorResponse.json();
+  assert.deepStrictEqual(actorJson.id, actorId.href);
+  assert.deepStrictEqual(
+    actorJson.followers,
+    "https://example.com/ap/actor/bot/followers",
+  );
+  assert.deepStrictEqual(
+    actorJson.outbox,
+    "https://example.com/ap/actor/bot/outbox",
+  );
+
+  const outboxResponse = await bot.fetch(
+    new Request("https://example.com/ap/actor/bot/outbox", {
+      headers: { accept: "application/activity+json" },
+    }),
+  );
+  assert.deepStrictEqual(outboxResponse.status, 200);
+  const outboxJson = await outboxResponse.json();
+  assert.deepStrictEqual(outboxJson.type, "OrderedCollection");
+  assert.deepStrictEqual(
+    outboxJson.id,
+    "https://example.com/ap/actor/bot/outbox",
+  );
+  assert.deepStrictEqual(outboxJson.totalItems, 1);
+  assert.deepStrictEqual(
+    outboxJson.first,
+    "https://example.com/ap/actor/bot/outbox?cursor=",
+  );
+  assert.deepStrictEqual(outboxJson.outboxOf, actorId.href);
+
+  const outboxPageResponse = await bot.fetch(
+    new Request("https://example.com/ap/actor/bot/outbox?cursor=", {
+      headers: { accept: "application/activity+json" },
+    }),
+  );
+  assert.deepStrictEqual(outboxPageResponse.status, 200);
+  const outboxPageJson = await outboxPageResponse.json();
+  assert.deepStrictEqual(outboxPageJson.type, "OrderedCollectionPage");
+  assert.deepStrictEqual(
+    outboxPageJson.id,
+    "https://example.com/ap/actor/bot/outbox?cursor=",
+  );
+  assert.deepStrictEqual(
+    outboxPageJson.partOf,
+    "https://example.com/ap/actor/bot/outbox",
+  );
+  assert.deepStrictEqual(outboxPageJson.outboxOf, actorId.href);
+
+  const followersResponse = await bot.fetch(
+    new Request("https://example.com/ap/actor/bot/followers", {
+      headers: { accept: "application/activity+json" },
+    }),
+  );
+  assert.deepStrictEqual(followersResponse.status, 200);
+  const followersJson = await followersResponse.json();
+  assert.deepStrictEqual(followersJson.type, "OrderedCollection");
+  assert.deepStrictEqual(
+    followersJson.id,
+    "https://example.com/ap/actor/bot/followers",
+  );
+  assert.deepStrictEqual(followersJson.totalItems, 1);
+  assert.deepStrictEqual(
+    followersJson.first,
+    "https://example.com/ap/actor/bot/followers?cursor=0",
+  );
+  assert.deepStrictEqual(followersJson.followersOf, actorId.href);
+
+  const followersPageResponse = await bot.fetch(
+    new Request("https://example.com/ap/actor/bot/followers?cursor=0", {
+      headers: { accept: "application/activity+json" },
+    }),
+  );
+  assert.deepStrictEqual(followersPageResponse.status, 200);
+  const followersPageJson = await followersPageResponse.json();
+  assert.deepStrictEqual(followersPageJson.type, "OrderedCollectionPage");
+  assert.deepStrictEqual(
+    followersPageJson.id,
+    "https://example.com/ap/actor/bot/followers?cursor=0",
+  );
+  assert.deepStrictEqual(
+    followersPageJson.partOf,
+    "https://example.com/ap/actor/bot/followers",
+  );
+  assert.deepStrictEqual(followersPageJson.followersOf, actorId.href);
+});
+
 describe("BotImpl.addCustomEmoji(), BotImpl.addCustomEmojis()", () => {
   const bot = new BotImpl<void>({ kv: new MemoryKvStore(), username: "bot" });
 

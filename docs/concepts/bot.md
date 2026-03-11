@@ -13,6 +13,12 @@ The `Bot` object is the main component of the library.  It is used to register
 event handlers, and provides the entry point of the bot—the `~Bot.fetch()`
 method to be connected to the HTTP server.
 
+BotKit also exposes the bot actor's standard ActivityPub collections.  The
+JSON-LD responses of the `outbox` and `followers` collections include the
+[FEP-5711] inverse properties `outboxOf` and `followersOf`.
+
+[FEP-5711]: https://w3id.org/fep/5711
+
 
 Instantiation
 -------------

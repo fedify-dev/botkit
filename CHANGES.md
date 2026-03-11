@@ -8,6 +8,9 @@ To be released.
 
 ### @fedify/botkit
 
+ -  Added FEP-5711 inverse properties to the bot actor's `outbox` and
+    `followers` collections.
+
  -  Added a remote follow button to the web interface.
     [[#10], [#14] by Hyeonseo Kim]
 

@@ -1064,6 +1064,57 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return new SessionImpl(this, ctx);
   }
 
+  async addCollectionInverseProperty(
+    request: Request,
+    contextData: TContextData,
+    response: Response,
+  ): Promise<Response> {
+    if (!response.ok) return response;
+    const ctx = this.federation.createContext(request, contextData);
+    const parsed = ctx.parseUri(new URL(request.url));
+    if (
+      parsed == null ||
+      (parsed.type !== "outbox" && parsed.type !== "followers") ||
+      parsed.identifier == null
+    ) {
+      return response;
+    }
+    const contentType = response.headers.get("Content-Type");
+    if (
+      contentType == null ||
+      (
+        !contentType.startsWith("application/activity+json") &&
+        !contentType.startsWith("application/ld+json")
+      )
+    ) {
+      return response;
+    }
+    const body = await response.json();
+    if (typeof body !== "object" || body == null || Array.isArray(body)) {
+      return new Response(JSON.stringify(body), {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
+    const property = parsed.type === "outbox" ? "outboxOf" : "followersOf";
+    const actorUri = ctx.getActorUri(parsed.identifier).href;
+    if (body[property] === actorUri) {
+      return new Response(JSON.stringify(body), {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
+    const headers = new Headers(response.headers);
+    headers.delete("Content-Length");
+    return new Response(JSON.stringify({ ...body, [property]: actorUri }), {
+      headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
   async fetch(request: Request, contextData: TContextData): Promise<Response> {
     if (this.behindProxy) {
       request = await getXForwardedRequest(request);
@@ -1074,7 +1125,12 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       url.pathname.startsWith("/ap/") ||
       url.pathname.startsWith("/nodeinfo/")
     ) {
-      return await this.federation.fetch(request, { contextData });
+      const response = await this.federation.fetch(request, { contextData });
+      return await this.addCollectionInverseProperty(
+        request,
+        contextData,
+        response,
+      );
     }
     const match = /^\/emojis\/([a-z0-9-_]+)(?:$|\.)/.exec(url.pathname);
     if (match != null) {
