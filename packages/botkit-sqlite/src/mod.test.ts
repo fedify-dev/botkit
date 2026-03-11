@@ -18,7 +18,7 @@ import {
   type SqliteRepositoryOptions,
 } from "@fedify/botkit-sqlite";
 import { importJwk } from "@fedify/fedify/sig";
-import { Create, Note, Person, PUBLIC_COLLECTION } from "@fedify/fedify/vocab";
+import { Create, Note, Person, PUBLIC_COLLECTION } from "@fedify/vocab";
 import assert from "node:assert";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

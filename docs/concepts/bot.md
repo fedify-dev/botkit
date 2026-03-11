@@ -237,18 +237,17 @@ It consists of the following properties:
     and hyphens.
 
 `version` (required)
-:   The version of the bot software.  It should be a `SemVer` object.
-    You can create a `SemVer` object using the `parseSemVer()` function:
+:   The version of the bot software.  It should be a string:
 
     ~~~~ typescript twoslash
     // @noErrors: 2345
-    import { createBot, parseSemVer } from "@fedify/botkit";
+    import { createBot } from "@fedify/botkit";
 
     const bot = createBot<void>({
       // Omitted other options for brevity
       software: {
         name: "my-bot",
-        version: parseSemVer("1.0.0"),  // [!code highlight]
+        version: "1.0.0",  // [!code highlight]
       }
     });
     ~~~~

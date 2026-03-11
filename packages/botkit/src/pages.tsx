@@ -25,7 +25,7 @@ import {
   Link,
   type Object,
   PUBLIC_COLLECTION,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import { Hono } from "hono";
 import { decode } from "html-entities";
 import { parseTemplate } from "url-template";

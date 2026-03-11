@@ -5,6 +5,9 @@
   "exports": {
     ".": "./src/mod.ts"
   },
+  "imports": {
+    "@fedify/vocab": "jsr:@fedify/vocab@^2.0.3"
+  },
   "exclude": [
     "dist",
     "junit.xml",

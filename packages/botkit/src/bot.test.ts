@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import { MemoryKvStore } from "@fedify/fedify/federation";
-import type { Actor } from "@fedify/fedify/vocab";
+import type { Actor } from "@fedify/vocab";
 import assert from "node:assert";
 import { test } from "node:test";
 import type { BotImpl } from "./bot-impl.ts";

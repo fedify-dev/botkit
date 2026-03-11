@@ -23,8 +23,7 @@ import type {
   Hashtag,
   Note,
   Question,
-} from "@fedify/fedify/vocab";
-import type { LanguageTag } from "@phensley/language-tag";
+} from "@fedify/vocab";
 import type { DeferredCustomEmoji, Emoji } from "./emoji.ts";
 import type { AuthorizedLike, AuthorizedReaction } from "./reaction.ts";
 import type {
@@ -43,9 +42,8 @@ export {
   Note,
   Question,
   Video,
-} from "@fedify/fedify/vocab";
-export type { Actor } from "@fedify/fedify/vocab";
-export { LanguageTag, parseLanguageTag } from "@phensley/language-tag";
+} from "@fedify/vocab";
+export type { Actor } from "@fedify/vocab";
 
 /**
  * A possible message class.
@@ -114,7 +112,7 @@ export interface Message<T extends MessageClass, TContextData> {
   /**
    * The language of the message if the content is tagged with a language.
    */
-  readonly language?: LanguageTag;
+  readonly language?: Intl.Locale;
 
   /**
    * The plain text content of the message.

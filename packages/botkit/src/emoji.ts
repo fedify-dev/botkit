@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { Emoji as EmojiObject } from "@fedify/fedify/vocab";
+import type { Emoji as EmojiObject } from "@fedify/vocab";
 import type { Session } from "./session.ts";
 
 /**

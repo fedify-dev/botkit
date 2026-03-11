@@ -20,7 +20,7 @@ import type {
   MessageQueue,
 } from "@fedify/fedify/federation";
 import type { Software } from "@fedify/fedify/nodeinfo";
-import type { Application, Image, Service } from "@fedify/fedify/vocab";
+import type { Application, Image, Service } from "@fedify/vocab";
 import { BotImpl } from "./bot-impl.ts";
 import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
 import type {
@@ -42,12 +42,8 @@ import type {
 import type { Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
-export {
-  parseSemVer,
-  type SemVer,
-  type Software,
-} from "@fedify/fedify/nodeinfo";
-export { Application, Image, Service } from "@fedify/fedify/vocab";
+export { type Software } from "@fedify/fedify/nodeinfo";
+export { Application, Image, Service } from "@fedify/vocab";
 
 /**
  * A bot that can interact with the ActivityPub network.

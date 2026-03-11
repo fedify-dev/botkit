@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import type { Actor } from "@fedify/fedify/vocab";
+import type { Actor } from "@fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
 import type { Vote } from "./poll.ts";

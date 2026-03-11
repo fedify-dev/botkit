@@ -28,7 +28,7 @@ import {
   Follow,
   isActor,
   Object,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import { DatabaseSync } from "node:sqlite";
 

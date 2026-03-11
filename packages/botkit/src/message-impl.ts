@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { LanguageString } from "@fedify/fedify/runtime";
+import { LanguageString } from "@fedify/vocab-runtime";
 import {
   type Actor,
   Announce,
@@ -36,8 +36,7 @@ import {
   Tombstone,
   Undo,
   Update,
-} from "@fedify/fedify/vocab";
-import type { LanguageTag } from "@phensley/language-tag";
+} from "@fedify/vocab";
 import { decode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import xss from "xss";
@@ -86,7 +85,7 @@ export class MessageImpl<T extends MessageClass, TContextData>
   readonly id: URL;
   readonly actor: Actor;
   readonly visibility: MessageVisibility;
-  readonly language?: LanguageTag | undefined;
+  readonly language?: Intl.Locale | undefined;
   text: string;
   html: string;
   readonly replyTarget?: Message<MessageClass, TContextData> | undefined;
@@ -727,7 +726,7 @@ export async function createMessage<T extends MessageClass, TContextData>(
       mentionedActorIds,
     ),
     language: raw.content instanceof LanguageString
-      ? raw.content.language
+      ? raw.content.locale
       : undefined,
     text: decode(text),
     html,

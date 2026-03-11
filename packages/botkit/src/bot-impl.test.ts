@@ -22,7 +22,6 @@ import {
   Article,
   Collection,
   Create,
-  CryptographicKey,
   Emoji,
   EmojiReact,
   Follow,
@@ -40,11 +39,10 @@ import {
   Service,
   Undo,
   Update,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
-import { parseSemVer } from "./bot.ts";
 import type { CustomEmoji } from "./emoji.ts";
 import type { FollowRequest } from "./follow.ts";
 import type { Message, MessageClass, SharedMessage } from "./message.ts";
@@ -810,37 +808,46 @@ test("BotImpl.authorizeFollow()", async () => {
       to: new URL("https://example.com/ap/actor/john"),
     }),
   );
-  assert.ok(
-    await bot.authorizeFollow(
-      ctx,
-      { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
-      new CryptographicKey({}),
-      new Person({ id: new URL("https://example.com/ap/actor/john") }),
-    ),
+  const setSignedKeyOwner = (owner: Actor | null) => {
+    Object.defineProperty(ctx, "getSignedKeyOwner", {
+      value: () => Promise.resolve(owner),
+      writable: true,
+      configurable: true,
+    });
+  };
+  setSignedKeyOwner(
+    new Person({ id: new URL("https://example.com/ap/actor/john") }),
   );
   assert.ok(
     await bot.authorizeFollow(
       ctx,
       { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
-      new CryptographicKey({}),
-      await new SessionImpl(bot, ctx).getActor(),
     ),
+  );
+  setSignedKeyOwner(await new SessionImpl(bot, ctx).getActor());
+  assert.ok(
+    await bot.authorizeFollow(
+      ctx,
+      { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
+    ),
+  );
+  setSignedKeyOwner(
+    new Person({ id: new URL("https://example.com/ap/actor/alice") }),
   );
   assert.deepStrictEqual(
     await bot.authorizeFollow(
       ctx,
       { id: "b51f6ca8-53e6-4f7d-ac1f-d039e8c6df5a" },
-      new CryptographicKey({}),
-      new Person({ id: new URL("https://example.com/ap/actor/alice") }),
     ),
     false,
+  );
+  setSignedKeyOwner(
+    new Person({ id: new URL("https://example.com/ap/actor/john") }),
   );
   assert.deepStrictEqual(
     await bot.authorizeFollow(
       ctx,
       { id: crypto.randomUUID() },
-      new CryptographicKey({}),
-      new Person({ id: new URL("https://example.com/ap/actor/john") }),
     ),
     false,
   );
@@ -2244,7 +2251,7 @@ test("BotImpl.dispatchNodeInfo()", () => {
     username: "bot",
     software: {
       name: "test",
-      version: parseSemVer("1.2.3"),
+      version: "1.2.3",
       homepage: new URL("https://example.com/"),
       repository: new URL("https://git.example.com/"),
     },
@@ -2256,7 +2263,7 @@ test("BotImpl.dispatchNodeInfo()", () => {
   assert.deepStrictEqual(bot.dispatchNodeInfo(ctx), {
     software: {
       name: "test",
-      version: parseSemVer("1.2.3"),
+      version: "1.2.3",
       homepage: new URL("https://example.com/"),
       repository: new URL("https://git.example.com/"),
     },
@@ -2490,7 +2497,11 @@ function createMockInboxContext(
     new URL(origin),
     undefined,
   ) as MockInboxContext;
-  ctx.recipient = recipient ?? null;
+  Object.defineProperty(ctx, "recipient", {
+    value: recipient ?? null,
+    writable: true,
+    configurable: true,
+  });
   ctx.sentActivities = [];
   ctx.sendActivity = (_, recipients, activity) => {
     ctx.sentActivities.push({

@@ -1,7 +1,7 @@
 /** @jsx react-jsx */
 /** @jsxImportSource hono/jsx */
 import { createBot, isActor, Question, text } from "@fedify/botkit";
-import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
+import { DenoKvMessageQueue, DenoKvStore } from "@fedify/denokv";
 import { Hono } from "hono";
 import type { FC } from "hono/jsx";
 import { getXForwardedRequest } from "x-forwarded-fetch";

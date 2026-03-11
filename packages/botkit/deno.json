@@ -16,9 +16,10 @@
     "./text": "./src/text.ts"
   },
   "imports": {
+    "@fedify/vocab": "jsr:@fedify/vocab@^2.0.3",
+    "@fedify/vocab-runtime": "jsr:@fedify/vocab-runtime@^2.0.3",
     "@fedify/markdown-it-hashtag": "jsr:@fedify/markdown-it-hashtag@^0.3.0",
     "@fedify/markdown-it-mention": "jsr:@fedify/markdown-it-mention@^0.3.0",
-    "@phensley/language-tag": "npm:@phensley/language-tag@^1.12.2",
     "html-entities": "npm:html-entities@^2.6.0",
     "markdown-it": "npm:markdown-it@^14.1.0",
     "mime-db": "npm:mime-db@^1.54.0",

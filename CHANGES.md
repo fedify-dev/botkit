@@ -20,7 +20,17 @@ To be released.
         automatically redirects to the appropriate follow page using the OStatus
         subscribe protocol.
 
- -  Upgraded Fedify to 1.10.0.
+ -  Upgraded Fedify to 2.0.3.
+
+     -  BotKit now targets Fedify 2.0's modular package layout, using
+        *@fedify/vocab*, *@fedify/vocab-runtime*, and *@fedify/denokv*
+        where appropriate.
+     -  `Message.language` and `SessionPublishOptions.language` now use
+        `Intl.Locale` instead of `LanguageTag`.
+     -  Bot software versions now use plain strings instead of `SemVer`
+        objects.
+     -  Removed the `parseSemVer()`, `SemVer`, `LanguageTag`, and
+        `parseLanguageTag()` public exports.
 
 [#10]: https://github.com/fedify-dev/botkit/issues/10
 [#14]: https://github.com/fedify-dev/botkit/pull/14

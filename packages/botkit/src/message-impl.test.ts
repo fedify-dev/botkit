@@ -33,7 +33,7 @@ import {
   Tombstone,
   Undo,
   Update,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import assert from "node:assert";
 import { test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";

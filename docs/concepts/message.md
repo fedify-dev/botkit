@@ -409,22 +409,19 @@ property.  It is represented as a string, which is one of the following:
 ### Language hint
 
 You can get the language hint of the message through the `~Message.language`
-property.  It is represented as a [`LanguageTag`] object.  If you want just
-a BCP 47 language tag string, you can call the [`LanguageTag.compact()`] method:
+property.  It is represented as an [`Intl.Locale`] object.  If you want just
+a BCP 47 language tag string, you can call the [`Intl.Locale.toString()`]
+method:
 
 ~~~~ typescript twoslash
 import { type Message, type MessageClass } from "@fedify/botkit";
 const message = {} as unknown as Message<MessageClass, void>;
 // ---cut-before---
-message.language?.compact()  // e.g., "en", "en-US", "zh-Hant"
+message.language?.toString()  // e.g., "en", "en-US", "zh-Hant"
 ~~~~
 
-> [!TIP]
-> BotKit re-exports [`LanguageTag`] class and [`parseLanguageTag()`] function.
-
-[`LanguageTag`]: https://phensley.github.io/cldr-engine/docs/en/api-languagetag
-[`LanguageTag.compact()`]: https://phensley.github.io/cldr-engine/docs/en/api-languagetag.html#compact
-[`parseLanguageTag()`]: https://phensley.github.io/cldr-engine/docs/en/api-cldrframework#parselanguagetag
+[`Intl.Locale`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale
+[`Intl.Locale.toString()`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/toString
 
 ### Traversing the conversation
 
@@ -560,7 +557,7 @@ the `~Message.raw` property:
 
 ~~~~ typescript twoslash
 import type { Message, MessageClass } from "@fedify/botkit";
-import { Place } from "@fedify/fedify/vocab";
+import { Place } from "@fedify/vocab";
 const message = {} as unknown as Message<MessageClass, void>;
 // ---cut-before---
 const location = await message.raw.getLocation();
@@ -575,14 +572,14 @@ In the above example, the [`Place`] class is declared by Fedify, so you need to
 install it and import it:
 
 ~~~~ typescript twoslash
-import { Place } from "@fedify/fedify/vocab";
+import { Place } from "@fedify/vocab";
 ~~~~
 
-[`Article`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Article
-[`ChatMessage`]: https://jsr.io/@fedify/fedify/doc/vocab/~/ChatMessage
-[`Note`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Note
-[`Question`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Question
-[`Place`]: https://jsr.io/@fedify/fedify/doc/vocab/~/Place
+[`Article`]: https://jsr.io/@fedify/vocab/doc/~/Article
+[`ChatMessage`]: https://jsr.io/@fedify/vocab/doc/~/ChatMessage
+[`Note`]: https://jsr.io/@fedify/vocab/doc/~/Note
+[`Question`]: https://jsr.io/@fedify/vocab/doc/~/Question
+[`Place`]: https://jsr.io/@fedify/vocab/doc/~/Place
 
 
 Getting published messages

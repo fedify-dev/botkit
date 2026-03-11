@@ -24,7 +24,7 @@ import {
   Question,
   type Recipient,
   Undo,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";

@@ -23,10 +23,10 @@ import {
   Follow,
   isActor,
   Object,
-} from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 export type { KvKey, KvStore } from "@fedify/fedify/federation";
-export { Announce, Create } from "@fedify/fedify/vocab";
+export { Announce, Create } from "@fedify/vocab";
 
 const logger = getLogger(["botkit", "repository"]);
 

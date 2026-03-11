@@ -17,12 +17,11 @@ import type {
   Actor,
   Article,
   ChatMessage,
-  Context,
   Document,
   Note,
   Question,
-} from "@fedify/fedify";
-import type { LanguageTag } from "@phensley/language-tag";
+} from "@fedify/vocab";
+import type { Context } from "@fedify/fedify/federation";
 import type { Bot } from "./bot.ts";
 import type {
   AuthorizedMessage,
@@ -158,7 +157,7 @@ export interface SessionPublishOptions<TContextData> {
   /**
    * The language of the published message.
    */
-  readonly language?: string | LanguageTag;
+  readonly language?: string | Intl.Locale;
 
   /**
    * The visibility of the published message.  If omitted, `"public"` will be

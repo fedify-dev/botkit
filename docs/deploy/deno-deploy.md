@@ -27,17 +27,17 @@ Prerequisites
     deno install -gArf jsr:@deno/deployctl
     ~~~~
 
-4.  Install the [Fedify] package to your bot project:
+4.  Install the [Fedify] Deno KV adapter package to your bot project:
 
     ~~~~ sh
-    deno add jsr:@fedify/fedify
+    deno add jsr:@fedify/denokv
     ~~~~
 
 5.  Configure your bot to use Deno KV for storage and message queue:
 
     ~~~~ typescript
     import { createBot } from "@fedify/botkit";
-    import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/deno";
+    import { DenoKvMessageQueue, DenoKvStore } from "@fedify/denokv";
 
     const kv = await Deno.openKv();
 

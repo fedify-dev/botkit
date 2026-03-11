@@ -27,8 +27,6 @@ export {
   type CreateBotOptions,
   Image,
   type PagesOptions,
-  parseSemVer,
-  type SemVer,
   Service,
   type Software,
 } from "./bot.ts";
@@ -48,9 +46,7 @@ export {
   Document,
   Hashtag,
   isActor,
-  LanguageTag,
   Note,
-  parseLanguageTag,
   Question,
   Video,
 } from "./message.ts";

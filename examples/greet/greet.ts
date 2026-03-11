@@ -7,7 +7,7 @@ import {
   mention,
   text,
 } from "@fedify/botkit";
-import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
+import { DenoKvMessageQueue, DenoKvStore } from "@fedify/denokv";
 
 const kv = await Deno.openKv();
 

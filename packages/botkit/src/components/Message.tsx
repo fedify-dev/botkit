@@ -15,14 +15,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
 /** @jsxImportSource hono/jsx */
-import { LanguageString } from "@fedify/fedify/runtime";
-import {
-  Document,
-  Emoji,
-  getActorHandle,
-  Image,
-  Link,
-} from "@fedify/fedify/vocab";
+import { LanguageString } from "@fedify/vocab-runtime";
+import { Document, Emoji, getActorHandle, Image, Link } from "@fedify/vocab";
 import type { MessageClass } from "../message.ts";
 import type { Session } from "../session.ts";
 
@@ -91,7 +85,7 @@ export async function Message({ session, message }: MessageProps) {
           __html: renderCustomEmojis(`${message.content}`, customEmojis),
         }}
         lang={message.content instanceof LanguageString
-          ? message.content.language.compact()
+          ? message.content.locale.toString()
           : undefined}
       />
       {attachments.length > 0 && (

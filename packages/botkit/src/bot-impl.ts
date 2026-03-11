@@ -20,12 +20,9 @@ import {
   generateCryptoKeyPair,
   type InboxContext,
   type NodeInfo,
-  Object,
   type PageItems,
-  type Recipient,
   type RequestContext,
   type Software,
-  Update,
 } from "@fedify/fedify";
 import {
   Accept,
@@ -36,7 +33,6 @@ import {
   Article,
   ChatMessage,
   Create,
-  type CryptographicKey,
   Emoji as APEmoji,
   EmojiReact,
   Endpoints,
@@ -47,13 +43,16 @@ import {
   Link,
   Mention,
   Note,
+  Object,
   PropertyValue,
   PUBLIC_COLLECTION,
   Question,
+  type Recipient,
   Reject,
   Service,
   Undo,
-} from "@fedify/fedify/vocab";
+  Update,
+} from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import mimeDb from "mime-db";
 import fs from "node:fs/promises";
@@ -490,11 +489,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   }
 
   async authorizeFollow(
-    _ctx: RequestContext<TContextData>,
+    ctx: RequestContext<TContextData>,
     values: { id: string },
-    _signedKey: CryptographicKey | null,
-    signedKeyOwner: Actor | null,
   ): Promise<boolean> {
+    const signedKeyOwner = await ctx.getSignedKeyOwner();
     if (signedKeyOwner == null || signedKeyOwner.id == null) return false;
     const id = values.id as Uuid;
     const follow = await this.repository.getSentFollow(id);

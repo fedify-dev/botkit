@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@fedify/fedify": "catalog:",
+    "@fedify/vocab": "catalog:",
     "@js-temporal/polyfill": "catalog:",
     "@logtape/logtape": "catalog:"
   },

@@ -17,12 +17,12 @@ import {
   type Actor,
   Emoji,
   getActorHandle,
+  Hashtag,
   isActor,
   Link,
   Mention,
   type Object,
-} from "@fedify/fedify";
-import { Hashtag } from "@fedify/fedify/vocab";
+} from "@fedify/vocab";
 import { hashtag as hashtagPlugin } from "@fedify/markdown-it-hashtag";
 import {
   mention as mentionPlugin,

@@ -18,9 +18,9 @@ import {
   createFederation,
   MemoryKvStore,
 } from "@fedify/fedify/federation";
-import { getDocumentLoader } from "@fedify/fedify/runtime";
+import { getDocumentLoader } from "@fedify/vocab-runtime";
 import { importJwk } from "@fedify/fedify/sig";
-import { Emoji, Hashtag, Image, Mention, Person } from "@fedify/fedify/vocab";
+import { Emoji, Hashtag, Image, Mention, Person } from "@fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
@@ -44,29 +44,32 @@ import {
 } from "./text.ts";
 
 const defaultDocumentLoader = getDocumentLoader();
+const customDocumentLoader = (url: string) => {
+  const parsed = new URL(url);
+  if (parsed.host !== "example.com") {
+    return defaultDocumentLoader(url);
+  }
+  const document = {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    type: "Person",
+    id: url,
+    preferredUsername: url.split("/").at(-1),
+    url,
+  };
+  return Promise.resolve({
+    document,
+    documentUrl: url,
+    contextUrl: null,
+  });
+};
 
 const federation = createFederation<void>({
   kv: new MemoryKvStore(),
-  documentLoader(url: string) {
-    const parsed = new URL(url);
-    if (parsed.host !== "example.com") {
-      return defaultDocumentLoader(url);
-    }
-    const document = {
-      "@context": "https://www.w3.org/ns/activitystreams",
-      type: "Person",
-      id: url,
-      preferredUsername: url.split("/").at(-1),
-      url,
-    };
-    return Promise.resolve({
-      document,
-      documentUrl: url,
-      contextUrl: null,
-    });
+  documentLoaderFactory() {
+    return customDocumentLoader;
   },
-  authenticatedDocumentLoaderFactory(_identity) {
-    return this.documentLoader!;
+  authenticatedDocumentLoaderFactory() {
+    return customDocumentLoader;
   },
 });
 

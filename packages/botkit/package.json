@@ -85,11 +85,12 @@
   ],
   "dependencies": {
     "@fedify/fedify": "catalog:",
+    "@fedify/vocab": "catalog:",
+    "@fedify/vocab-runtime": "catalog:",
     "@fedify/markdown-it-hashtag": "^0.3.0",
     "@fedify/markdown-it-mention": "^0.3.0",
     "@js-temporal/polyfill": "catalog:",
     "@logtape/logtape": "catalog:",
-    "@phensley/language-tag": "^1.12.2",
     "hono": "catalog:",
     "html-entities": "^2.6.0",
     "markdown-it": "^14.1.0",

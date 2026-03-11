@@ -15,7 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsx react-jsx */
 /** @jsxImportSource hono/jsx */
-import { type Actor, getActorHandle, Link } from "@fedify/fedify/vocab";
+import { type Actor, getActorHandle, Link } from "@fedify/vocab";
 import type { Session } from "../session.ts";
 
 export interface FollowerProps {

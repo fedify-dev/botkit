@@ -15,13 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import { MemoryKvStore } from "@fedify/fedify/federation";
 import { importJwk } from "@fedify/fedify/sig";
-import {
-  Create,
-  Follow,
-  Note,
-  Person,
-  PUBLIC_COLLECTION,
-} from "@fedify/fedify/vocab";
+import { Create, Follow, Note, Person, PUBLIC_COLLECTION } from "@fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {

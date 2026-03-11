@@ -13,18 +13,21 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import type { Context } from "@fedify/fedify/federation";
+import { LanguageString } from "@fedify/vocab-runtime";
 import {
   type Actor,
-  type Context,
+  Collection,
   Create,
+  Follow,
   isActor,
-  LanguageString,
+  Link,
   Mention,
   Note,
   type Object,
   PUBLIC_COLLECTION,
-} from "@fedify/fedify";
-import { Collection, Follow, Link, Undo } from "@fedify/fedify/vocab";
+  Undo,
+} from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import { encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
@@ -196,7 +199,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         const object = await this.context.lookupObject(actor, {
           documentLoader,
         });
-        if (!isActor(object)) {
+        if (object == null || !isActor(object)) {
           throw new TypeError("The resolved object is not an Actor.");
         }
         if (object.id == null) {

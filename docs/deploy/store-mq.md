@@ -34,7 +34,7 @@ available in Deno environments, has limited querying capabilities, and size
 limits per value (64KB on Deno Deploy).
 
 ~~~~ typescript
-import { DenoKvStore } from "@fedify/fedify/x/deno";
+import { DenoKvStore } from "@fedify/denokv";
 
 const kv = await Deno.openKv();
 
@@ -46,10 +46,10 @@ const bot = createBot<void>({
 ~~~~
 
 Since [`DenoKvStore`] is provided by [Fedify], you need to install the
-*@fedify/fedify* package to use it:
+*@fedify/denokv* package to use it:
 
 ~~~~ sh [Deno]
-deno add jsr:@fedify/fedify
+deno add jsr:@fedify/denokv
 ~~~~
 
 [Deno KV]: https://deno.land/manual/runtime/kv
@@ -255,7 +255,7 @@ environments and has limited throughput compared to dedicated message queue
 solutions.
 
 ~~~~ typescript
-import { DenoKvMessageQueue } from "@fedify/fedify/x/deno";
+import { DenoKvMessageQueue } from "@fedify/denokv";
 
 const kv = await Deno.openKv();
 
@@ -269,10 +269,10 @@ bot.federation.startQueue();
 ~~~~
 
 Since [`DenoKvMessageQueue`] is provided by [Fedify], you need to install the
-*@fedify/fedify* package to use it:
+*@fedify/denokv* package to use it:
 
 ~~~~ sh [Deno]
-deno add jsr:@fedify/fedify
+deno add jsr:@fedify/denokv
 ~~~~
 
 [Deno KV Queue]: https://docs.deno.com/deploy/kv/manual/queue_overview/

@@ -13,9 +13,9 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import { Person } from "@fedify/fedify";
+import { Person } from "@fedify/vocab";
 import { MemoryKvStore } from "@fedify/fedify/federation";
-import { Accept, Follow, Reject } from "@fedify/fedify/vocab";
+import { Accept, Follow, Reject } from "@fedify/vocab";
 import assert from "node:assert";
 import { test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
