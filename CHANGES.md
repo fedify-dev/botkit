@@ -8,6 +8,27 @@ To be released.
 
 ### @fedify/botkit
 
+ -  Upgraded Fedify to 2.1.0.
+
+     -  BotKit now targets Fedify 2.0's modular package layout, using
+        *@fedify/vocab*, *@fedify/vocab-runtime*, and *@fedify/denokv*
+        where appropriate.
+     -  `Message.language` and `SessionPublishOptions.language` now use
+        `Intl.Locale` instead of `LanguageTag`.
+     -  Bot software versions now use plain strings instead of `SemVer`
+        objects.
+     -  Removed the `parseSemVer()`, `SemVer`, `LanguageTag`, and
+        `parseLanguageTag()` public exports.
+
+ -  BotKit now acknowledges unverified remote `Delete` activities signed by
+    permanently gone actors with `202 Accepted` instead of `401 Unauthorized`.
+
+     -  This applies only when Fedify reports a `keyFetchError` and the
+        remote actor's key fetch returned `410 Gone`.
+     -  The unverified activity is not passed to BotKit event handlers, but
+        the successful response stops repeated redelivery attempts from the
+        remote server.
+
  -  Added FEP-5711 inverse properties to the bot actor's `outbox` and
     `followers` collections.
 
@@ -22,18 +43,6 @@ To be released.
      -  The feature uses WebFinger to discover the user's instance and
         automatically redirects to the appropriate follow page using the OStatus
         subscribe protocol.
-
- -  Upgraded Fedify to 2.0.3.
-
-     -  BotKit now targets Fedify 2.0's modular package layout, using
-        *@fedify/vocab*, *@fedify/vocab-runtime*, and *@fedify/denokv*
-        where appropriate.
-     -  `Message.language` and `SessionPublishOptions.language` now use
-        `Intl.Locale` instead of `LanguageTag`.
-     -  Bot software versions now use plain strings instead of `SemVer`
-        objects.
-     -  Removed the `parseSemVer()`, `SemVer`, `LanguageTag`, and
-        `parseLanguageTag()` public exports.
 
 [#10]: https://github.com/fedify-dev/botkit/issues/10
 [#14]: https://github.com/fedify-dev/botkit/pull/14

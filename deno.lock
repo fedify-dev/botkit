@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@fedify/denokv@2.1.0": "2.1.0",
     "jsr:@fedify/fedify@2.1.0": "2.1.0",
     "jsr:@fedify/fedify@^2.1.0": "2.1.0",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
@@ -9,10 +10,10 @@
     "jsr:@fedify/vocab@^2.1.0": "2.1.0",
     "jsr:@fedify/webfinger@^2.1.0": "2.1.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
-    "jsr:@hono/hono@^4.8.2": "4.11.1",
+    "jsr:@hono/hono@^4.8.2": "4.12.9",
     "jsr:@logtape/logtape@^1.3.5": "1.3.7",
     "jsr:@logtape/logtape@^2.0.5": "2.0.5",
-    "jsr:@std/fs@^1.0.19": "1.0.21",
+    "jsr:@std/fs@^1.0.19": "1.0.23",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/path@^1.1.1": "1.1.4",
@@ -25,6 +26,7 @@
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:asn1js@^3.0.6": "3.0.7",
     "npm:byte-encodings@^1.0.11": "1.0.11",
+    "npm:es-toolkit@^1.30.0": "1.45.0",
     "npm:es-toolkit@^1.43.0": "1.45.0",
     "npm:hongdown@~0.1.0-dev.28": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.29": "0.1.0-dev.37",
@@ -51,6 +53,13 @@
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
+    "@fedify/denokv@2.1.0": {
+      "integrity": "1d48257ada4a5fd1e7a5fbe8b374b609e9478aa9c6490968dee78569e0e338ec",
+      "dependencies": [
+        "jsr:@fedify/fedify@^2.1.0",
+        "npm:es-toolkit@^1.30.0"
+      ]
+    },
     "@fedify/fedify@2.1.0": {
       "integrity": "046b088537f64706f8f90cf22785730acaed9c7e1dcf1083051f114d954a1f68",
       "dependencies": [
@@ -62,7 +71,7 @@
         "npm:@opentelemetry/api",
         "npm:@opentelemetry/semantic-conventions",
         "npm:byte-encodings",
-        "npm:es-toolkit",
+        "npm:es-toolkit@^1.43.0",
         "npm:json-canon",
         "npm:structured-field-values",
         "npm:uri-template-router",
@@ -90,7 +99,7 @@
         "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.0.5",
         "npm:@opentelemetry/api",
-        "npm:es-toolkit"
+        "npm:es-toolkit@^1.43.0"
       ]
     },
     "@fedify/vocab-runtime@2.1.0": {
@@ -119,6 +128,9 @@
     "@hono/hono@4.11.1": {
       "integrity": "28bb28c7322a1379e7132af05ef76aef09f86bb8cdd7077c67e004dea288ac0d"
     },
+    "@hono/hono@4.12.9": {
+      "integrity": "53c2b0a721c1d782e6a347ad5bf15a3235ff624b98859c21f779b7ee2f5e040e"
+    },
     "@logtape/logtape@1.3.7": {
       "integrity": "d9dc1f8c7e2e1e4e3998006ea84eaf4054e40ad39325b056b3f517c013286bed"
     },
@@ -127,6 +139,13 @@
     },
     "@std/fs@1.0.21": {
       "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
+      "dependencies": [
+        "jsr:@std/internal",
+        "jsr:@std/path@^1.1.4"
+      ]
+    },
+    "@std/fs@1.0.23": {
+      "integrity": "3ecbae4ce4fee03b180fa710caff36bb5adb66631c46a6460aaad49515565a37",
       "dependencies": [
         "jsr:@std/internal",
         "jsr:@std/path@^1.1.4"

@@ -25,6 +25,11 @@ bot.onMention = async (session, message) => {
 Every event handler receives a [session](./session.md) object as the first
 argument, and the event-specific object as the second argument.
 
+BotKit invokes these event handlers only for activities whose signatures were
+verified by Fedify.  As of Fedify 2.1.0, BotKit also acknowledges certain
+unverified remote `Delete` activities from actors whose keys now return
+`410 Gone`, but those activities are not dispatched to `on*` handlers.
+
 The following is a list of events that BotKit supports:
 
 

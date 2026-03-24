@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import type { UnverifiedActivityReason } from "@fedify/fedify";
 import { type InboxContext, MemoryKvStore } from "@fedify/fedify/federation";
 import {
   Accept,
@@ -22,6 +23,7 @@ import {
   Article,
   Collection,
   Create,
+  Delete,
   Emoji,
   EmojiReact,
   Follow,
@@ -1203,6 +1205,78 @@ test("BotImpl.dispatchSharedKey()", () => {
   });
   const ctx = bot.federation.createContext(new URL("https://example.com"));
   assert.deepStrictEqual(bot.dispatchSharedKey(ctx), { identifier });
+});
+
+test("BotImpl.onUnverifiedActivity()", async (t) => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+  });
+  const ctx = bot.federation.createContext(
+    new Request("https://example.com/ap/inbox", { method: "POST" }),
+    undefined,
+  );
+  const deleteActivity = new Delete({
+    id: new URL("https://remote.example/activities/delete"),
+    actor: new URL("https://remote.example/actors/deleted"),
+    object: new URL("https://remote.example/actors/deleted"),
+  });
+  const createActivity = new Create({
+    id: new URL("https://remote.example/activities/create"),
+    actor: new URL("https://remote.example/actors/deleted"),
+    object: new Note({
+      id: new URL("https://remote.example/notes/1"),
+      attribution: new URL("https://remote.example/actors/deleted"),
+      content: "Hello, world!",
+    }),
+  });
+  const keyFetch410: UnverifiedActivityReason = {
+    type: "keyFetchError",
+    keyId: new URL("https://remote.example/actors/deleted#main-key"),
+    result: {
+      status: 410,
+      response: new Response(null, { status: 410 }),
+    },
+  };
+
+  await t.test("acknowledges gone actor deletes", () => {
+    const response = bot.onUnverifiedActivity(ctx, deleteActivity, keyFetch410);
+    assert.ok(response instanceof Response);
+    assert.deepStrictEqual(response.status, 202);
+  });
+
+  await t.test("ignores non-410 key fetch failures", () => {
+    const reason: UnverifiedActivityReason = {
+      ...keyFetch410,
+      result: {
+        status: 404,
+        response: new Response(null, { status: 404 }),
+      },
+    };
+    const response = bot.onUnverifiedActivity(ctx, deleteActivity, reason);
+    assert.deepStrictEqual(response, undefined);
+  });
+
+  await t.test("ignores non-delete activities", () => {
+    const response = bot.onUnverifiedActivity(ctx, createActivity, keyFetch410);
+    assert.deepStrictEqual(response, undefined);
+  });
+
+  await t.test("ignores other verification failures", () => {
+    const noSignature: UnverifiedActivityReason = { type: "noSignature" };
+    const invalidSignature: UnverifiedActivityReason = {
+      type: "invalidSignature",
+      keyId: new URL("https://remote.example/actors/deleted#main-key"),
+    };
+    assert.deepStrictEqual(
+      bot.onUnverifiedActivity(ctx, deleteActivity, noSignature),
+      undefined,
+    );
+    assert.deepStrictEqual(
+      bot.onUnverifiedActivity(ctx, deleteActivity, invalidSignature),
+      undefined,
+    );
+  });
 });
 
 for (const policy of ["accept", "reject", "manual"] as const) {

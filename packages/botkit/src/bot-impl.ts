@@ -23,6 +23,7 @@ import {
   type PageItems,
   type RequestContext,
   type Software,
+  type UnverifiedActivityReason,
 } from "@fedify/fedify";
 import {
   Accept,
@@ -33,6 +34,7 @@ import {
   Article,
   ChatMessage,
   Create,
+  Delete,
   Emoji as APEmoji,
   EmojiReact,
   Endpoints,
@@ -236,6 +238,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     );
     this.federation
       .setInboxListeners("/ap/actor/{identifier}/inbox", "/ap/inbox")
+      .onUnverifiedActivity(this.onUnverifiedActivity.bind(this))
       .on(Follow, this.onFollowed.bind(this))
       .on(Undo, async (ctx, undo) => {
         const object = await undo.getObject(ctx);
@@ -550,6 +553,21 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
 
   dispatchSharedKey(_ctx: Context<TContextData>): { identifier: string } {
     return { identifier: this.identifier };
+  }
+
+  onUnverifiedActivity(
+    _ctx: RequestContext<TContextData>,
+    activity: Activity,
+    reason: UnverifiedActivityReason,
+  ): Response | void {
+    if (
+      activity instanceof Delete &&
+      reason.type === "keyFetchError" &&
+      "status" in reason.result &&
+      reason.result.status === 410
+    ) {
+      return new Response(null, { status: 202 });
+    }
   }
 
   async onFollowed(
