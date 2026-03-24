@@ -6,7 +6,7 @@
     ".": "./src/mod.ts"
   },
   "imports": {
-    "@fedify/vocab": "jsr:@fedify/vocab@^2.0.3"
+    "@fedify/vocab": "jsr:@fedify/vocab@^2.1.0"
   },
   "exclude": [
     "dist",
