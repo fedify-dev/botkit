@@ -1,6 +1,6 @@
 {
   "name": "@fedify/botkit-postgres",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "PostgreSQL-based repository for BotKit",
   "license": "AGPL-3.0-only",
   "author": {
