@@ -163,26 +163,26 @@ importers:
   packages/botkit-postgres:
     dependencies:
       '@fedify/botkit':
-        specifier: 'workspace:'
+        specifier: ^0.4.0
         version: link:../botkit
       '@fedify/fedify':
-        specifier: 'catalog:'
+        specifier: ^2.1.2
         version: 2.1.2
       '@fedify/vocab':
-        specifier: 'catalog:'
+        specifier: ^2.1.2
         version: 2.1.2
       '@js-temporal/polyfill':
-        specifier: 'catalog:'
+        specifier: ^0.5.1
         version: 0.5.1
       '@logtape/logtape':
-        specifier: 'catalog:'
+        specifier: ^1.3.5
         version: 1.3.5
       postgres:
         specifier: ^3.4.8
         version: 3.4.8
     devDependencies:
       tsdown:
-        specifier: 'catalog:'
+        specifier: ^0.12.8
         version: 0.12.8(typescript@5.8.3)
 
   packages/botkit-sqlite:
