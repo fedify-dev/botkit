@@ -34,6 +34,7 @@ import postgres from "postgres";
 
 const logger = getLogger(["botkit", "postgres"]);
 const schemaNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const followRequestAdvisoryLockNamespace = 0x4254;
 
 type Queryable = Pick<postgres.Sql, "unsafe">;
 type QueryParameter = postgres.SerializableParameter;
@@ -463,6 +464,7 @@ export class PostgresRepository implements Repository, AsyncDisposable {
     const followerId = follower.id;
     const followerJson = await follower.toJsonLd({ format: "compact" });
     await this.sql.begin(async (sql) => {
+      await this.lockFollowRequest(sql, followId);
       const rows = await this.query<{ readonly follower_id: string }>(
         sql,
         `SELECT follower_id
@@ -719,6 +721,20 @@ export class PostgresRepository implements Repository, AsyncDisposable {
 
   private table(name: string): string {
     return `"${this.schema}"."${name}"`;
+  }
+
+  private async lockFollowRequest(
+    sql: Queryable,
+    followId: URL,
+  ): Promise<void> {
+    await this.query(
+      sql,
+      `SELECT pg_catalog.pg_advisory_xact_lock($1, pg_catalog.hashtext($2))`,
+      [
+        followRequestAdvisoryLockNamespace,
+        `${this.schema}:${followId.href}`,
+      ],
+    );
   }
 
   private async ensureReady(): Promise<void> {

@@ -244,6 +244,109 @@ if (postgresUrl == null) {
       }
     });
 
+    test("does not leak stale followers during concurrent assignment", async () => {
+      const schema = createSchemaName();
+      const adminSql = createSql(postgresUrl);
+      const sqlA = createSql(postgresUrl);
+      const sqlB = createSql(postgresUrl);
+      const followId = new URL(
+        "https://example.com/ap/follow/eac8d54f-f843-49f4-94c1-485a22e07907",
+      );
+      const followerA = new Person({
+        id: new URL("https://example.com/ap/actor/concurrent-alice"),
+        preferredUsername: "concurrent-alice",
+      });
+      const followerB = new Person({
+        id: new URL("https://example.com/ap/actor/concurrent-bob"),
+        preferredUsername: "concurrent-bob",
+      });
+      let arrivals = 0;
+      let releaseBarrier!: () => void;
+      const barrier = new Promise<void>((resolve) => {
+        releaseBarrier = resolve;
+      });
+      const barrierTimeout = 50;
+      const wrapSql = (sql: postgres.Sql): postgres.Sql =>
+        new Proxy(sql, {
+          get(target, property, receiver) {
+            if (property === "begin") {
+              return async (
+                callback: (transactionSql: postgres.TransactionSql) => unknown,
+              ) =>
+                await target.begin(async (transactionSql) =>
+                  await callback(
+                    new Proxy(transactionSql, {
+                      get(txTarget, txProperty, txReceiver) {
+                        if (txProperty === "unsafe") {
+                          return async <T extends object[]>(
+                            query: string,
+                            parameters?: postgres.ParameterOrJSON<never>[],
+                            options?: postgres.UnsafeQueryOptions,
+                          ): Promise<T> => {
+                            const result = await txTarget.unsafe<T>(
+                              query,
+                              parameters,
+                              options,
+                            );
+                            if (
+                              arrivals < 2 &&
+                              query.includes("SELECT follower_id") &&
+                              query.includes("FOR UPDATE") &&
+                              parameters?.[0] === followId.href
+                            ) {
+                              arrivals++;
+                              if (arrivals === 2) releaseBarrier();
+                              await Promise.race([
+                                barrier,
+                                new Promise<void>((resolve) =>
+                                  setTimeout(resolve, barrierTimeout)
+                                ),
+                              ]);
+                            }
+                            return result;
+                          };
+                        }
+                        return Reflect.get(txTarget, txProperty, txReceiver);
+                      },
+                    }),
+                  )
+                );
+            }
+            return Reflect.get(target, property, receiver);
+          },
+        });
+      try {
+        await initializePostgresRepositorySchema(adminSql, schema);
+        const repoA = new PostgresRepository({ sql: wrapSql(sqlA), schema });
+        const repoB = new PostgresRepository({ sql: wrapSql(sqlB), schema });
+
+        await Promise.all([
+          repoA.addFollower(followId, followerA),
+          repoB.addFollower(followId, followerB),
+        ]);
+
+        const followers = await Array.fromAsync(repoA.getFollowers());
+        assert.deepStrictEqual(await repoA.countFollowers(), 1);
+        assert.deepStrictEqual(followers.length, 1);
+        const remainingFollowerId = followers[0]?.id?.href;
+        assert.ok(
+          remainingFollowerId === followerA.id!.href ||
+            remainingFollowerId === followerB.id!.href,
+        );
+        assert.deepStrictEqual(
+          await repoA.hasFollower(followerA.id!),
+          remainingFollowerId === followerA.id!.href,
+        );
+        assert.deepStrictEqual(
+          await repoA.hasFollower(followerB.id!),
+          remainingFollowerId === followerB.id!.href,
+        );
+      } finally {
+        await adminSql.unsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+        await Promise.all([sqlA.end(), sqlB.end(), adminSql.end()]);
+      }
+    });
+
     test("repository operations and persistence", async () => {
       const harness = createHarness();
       try {

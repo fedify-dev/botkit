@@ -64,6 +64,8 @@ To be released.
  -  Added `initializePostgresRepositorySchema()` helper.  [[#11]]
  -  Fixed stale follower cleanup when a follow request is reassigned to a
     different actor.  [[#11]]
+ -  Fixed concurrent follower assignment so stale followers are not left
+    behind when multiple workers race on the same follow request.  [[#11]]
 
 [#11]: https://github.com/fedify-dev/botkit/issues/11
 
