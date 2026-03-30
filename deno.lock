@@ -45,6 +45,7 @@
     "npm:markdown-it@^14.1.0": "14.1.0",
     "npm:mime-db@^1.54.0": "1.54.0",
     "npm:pkijs@^3.2.5": "3.4.0",
+    "npm:postgres@^3.4.8": "3.4.8",
     "npm:structured-field-values@^2.0.4": "2.0.4",
     "npm:tsdown@~0.12.8": "0.12.9_rolldown@1.0.0-beta.55",
     "npm:uri-template-router@1": "1.0.0",
@@ -622,6 +623,9 @@
         "tslib"
       ]
     },
+    "postgres@3.4.8": {
+      "integrity": "sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg=="
+    },
     "punycode.js@2.3.1": {
       "integrity": "sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA=="
     },
@@ -811,6 +815,17 @@
             "npm:url-template@^3.1.1",
             "npm:uuid@^11.1.0",
             "npm:xss@^1.0.15"
+          ]
+        }
+      },
+      "packages/botkit-postgres": {
+        "dependencies": [
+          "jsr:@fedify/vocab@^2.1.2",
+          "npm:postgres@^3.4.8"
+        ],
+        "packageJson": {
+          "dependencies": [
+            "npm:postgres@^3.4.8"
           ]
         }
       },

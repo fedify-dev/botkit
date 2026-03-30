@@ -135,6 +135,85 @@ properties:
 [`node:sqlite`]: https://nodejs.org/api/sqlite.html
 
 
+`PostgresRepository`
+--------------------
+
+*This API is available since BotKit 0.4.0.*
+
+The `PostgresRepository` is a repository that stores data in PostgreSQL using
+the [Postgres.js] driver.  It is suited for deployments where multiple bot
+processes need to share the same persistent repository state, or where you
+already operate PostgreSQL for other infrastructure.
+
+Unlike [`KvRepository`](#kvrepository), `PostgresRepository` stores BotKit data
+in ordinary PostgreSQL tables rather than a key-value abstraction.  It creates
+tables inside a dedicated PostgreSQL schema, uses transactions for multi-step
+updates, and supports either an internally owned connection pool or an injected
+Postgres.js client.
+
+In order to use `PostgresRepository`, you need to install the
+*@fedify/botkit-postgres* package:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/botkit-postgres
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/botkit-postgres
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/botkit-postgres
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/botkit-postgres
+~~~~
+
+:::
+
+The `PostgresRepository` constructor accepts an options object with the
+following properties:
+
+`sql`
+:   An existing [Postgres.js] client.  When this is provided, the repository
+    does not own the client and calling `close()` will not shut it down.
+
+`url`
+:   A PostgreSQL connection string used to create an internal connection pool.
+    Exactly one of `sql` and `url` must be provided.
+
+`schema` (optional)
+:   The PostgreSQL schema used for BotKit tables.  Defaults to `"botkit"`.
+
+`maxConnections` (optional)
+:   The maximum number of connections for the internally created pool.  This
+    option is only valid when `url` is used.
+
+`prepare` (optional)
+:   Whether to use prepared statements for repository queries.  Defaults to
+    `true`.
+
+These options are mutually exclusive: use either `sql` or `url`.  The
+`maxConnections` option is only meaningful together with `url`.
+
+The repository initializes its tables and indexes automatically.  If you want
+to provision them before creating the repository, use the exported
+`initializePostgresRepositorySchema()` helper:
+
+~~~~ typescript
+import postgres from "postgres";
+import { initializePostgresRepositorySchema } from "@fedify/botkit-postgres";
+
+const sql = postgres("postgresql://localhost/botkit");
+await initializePostgresRepositorySchema(sql, "botkit");
+~~~~
+
+[Postgres.js]: https://github.com/porsager/postgres
+
+
 `MemoryRepository`
 ------------------
 

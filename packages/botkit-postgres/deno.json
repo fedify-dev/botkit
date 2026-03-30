@@ -1,0 +1,36 @@
+{
+  "name": "@fedify/botkit-postgres",
+  "version": "0.4.0",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/mod.ts"
+  },
+  "imports": {
+    "@fedify/vocab": "jsr:@fedify/vocab@^2.1.2",
+    "postgres": "npm:postgres@^3.4.8"
+  },
+  "exclude": [
+    "dist",
+    "junit.xml",
+    "package.json"
+  ],
+  "fmt": {
+    "exclude": [
+      "*.md",
+      "*.yaml",
+      "*.yml"
+    ]
+  },
+  "tasks": {
+    "test": "deno test --allow-env --allow-net=localhost,127.0.0.1 --parallel",
+    "test:node": "pnpm install && pnpm test",
+    "test-all": {
+      "dependencies": [
+        "check",
+        "test",
+        "test:node"
+      ]
+    },
+    "coverage": "deno task test --coverage --clean && deno coverage --html"
+  }
+}
