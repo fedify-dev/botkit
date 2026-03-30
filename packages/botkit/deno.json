@@ -16,8 +16,8 @@
     "./text": "./src/text.ts"
   },
   "imports": {
-    "@fedify/vocab": "jsr:@fedify/vocab@^2.1.0",
-    "@fedify/vocab-runtime": "jsr:@fedify/vocab-runtime@^2.1.0",
+    "@fedify/vocab": "jsr:@fedify/vocab@^2.1.2",
+    "@fedify/vocab-runtime": "jsr:@fedify/vocab-runtime@^2.1.2",
     "@fedify/markdown-it-hashtag": "jsr:@fedify/markdown-it-hashtag@^0.3.0",
     "@fedify/markdown-it-mention": "jsr:@fedify/markdown-it-mention@^0.3.0",
     "html-entities": "npm:html-entities@^2.6.0",

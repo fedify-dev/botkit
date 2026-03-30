@@ -8,7 +8,7 @@ To be released.
 
 ### @fedify/botkit
 
- -  Upgraded Fedify to 2.1.0.
+ -  Upgraded Fedify to 2.1.2.
 
      -  BotKit now targets Fedify 2.0's modular package layout, using
         *@fedify/vocab*, *@fedify/vocab-runtime*, and *@fedify/denokv*
