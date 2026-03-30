@@ -183,6 +183,14 @@ if (postgresUrl == null) {
     test("rejects invalid constructor option combinations", async () => {
       const sql = createSql(postgresUrl);
       try {
+        await assert.doesNotReject(
+          async () =>
+            await Reflect.construct(PostgresRepository, [{
+              sql,
+              url: undefined,
+              maxConnections: undefined,
+            }]).countMessages(),
+        );
         await assert.rejects(
           async () =>
             await Reflect.construct(PostgresRepository, [{

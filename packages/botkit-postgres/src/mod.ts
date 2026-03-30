@@ -244,7 +244,7 @@ export class PostgresRepository implements Repository, AsyncDisposable {
     this.schema = validateSchemaName(options.schema ?? "botkit");
     this.prepare = options.prepare ?? true;
     if ("sql" in options) {
-      if ("url" in options || "maxConnections" in options) {
+      if (options.url != null || options.maxConnections != null) {
         throw new TypeError(
           "PostgresRepositoryOptions.sql cannot be combined with PostgresRepositoryOptions.url or PostgresRepositoryOptions.maxConnections.",
         );
