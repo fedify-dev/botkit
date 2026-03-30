@@ -137,6 +137,49 @@ if (postgresUrl == null) {
       }
     });
 
+    test("honors prepare=false during schema initialization", async () => {
+      const prepares: boolean[] = [];
+      const sql = createSql(postgresUrl);
+      const helperSchema = createSchemaName();
+      const repositorySchema = createSchemaName();
+      const wrappedSql = new Proxy(sql, {
+        get(target, property, receiver) {
+          if (property === "unsafe") {
+            return (
+              query: string,
+              parameters?: postgres.ParameterOrJSON<never>[],
+              options?: postgres.UnsafeQueryOptions,
+            ) => {
+              prepares.push(options?.prepare ?? true);
+              return target.unsafe(query, parameters, options);
+            };
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      });
+      try {
+        await initializePostgresRepositorySchema(
+          wrappedSql,
+          helperSchema,
+          false,
+        );
+
+        const repo = new PostgresRepository({
+          sql: wrappedSql,
+          schema: repositorySchema,
+          prepare: false,
+        });
+        await repo.countMessages();
+
+        assert.ok(prepares.length > 0);
+        assert.ok(prepares.every((prepare) => !prepare));
+      } finally {
+        await sql.unsafe(`DROP SCHEMA IF EXISTS "${helperSchema}" CASCADE`);
+        await sql.unsafe(`DROP SCHEMA IF EXISTS "${repositorySchema}" CASCADE`);
+        await sql.end();
+      }
+    });
+
     test("rejects invalid constructor option combinations", async () => {
       const sql = createSql(postgresUrl);
       try {

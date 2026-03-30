@@ -211,6 +211,9 @@ const sql = postgres("postgresql://localhost/botkit");
 await initializePostgresRepositorySchema(sql, "botkit");
 ~~~~
 
+If you disable prepared statements for PgBouncer-style deployments, pass
+`false` as the third argument so schema initialization uses the same setting.
+
 [Postgres.js]: https://github.com/porsager/postgres
 
 

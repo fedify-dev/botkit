@@ -107,6 +107,9 @@ const sql = postgres("postgresql://localhost/botkit");
 await initializePostgresRepositorySchema(sql, "botkit");
 ~~~~
 
+If you disable prepared statements, pass `false` as the third argument so
+schema initialization uses the same setting.
+
 
 Features
 --------

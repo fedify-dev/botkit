@@ -112,16 +112,20 @@ export type PostgresRepositoryOptions =
  * Initializes the PostgreSQL schema used by BotKit repositories.
  * @param sql The PostgreSQL client to initialize the schema with.
  * @param schema The PostgreSQL schema name to initialize.
+ * @param prepare Whether to use prepared statements for schema queries.
  * @since 0.4.0
  */
 export async function initializePostgresRepositorySchema(
-  sql: postgres.Sql,
+  sql: Queryable,
   schema = "botkit",
+  prepare = true,
 ): Promise<void> {
   const validatedSchema = validateSchemaName(schema);
   await execute(
     sql,
     `CREATE SCHEMA IF NOT EXISTS "${validatedSchema}"`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -130,6 +134,8 @@ export async function initializePostgresRepositorySchema(
        private_key_jwk JSONB NOT NULL,
        public_key_jwk JSONB NOT NULL
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -138,11 +144,15 @@ export async function initializePostgresRepositorySchema(
        activity_json JSONB NOT NULL,
        published BIGINT
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
     `CREATE INDEX IF NOT EXISTS "idx_messages_published"
        ON "${validatedSchema}"."messages" (published, id)`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -150,6 +160,8 @@ export async function initializePostgresRepositorySchema(
        follower_id TEXT PRIMARY KEY,
        actor_json JSONB NOT NULL
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -159,11 +171,15 @@ export async function initializePostgresRepositorySchema(
          REFERENCES "${validatedSchema}"."followers" (follower_id)
          ON DELETE CASCADE
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
     `CREATE INDEX IF NOT EXISTS "idx_follow_requests_follower"
        ON "${validatedSchema}"."follow_requests" (follower_id)`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -171,6 +187,8 @@ export async function initializePostgresRepositorySchema(
        id TEXT PRIMARY KEY,
        follow_json JSONB NOT NULL
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -178,6 +196,8 @@ export async function initializePostgresRepositorySchema(
        followee_id TEXT PRIMARY KEY,
        follow_json JSONB NOT NULL
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
@@ -187,11 +207,15 @@ export async function initializePostgresRepositorySchema(
        option TEXT NOT NULL,
        PRIMARY KEY (message_id, voter_id, option)
      )`,
+    [],
+    prepare,
   );
   await execute(
     sql,
     `CREATE INDEX IF NOT EXISTS "idx_poll_votes_message_option"
        ON "${validatedSchema}"."poll_votes" (message_id, option)`,
+    [],
+    prepare,
   );
 }
 
@@ -233,7 +257,11 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         prepare: this.prepare,
       });
     }
-    const ready = initializePostgresRepositorySchema(this.sql, this.schema);
+    const ready = initializePostgresRepositorySchema(
+      this.sql,
+      this.schema,
+      this.prepare,
+    );
     // Avoid unhandled rejection warnings before a repository method awaits it.
     ready.catch(() => {});
     this.ready = ready;
