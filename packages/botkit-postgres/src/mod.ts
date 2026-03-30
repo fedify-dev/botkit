@@ -463,6 +463,15 @@ export class PostgresRepository implements Repository, AsyncDisposable {
     const followerId = follower.id;
     const followerJson = await follower.toJsonLd({ format: "compact" });
     await this.sql.begin(async (sql) => {
+      const rows = await this.query<{ readonly follower_id: string }>(
+        sql,
+        `SELECT follower_id
+           FROM ${this.table("follow_requests")}
+          WHERE follow_request_id = $1
+          FOR UPDATE`,
+        [followId.href],
+      );
+      const previousFollowerId = rows[0]?.follower_id;
       await this.query(
         sql,
         `INSERT INTO ${this.table("followers")} (follower_id, actor_json)
@@ -481,6 +490,21 @@ export class PostgresRepository implements Repository, AsyncDisposable {
          DO UPDATE SET follower_id = EXCLUDED.follower_id`,
         [followId.href, followerId.href],
       );
+      if (
+        previousFollowerId != null && previousFollowerId !== followerId.href
+      ) {
+        await this.query(
+          sql,
+          `DELETE FROM ${this.table("followers")}
+            WHERE follower_id = $1
+              AND NOT EXISTS (
+                SELECT 1
+                  FROM ${this.table("follow_requests")}
+                 WHERE follower_id = $1
+              )`,
+          [previousFollowerId],
+        );
+      }
     });
   }
 

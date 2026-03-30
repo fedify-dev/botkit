@@ -7,6 +7,7 @@
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
     "jsr:@fedify/vocab-runtime@^2.1.2": "2.1.2",
+    "jsr:@fedify/vocab@2.1.2": "2.1.2",
     "jsr:@fedify/vocab@^2.1.2": "2.1.2",
     "jsr:@fedify/webfinger@^2.1.2": "2.1.2",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
@@ -65,8 +66,8 @@
       "integrity": "27ee6b24286b7cf60a696a0ba115b2c17590d9ccee9ccbff23be8d1b22c399f1",
       "dependencies": [
         "jsr:@fedify/fedify@^2.1.2",
-        "jsr:@fedify/vocab",
         "jsr:@fedify/vocab-runtime",
+        "jsr:@fedify/vocab@^2.1.2",
         "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.0.5",
         "npm:@opentelemetry/api",

@@ -62,6 +62,8 @@ To be released.
     repository for BotKit.  [[#11]]
  -  Added `PostgresRepositoryOptions` interface.  [[#11]]
  -  Added `initializePostgresRepositorySchema()` helper.  [[#11]]
+ -  Fixed stale follower cleanup when a follow request is reassigned to a
+    different actor.  [[#11]]
 
 [#11]: https://github.com/fedify-dev/botkit/issues/11
 

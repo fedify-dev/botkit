@@ -417,6 +417,21 @@ if (postgresUrl == null) {
         assert.deepStrictEqual(await repo.countFollowers(), 1);
         assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
 
+        await repo.addFollower(followA, followerA);
+        assert.deepStrictEqual(await repo.countFollowers(), 2);
+        await repo.addFollower(followA, followerB);
+        assert.deepStrictEqual(await repo.countFollowers(), 1);
+        assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
+        assert.ok(await repo.hasFollower(followerB.id!));
+        assert.deepStrictEqual(
+          await Promise.all(
+            (await Array.fromAsync(repo.getFollowers())).map((follower) =>
+              follower.toJsonLd()
+            ),
+          ),
+          [await followerB.toJsonLd()],
+        );
+
         const sentFollow = new Follow({
           id: new URL(
             "https://example.com/ap/follow/03a395a2-353a-4894-afdb-2cab31a7b004",
