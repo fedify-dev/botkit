@@ -38,6 +38,9 @@ importers:
       '@fedify/botkit':
         specifier: 'workspace:'
         version: link:../packages/botkit
+      '@fedify/botkit-postgres':
+        specifier: 'workspace:'
+        version: link:../packages/botkit-postgres
       '@fedify/botkit-sqlite':
         specifier: 'workspace:'
         version: link:../packages/botkit-sqlite
@@ -155,6 +158,31 @@ importers:
     devDependencies:
       tsdown:
         specifier: 'catalog:'
+        version: 0.12.8(typescript@5.8.3)
+
+  packages/botkit-postgres:
+    dependencies:
+      '@fedify/botkit':
+        specifier: ^0.4.0
+        version: link:../botkit
+      '@fedify/fedify':
+        specifier: ^2.1.2
+        version: 2.1.2
+      '@fedify/vocab':
+        specifier: ^2.1.2
+        version: 2.1.2
+      '@js-temporal/polyfill':
+        specifier: ^0.5.1
+        version: 0.5.1
+      '@logtape/logtape':
+        specifier: ^1.3.5
+        version: 1.3.5
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+    devDependencies:
+      tsdown:
+        specifier: ^0.12.8
         version: 0.12.8(typescript@5.8.3)
 
   packages/botkit-sqlite:
@@ -1687,6 +1715,10 @@ packages:
 
   postgres@3.4.7:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
+    engines: {node: '>=12'}
+
+  postgres@3.4.8:
+    resolution: {integrity: sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg==}
     engines: {node: '>=12'}
 
   property-information@7.1.0:
@@ -3713,6 +3745,8 @@ snapshots:
       source-map-js: 1.2.1
 
   postgres@3.4.7: {}
+
+  postgres@3.4.8: {}
 
   property-information@7.1.0: {}
 

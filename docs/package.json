@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@fedify/botkit": "workspace:",
+    "@fedify/botkit-postgres": "workspace:",
     "@fedify/botkit-sqlite": "workspace:",
     "@fedify/denokv": "jsr:@fedify/denokv@^2.1.2",
     "@fedify/fedify": "catalog:",

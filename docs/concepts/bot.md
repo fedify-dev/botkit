@@ -97,6 +97,12 @@ the key–value store specified in the [`kv`](#createbotoptions-kv) option.
 
 For more information, see the [*Repository* section](./repository.md).
 
+If you want to use a SQL-backed repository directly instead of
+[`KvRepository`](./repository.md#kvrepository), BotKit also provides concrete
+repository packages such as
+[`SqliteRepository`](./repository.md#sqliterepository) and
+[`PostgresRepository`](./repository.md#postgresrepository).
+
 ### `~CreateBotOptions.identifier`
 
 The internal identifier of the bot actor.  It is used for the URI of the bot

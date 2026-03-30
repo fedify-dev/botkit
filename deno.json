@@ -35,7 +35,7 @@
     "check-versions": "deno run --allow-read --allow-write scripts/check_versions.ts",
     "fmt": "deno fmt && deno task hongdown --write",
     "install": "deno cache packages/*/src/*.ts && pnpm install",
-    "test": "deno test --allow-read --allow-write --allow-env --allow-net=hollo.social --parallel",
+    "test": "deno test --allow-read --allow-write --allow-env --allow-net=hollo.social,localhost,127.0.0.1 --parallel",
     "test:node": "pnpm install && pnpm run -r test",
     "test-all": {
       "dependencies": ["check", "test", "test:node"]

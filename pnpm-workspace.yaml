@@ -2,6 +2,8 @@ packages:
 - packages/*
 - docs
 
+linkWorkspacePackages: true
+
 catalog:
   "@fedify/denokv": 2.1.2
   "@fedify/fedify": 2.1.2

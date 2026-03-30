@@ -56,6 +56,15 @@ To be released.
 [#14]: https://github.com/fedify-dev/botkit/pull/14
 [#18]: https://github.com/fedify-dev/botkit/issues/18
 
+### @fedify/botkit-postgres
+
+ -  Added a new PostgreSQL repository package, *`@fedify/botkit-postgres`*,
+    which provides `PostgresRepository`, `PostgresRepositoryOptions`, and
+    `initializePostgresRepositorySchema()`.  [[#11], [#19]]
+
+[#11]: https://github.com/fedify-dev/botkit/issues/11
+[#19]: https://github.com/fedify-dev/botkit/pull/19
+
 
 Version 0.3.1
 -------------
