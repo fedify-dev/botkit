@@ -1,5 +1,5 @@
 // BotKit by Fedify: A framework for creating ActivityPub bots
-// Copyright (C) 2025 Hong Minhee <https://hongminhee.org/>
+// Copyright (C) 2025–2026 Hong Minhee <https://hongminhee.org/>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
