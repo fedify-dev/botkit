@@ -516,6 +516,7 @@ export class PostgresRepository implements Repository, AsyncDisposable {
   ): Promise<Actor | undefined> {
     await this.ensureReady();
     return await this.sql.begin(async (sql) => {
+      await this.lockFollowRequest(sql, followId);
       const rows = await this.query<{ readonly actor_json: unknown }>(
         sql,
         `SELECT f.actor_json

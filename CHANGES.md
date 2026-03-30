@@ -66,6 +66,8 @@ To be released.
     different actor.  [[#11]]
  -  Fixed concurrent follower assignment so stale followers are not left
     behind when multiple workers race on the same follow request.  [[#11]]
+ -  Fixed concurrent unfollows so `Undo(Follow)` waits for in-flight follow
+    assignments on the same follow request.  [[#11]]
 
 [#11]: https://github.com/fedify-dev/botkit/issues/11
 

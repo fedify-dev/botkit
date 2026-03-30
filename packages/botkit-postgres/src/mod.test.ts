@@ -347,6 +347,93 @@ if (postgresUrl == null) {
       }
     });
 
+    test("serializes follower removal with concurrent adds", async () => {
+      const schema = createSchemaName();
+      const adminSql = createSql(postgresUrl);
+      const sqlA = createSql(postgresUrl);
+      const sqlB = createSql(postgresUrl);
+      const followId = new URL(
+        "https://example.com/ap/follow/55db42c7-8a99-4c40-98c1-4684d7d0c758",
+      );
+      const follower = new Person({
+        id: new URL("https://example.com/ap/actor/concurrent-charlie"),
+        preferredUsername: "concurrent-charlie",
+      });
+      let releaseBarrier!: () => void;
+      let resolveLockAcquired!: () => void;
+      const barrier = new Promise<void>((resolve) => {
+        releaseBarrier = resolve;
+      });
+      const lockAcquired = new Promise<void>((resolve) => {
+        resolveLockAcquired = resolve;
+      });
+      const wrappedSql = new Proxy(sqlA, {
+        get(target, property, receiver) {
+          if (property === "begin") {
+            return async (
+              callback: (transactionSql: postgres.TransactionSql) => unknown,
+            ) =>
+              await target.begin(async (transactionSql) =>
+                await callback(
+                  new Proxy(transactionSql, {
+                    get(txTarget, txProperty, txReceiver) {
+                      if (txProperty === "unsafe") {
+                        return async <T extends object[]>(
+                          query: string,
+                          parameters?: postgres.ParameterOrJSON<never>[],
+                          options?: postgres.UnsafeQueryOptions,
+                        ): Promise<T> => {
+                          const result = await txTarget.unsafe<T>(
+                            query,
+                            parameters,
+                            options,
+                          );
+                          if (
+                            query.includes("pg_advisory_xact_lock") &&
+                            parameters?.[1] === `${schema}:${followId.href}`
+                          ) {
+                            resolveLockAcquired();
+                            await barrier;
+                          }
+                          return result;
+                        };
+                      }
+                      return Reflect.get(txTarget, txProperty, txReceiver);
+                    },
+                  }),
+                )
+              );
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      });
+      try {
+        await initializePostgresRepositorySchema(adminSql, schema);
+        const repoA = new PostgresRepository({ sql: wrappedSql, schema });
+        const repoB = new PostgresRepository({ sql: sqlB, schema });
+
+        const addPromise = repoA.addFollower(followId, follower);
+        await lockAcquired;
+        const removePromise = repoB.removeFollower(followId, follower.id!);
+        await waitForMacrotask();
+        releaseBarrier();
+
+        const [, removedFollower] = await Promise.all([
+          addPromise,
+          removePromise,
+        ]);
+        assert.deepStrictEqual(
+          await removedFollower?.toJsonLd(),
+          await follower.toJsonLd(),
+        );
+        assert.deepStrictEqual(await repoA.countFollowers(), 0);
+        assert.deepStrictEqual(await repoA.hasFollower(follower.id!), false);
+      } finally {
+        await adminSql.unsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+        await Promise.all([sqlA.end(), sqlB.end(), adminSql.end()]);
+      }
+    });
+
     test("repository operations and persistence", async () => {
       const harness = createHarness();
       try {
