@@ -542,6 +542,168 @@ if (postgresUrl == null) {
       }
     });
 
+    test("does not drop valid followers during concurrent cleanup and add", async () => {
+      const schema = createSchemaName();
+      const adminSql = createSql(postgresUrl);
+      const sqlA = createSql(postgresUrl);
+      const sqlB = createSql(postgresUrl);
+      const oldFollower = new Person({
+        id: new URL("https://example.com/ap/actor/concurrent-grace"),
+        preferredUsername: "concurrent-grace",
+      });
+      const reassignedFollower = new Person({
+        id: new URL("https://example.com/ap/actor/concurrent-harper"),
+        preferredUsername: "concurrent-harper",
+      });
+      const followA = new URL(
+        "https://example.com/ap/follow/ea47ae4b-8e5d-4f5f-b1c8-9d66d5d11d83",
+      );
+      const followB = new URL(
+        "https://example.com/ap/follow/8f65dab0-2a7e-4c6a-b53e-99f3e2521c0e",
+      );
+      let resolveCleanupReady!: () => void;
+      let resolveInsertedNewRequest!: () => void;
+      const cleanupReady = new Promise<void>((resolve) => {
+        resolveCleanupReady = resolve;
+      });
+      const insertedNewRequest = new Promise<void>((resolve) => {
+        resolveInsertedNewRequest = resolve;
+      });
+      const barrierTimeout = 50;
+      const wrapCleanupSql = (sql: postgres.Sql): postgres.Sql =>
+        new Proxy(sql, {
+          get(target, property, receiver) {
+            if (property === "begin") {
+              return async (
+                callback: (transactionSql: postgres.TransactionSql) => unknown,
+              ) =>
+                await target.begin(async (transactionSql) =>
+                  await callback(
+                    new Proxy(transactionSql, {
+                      get(txTarget, txProperty, txReceiver) {
+                        if (txProperty === "unsafe") {
+                          return async <T extends object[]>(
+                            query: string,
+                            parameters?: postgres.ParameterOrJSON<never>[],
+                            options?: postgres.UnsafeQueryOptions,
+                          ): Promise<T> => {
+                            if (
+                              query.includes(
+                                `DELETE FROM "${schema}"."followers"`,
+                              ) &&
+                              parameters?.[0] === oldFollower.id!.href
+                            ) {
+                              resolveCleanupReady();
+                              await Promise.race([
+                                insertedNewRequest,
+                                new Promise<void>((resolve) =>
+                                  setTimeout(resolve, barrierTimeout)
+                                ),
+                              ]);
+                            }
+                            return await txTarget.unsafe<T>(
+                              query,
+                              parameters,
+                              options,
+                            );
+                          };
+                        }
+                        return Reflect.get(txTarget, txProperty, txReceiver);
+                      },
+                    }),
+                  )
+                );
+            }
+            return Reflect.get(target, property, receiver);
+          },
+        });
+      const wrapAddSql = (sql: postgres.Sql): postgres.Sql =>
+        new Proxy(sql, {
+          get(target, property, receiver) {
+            if (property === "begin") {
+              return async (
+                callback: (transactionSql: postgres.TransactionSql) => unknown,
+              ) =>
+                await target.begin(async (transactionSql) =>
+                  await callback(
+                    new Proxy(transactionSql, {
+                      get(txTarget, txProperty, txReceiver) {
+                        if (txProperty === "unsafe") {
+                          return async <T extends object[]>(
+                            query: string,
+                            parameters?: postgres.ParameterOrJSON<never>[],
+                            options?: postgres.UnsafeQueryOptions,
+                          ): Promise<T> => {
+                            const result = await txTarget.unsafe<T>(
+                              query,
+                              parameters,
+                              options,
+                            );
+                            if (
+                              query.includes(
+                                `INSERT INTO "${schema}"."follow_requests"`,
+                              ) &&
+                              parameters?.[0] === followB.href &&
+                              parameters?.[1] === oldFollower.id!.href
+                            ) {
+                              resolveInsertedNewRequest();
+                              await new Promise<void>((resolve) =>
+                                setTimeout(resolve, barrierTimeout)
+                              );
+                            }
+                            return result;
+                          };
+                        }
+                        return Reflect.get(txTarget, txProperty, txReceiver);
+                      },
+                    }),
+                  )
+                );
+            }
+            return Reflect.get(target, property, receiver);
+          },
+        });
+      try {
+        await initializePostgresRepositorySchema(adminSql, schema);
+        const setupRepo = new PostgresRepository({ sql: adminSql, schema });
+        await setupRepo.addFollower(followA, oldFollower);
+
+        const repoA = new PostgresRepository({
+          sql: wrapCleanupSql(sqlA),
+          schema,
+        });
+        const repoB = new PostgresRepository({ sql: wrapAddSql(sqlB), schema });
+
+        const reassignPromise = repoA.addFollower(followA, reassignedFollower);
+        await cleanupReady;
+        const addPromise = repoB.addFollower(followB, oldFollower);
+        await Promise.all([reassignPromise, addPromise]);
+
+        const followers = await Promise.all(
+          (await Array.fromAsync(repoA.getFollowers())).map((follower) =>
+            follower.toJsonLd()
+          ),
+        );
+        assert.deepStrictEqual(await repoA.countFollowers(), 2);
+        assert.ok(await repoA.hasFollower(oldFollower.id!));
+        assert.ok(await repoA.hasFollower(reassignedFollower.id!));
+        assert.deepStrictEqual(followers, [
+          await oldFollower.toJsonLd(),
+          await reassignedFollower.toJsonLd(),
+        ]);
+        assert.deepStrictEqual(
+          await (await repoA.removeFollower(followB, oldFollower.id!))
+            ?.toJsonLd(),
+          await oldFollower.toJsonLd(),
+        );
+        assert.deepStrictEqual(await repoA.countFollowers(), 1);
+        assert.deepStrictEqual(await repoA.hasFollower(oldFollower.id!), false);
+      } finally {
+        await adminSql.unsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+        await Promise.all([sqlA.end(), sqlB.end(), adminSql.end()]);
+      }
+    });
+
     test("repository operations and persistence", async () => {
       const harness = createHarness();
       try {

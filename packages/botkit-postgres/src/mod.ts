@@ -483,6 +483,10 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         [followId.href],
       );
       const previousFollowerId = rows[0]?.follower_id;
+      await this.lockFollowers(sql, [
+        followerId.href,
+        ...(previousFollowerId == null ? [] : [previousFollowerId]),
+      ]);
       await this.query(
         sql,
         `INSERT INTO ${this.table("followers")} (follower_id, actor_json)
@@ -739,6 +743,16 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         `${this.schema}:${followerId}`,
       ],
     );
+  }
+
+  private async lockFollowers(
+    sql: Queryable,
+    followerIds: readonly string[],
+  ): Promise<void> {
+    const uniqueFollowerIds = [...new Set(followerIds)].sort();
+    for (const followerId of uniqueFollowerIds) {
+      await this.lockFollower(sql, followerId);
+    }
   }
 
   private async cleanupFollower(
