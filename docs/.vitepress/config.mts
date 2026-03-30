@@ -58,6 +58,10 @@ const references = {
   items: [
     { text: "@fedify/botkit", link: "https://jsr.io/@fedify/botkit/doc" },
     {
+      text: "@fedify/botkit-postgres",
+      link: "https://jsr.io/@fedify/botkit-postgres/doc",
+    },
+    {
       text: "@fedify/botkit-sqlite",
       link: "https://jsr.io/@fedify/botkit-sqlite/doc",
     },
@@ -168,7 +172,19 @@ export default defineConfig({
   ignoreDeadLinks: true,
 
   markdown: {
-    languages: ["js", "jsx", "ts", "tsx", "typescript", "bash", "sh", "shell", "json", "text", "html"],
+    languages: [
+      "js",
+      "jsx",
+      "ts",
+      "tsx",
+      "typescript",
+      "bash",
+      "sh",
+      "shell",
+      "json",
+      "text",
+      "html",
+    ],
     codeTransformers: [
       transformerTwoslash({
         twoslashOptions: {
