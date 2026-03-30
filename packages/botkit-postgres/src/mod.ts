@@ -20,6 +20,7 @@ import type {
   Uuid,
 } from "@fedify/botkit/repository";
 import { exportJwk, importJwk } from "@fedify/fedify/sig";
+import { Temporal, toTemporalInstant } from "@js-temporal/polyfill";
 import {
   Activity,
   type Actor,
@@ -31,6 +32,13 @@ import {
 } from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import postgres from "postgres";
+
+if (!("Temporal" in globalThis)) {
+  Reflect.set(globalThis, "Temporal", Temporal);
+}
+if (Date.prototype.toTemporalInstant == null) {
+  Reflect.set(Date.prototype, "toTemporalInstant", toTemporalInstant);
+}
 
 const logger = getLogger(["botkit", "postgres"]);
 const schemaNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
