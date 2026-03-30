@@ -233,7 +233,10 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         prepare: this.prepare,
       });
     }
-    this.ready = initializePostgresRepositorySchema(this.sql, this.schema);
+    const ready = initializePostgresRepositorySchema(this.sql, this.schema);
+    // Avoid unhandled rejection warnings before a repository method awaits it.
+    ready.catch(() => {});
+    this.ready = ready;
   }
 
   async [Symbol.asyncDispose](): Promise<void> {
@@ -481,7 +484,12 @@ export class PostgresRepository implements Repository, AsyncDisposable {
       await this.query(
         sql,
         `DELETE FROM ${this.table("followers")}
-          WHERE follower_id = $1`,
+          WHERE follower_id = $1
+            AND NOT EXISTS (
+              SELECT 1
+                FROM ${this.table("follow_requests")}
+               WHERE follower_id = $1
+            )`,
         [followerId.href],
       );
       return await parseActor(row.actor_json);

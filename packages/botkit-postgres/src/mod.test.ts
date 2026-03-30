@@ -77,6 +77,10 @@ function createSql(url: string) {
   return postgres(url, { max: 1, onnotice: () => {} });
 }
 
+function waitForMacrotask(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 function createHarness() {
   if (postgresUrl == null) throw new Error("POSTGRES_URL is not set.");
   const schema = createSchemaName();
@@ -149,6 +153,51 @@ if (postgresUrl == null) {
         );
       } finally {
         await sql.end();
+      }
+    });
+
+    test("does not emit unhandled rejections for schema initialization", async () => {
+      const error = new Error("Schema initialization failed.");
+      const sql = {
+        // deno-lint-ignore require-await
+        unsafe: async () => {
+          throw error;
+        },
+      };
+      let unhandledReason: unknown;
+      let detach: (() => void) | undefined;
+      if ("process" in globalThis) {
+        const handler = (reason: unknown) => {
+          unhandledReason = reason;
+        };
+        globalThis.process.once("unhandledRejection", handler);
+        detach = () => {
+          globalThis.process.off("unhandledRejection", handler);
+        };
+      } else {
+        const handler = (event: PromiseRejectionEvent) => {
+          unhandledReason = event.reason;
+          event.preventDefault();
+        };
+        addEventListener("unhandledrejection", handler);
+        detach = () => {
+          removeEventListener("unhandledrejection", handler);
+        };
+      }
+      try {
+        const repo = Reflect.construct(PostgresRepository, [{
+          sql,
+          schema: createSchemaName(),
+        }]) as PostgresRepository;
+        await waitForMacrotask();
+        await assert.rejects(
+          () => repo.countMessages(),
+          error,
+        );
+        await waitForMacrotask();
+        assert.deepStrictEqual(unhandledReason, undefined);
+      } finally {
+        detach?.();
       }
     });
 
@@ -303,6 +352,27 @@ if (postgresUrl == null) {
           await followerA.toJsonLd(),
         );
         assert.deepStrictEqual(await repo.countFollowers(), 1);
+
+        const followA2 = new URL(
+          "https://example.com/ap/follow/6eedf12f-32aa-4f1d-b6ca-d5bf34c4d149",
+        );
+        await repo.addFollower(followA, followerA);
+        await repo.addFollower(followA2, followerA);
+        assert.deepStrictEqual(await repo.countFollowers(), 2);
+        assert.ok(await repo.hasFollower(followerA.id!));
+        assert.deepStrictEqual(
+          await (await repo.removeFollower(followA, followerA.id!))?.toJsonLd(),
+          await followerA.toJsonLd(),
+        );
+        assert.ok(await repo.hasFollower(followerA.id!));
+        assert.deepStrictEqual(await repo.countFollowers(), 2);
+        assert.deepStrictEqual(
+          await (await repo.removeFollower(followA2, followerA.id!))
+            ?.toJsonLd(),
+          await followerA.toJsonLd(),
+        );
+        assert.deepStrictEqual(await repo.countFollowers(), 1);
+        assert.deepStrictEqual(await repo.hasFollower(followerA.id!), false);
 
         const sentFollow = new Follow({
           id: new URL(
