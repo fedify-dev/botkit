@@ -58,20 +58,12 @@ To be released.
 
 ### @fedify/botkit-postgres
 
- -  Added `PostgresRepository` class that implements a PostgreSQL-based
-    repository for BotKit.  [[#11]]
- -  Added `PostgresRepositoryOptions` interface.  [[#11]]
- -  Added `initializePostgresRepositorySchema()` helper.  [[#11]]
- -  Fixed stale follower cleanup when a follow request is reassigned to a
-    different actor.  [[#11]]
- -  Fixed concurrent follower assignment so stale followers are not left
-    behind when multiple workers race on the same follow request.  [[#11]]
- -  Fixed concurrent unfollows so `Undo(Follow)` waits for in-flight follow
-    assignments on the same follow request.  [[#11]]
- -  Fixed concurrent cleanup of stale follower rows when multiple follow
-    requests for the same actor are reassigned at the same time.  [[#11]]
+ -  Added a new PostgreSQL repository package, *`@fedify/botkit-postgres`*,
+    which provides `PostgresRepository`, `PostgresRepositoryOptions`, and
+    `initializePostgresRepositorySchema()`.  [[#11], [#19]]
 
 [#11]: https://github.com/fedify-dev/botkit/issues/11
+[#19]: https://github.com/fedify-dev/botkit/pull/19
 
 
 Version 0.3.1
