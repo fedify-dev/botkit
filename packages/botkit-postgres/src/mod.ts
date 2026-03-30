@@ -35,6 +35,7 @@ import postgres from "postgres";
 const logger = getLogger(["botkit", "postgres"]);
 const schemaNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const followRequestAdvisoryLockNamespace = 0x4254;
+const followerAdvisoryLockNamespace = 0x4246;
 
 type Queryable = Pick<postgres.Sql, "unsafe">;
 type QueryParameter = postgres.SerializableParameter;
@@ -495,17 +496,7 @@ export class PostgresRepository implements Repository, AsyncDisposable {
       if (
         previousFollowerId != null && previousFollowerId !== followerId.href
       ) {
-        await this.query(
-          sql,
-          `DELETE FROM ${this.table("followers")}
-            WHERE follower_id = $1
-              AND NOT EXISTS (
-                SELECT 1
-                  FROM ${this.table("follow_requests")}
-                 WHERE follower_id = $1
-              )`,
-          [previousFollowerId],
-        );
+        await this.cleanupFollower(sql, previousFollowerId);
       }
     });
   }
@@ -536,17 +527,7 @@ export class PostgresRepository implements Repository, AsyncDisposable {
           WHERE follow_request_id = $1`,
         [followId.href],
       );
-      await this.query(
-        sql,
-        `DELETE FROM ${this.table("followers")}
-          WHERE follower_id = $1
-            AND NOT EXISTS (
-              SELECT 1
-                FROM ${this.table("follow_requests")}
-               WHERE follower_id = $1
-            )`,
-        [followerId.href],
-      );
+      await this.cleanupFollower(sql, followerId.href);
       return await parseActor(row.actor_json);
     });
   }
@@ -735,6 +716,38 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         followRequestAdvisoryLockNamespace,
         `${this.schema}:${followId.href}`,
       ],
+    );
+  }
+
+  private async lockFollower(
+    sql: Queryable,
+    followerId: string,
+  ): Promise<void> {
+    await this.query(
+      sql,
+      `SELECT pg_catalog.pg_advisory_xact_lock($1, pg_catalog.hashtext($2))`,
+      [
+        followerAdvisoryLockNamespace,
+        `${this.schema}:${followerId}`,
+      ],
+    );
+  }
+
+  private async cleanupFollower(
+    sql: Queryable,
+    followerId: string,
+  ): Promise<void> {
+    await this.lockFollower(sql, followerId);
+    await this.query(
+      sql,
+      `DELETE FROM ${this.table("followers")}
+        WHERE follower_id = $1
+          AND NOT EXISTS (
+            SELECT 1
+              FROM ${this.table("follow_requests")}
+             WHERE follower_id = $1
+          )`,
+      [followerId],
     );
   }
 
