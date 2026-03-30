@@ -126,6 +126,10 @@ The type of the bot actor.  It can be either `Application` or `Service`.
 The display name of the bot.  It can be changed after the bot is
 federated.
 
+If you change it after deployment and want followers to notice the change
+immediately, call
+[`Session.republishProfile()`](./session.md#republishing-the-bot-profile).
+
 ### `~CreateBotOptions.summary`
 
 The description of the bot.  It will be displayed in the bio field
@@ -133,6 +137,10 @@ of the profile.  It can be changed after the bot is federated.
 
 Note that it does not take a string, but a `Text` object.
 See also the [*Text* chapter](./text.md).
+
+If you change it after deployment and want followers to notice the change
+immediately, call
+[`Session.republishProfile()`](./session.md#republishing-the-bot-profile).
 
 ### `~CreateBotOptions.icon`
 
@@ -144,6 +152,10 @@ The avatar URL of the bot.  It can be changed after the bot is federated.
 > the avatar image so that it looks fine on the most fediverse platforms,
 > you need to change the image file itself.
 
+If you change it after deployment and want followers to notice the change
+immediately, call
+[`Session.republishProfile()`](./session.md#republishing-the-bot-profile).
+
 ### `~CreateBotOptions.image`
 
 The header image URL of the bot.  It can be changed after the bot is federated.
@@ -153,6 +165,10 @@ The header image URL of the bot.  It can be changed after the bot is federated.
 > the header image.  The image as it is will be used.  If you want to adjust
 > the header image so that it looks fine on the most fediverse platforms,
 > you need to change the image file itself.
+
+If you change it after deployment and want followers to notice the change
+immediately, call
+[`Session.republishProfile()`](./session.md#republishing-the-bot-profile).
 
 ### `~CreateBotOptions.properties`
 

@@ -24,6 +24,7 @@ import {
   Question,
   type Recipient,
   Undo,
+  Update,
 } from "@fedify/vocab";
 import assert from "node:assert";
 import { describe, test } from "node:test";
@@ -262,6 +263,43 @@ describe("SessionImpl.follows()", () => {
     );
     assert.deepStrictEqual(await session.follows(session.actorHandle), false);
   });
+});
+
+test("SessionImpl.republishProfile()", async () => {
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    username: "bot",
+    name: "Bot display name",
+    summary: text`This is the bot profile.`,
+    icon: new URL("https://example.com/icon.png"),
+    image: new URL("https://example.com/header.png"),
+  });
+  const ctx = createMockContext(bot, "https://example.com");
+  const session = new SessionImpl(bot, ctx);
+
+  await session.republishProfile();
+
+  assert.deepStrictEqual(ctx.sentActivities.length, 1);
+  const { recipients, activity } = ctx.sentActivities[0];
+  assert.deepStrictEqual(recipients, "followers");
+  assert.ok(activity instanceof Update);
+  assert.deepStrictEqual(activity.actorId, ctx.getActorUri(bot.identifier));
+  assert.deepStrictEqual(activity.toIds, [ctx.getFollowersUri(bot.identifier)]);
+  assert.deepStrictEqual(activity.ccIds, []);
+  const actor = await activity.getObject(ctx);
+  assert.ok(actor instanceof bot.class);
+  assert.deepStrictEqual(actor.id, session.actorId);
+  assert.deepStrictEqual(actor.name?.toString(), "Bot display name");
+  assert.deepStrictEqual(
+    actor.summary?.toString(),
+    "<p>This is the bot profile.</p>",
+  );
+  const icon = await actor.getIcon();
+  assert.ok(icon != null);
+  assert.deepStrictEqual(icon.url, new URL("https://example.com/icon.png"));
+  const image = await actor.getImage();
+  assert.ok(image != null);
+  assert.deepStrictEqual(image.url, new URL("https://example.com/header.png"));
 });
 
 test("SessionImpl.publish()", async (t) => {

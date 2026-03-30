@@ -27,6 +27,7 @@ import {
   type Object,
   PUBLIC_COLLECTION,
   Undo,
+  Update,
 } from "@fedify/vocab";
 import { getLogger } from "@logtape/logtape";
 import { encode } from "html-entities";
@@ -211,6 +212,25 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     if (actorId.href === this.actorId.href) return false;
     const follow = await this.bot.repository.getFollowee(actorId);
     return follow != null;
+  }
+
+  async republishProfile(): Promise<void> {
+    const actor = await this.getActor();
+    const update = new Update({
+      id: new URL(`#update-profile/${crypto.randomUUID()}`, this.actorId),
+      actor: this.actorId,
+      to: this.context.getFollowersUri(this.bot.identifier),
+      object: actor,
+    });
+    await this.context.sendActivity(
+      this.bot,
+      "followers",
+      update,
+      {
+        preferSharedInbox: true,
+        excludeBaseUris: [new URL(this.context.origin)],
+      },
+    );
   }
 
   async publish(

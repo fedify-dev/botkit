@@ -131,6 +131,26 @@ const actor: Actor = await session.getActor();
 ~~~~
 
 
+Republishing the bot profile
+----------------------------
+
+If you change the bot's profile metadata, such as the display name, bio,
+avatar, or header image, remote servers may keep showing the old cached
+profile until they refresh it themselves.  You can explicitly notify your
+followers by calling the `~Session.republishProfile()` method:
+
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+await session.republishProfile();
+~~~~
+
+This sends an ActivityPub `Update` activity for the bot actor to the bot's
+followers.  Call it after your application updates the bot profile and you want
+the change to propagate without waiting for the next post.
+
+
 Publishing a message
 --------------------
 

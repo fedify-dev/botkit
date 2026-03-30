@@ -44,8 +44,17 @@ To be released.
         automatically redirects to the appropriate follow page using the OStatus
         subscribe protocol.
 
+ -  Added `Session.republishProfile()` to broadcast profile changes to
+    followers.  [[#18]]
+
+     -  The new method sends an ActivityPub `Update` activity for the bot
+        actor to the bot's followers.
+     -  This makes profile updates such as display name, bio, avatar, and
+        header image propagate without waiting for the next post.
+
 [#10]: https://github.com/fedify-dev/botkit/issues/10
 [#14]: https://github.com/fedify-dev/botkit/pull/14
+[#18]: https://github.com/fedify-dev/botkit/issues/18
 
 
 Version 0.3.1

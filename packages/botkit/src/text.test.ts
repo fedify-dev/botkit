@@ -145,6 +145,9 @@ const bot: BotWithVoidContextData = {
       publish() {
         throw new Error("Not implemented");
       },
+      republishProfile() {
+        throw new Error("Not implemented");
+      },
       getOutbox() {
         throw new Error("Not implemented");
       },

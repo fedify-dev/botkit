@@ -105,6 +105,18 @@ export interface Session<TContextData> {
   follows(actor: Actor | URL | string): Promise<boolean>;
 
   /**
+   * Republishes the bot profile to its followers.
+   *
+   * This is useful when the bot's profile metadata such as its display name,
+   * bio, avatar, or header image has changed and remote servers need to be
+   * notified explicitly.
+   *
+   * @returns A promise that resolves when the profile update activity is sent.
+   * @since 0.4.0
+   */
+  republishProfile(): Promise<void>;
+
+  /**
    * Publishes a message attributed to the bot.
    * @param text The content of the note.
    * @param options The options for publishing the message.
