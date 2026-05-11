@@ -64,7 +64,6 @@ jobs:
     - uses: pnpm/action-setup@v4
       with:
         version: latest
-    - run: npm install -g npm@latest && npm --version
     - if: github.ref_type == 'branch'
       run: |
         set -euo pipefail
