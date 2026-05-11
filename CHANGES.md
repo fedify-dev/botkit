@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.3.2
 -------------
 
-To be released.
+Released on May 12, 2026.
 
  -  Upgraded Fedify to 1.9.10, which addresses a private network protection
     bypass vulnerability.  This vulnerability allowed certain IPv4-mapped IPv6
