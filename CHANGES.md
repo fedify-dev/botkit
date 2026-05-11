@@ -1,6 +1,12 @@
 BotKit changelog
 ================
 
+Version 0.4.2
+-------------
+
+To be released.
+
+
 Version 0.4.1
 -------------
 
