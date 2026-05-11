@@ -6,6 +6,14 @@ Version 0.4.1
 
 To be released.
 
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.1.12, which addresses a private network protection
+    bypass vulnerability.  This vulnerability allowed certain IPv4-mapped IPv6
+    literals (e.g., `http://[::ffff:127.0.0.1]/`) to bypass SSRF (Server-Side
+    Request Forgery) protection, potentially allowing attackers to access
+    internal network resources.
+
 
 Version 0.4.0
 -------------
@@ -70,6 +78,18 @@ Released on March 30, 2026.
 
 [#11]: https://github.com/fedify-dev/botkit/issues/11
 [#19]: https://github.com/fedify-dev/botkit/pull/19
+
+
+Version 0.3.2
+-------------
+
+Released on May 12, 2026.
+
+ -  Upgraded Fedify to 1.9.10, which addresses a private network protection
+    bypass vulnerability.  This vulnerability allowed certain IPv4-mapped IPv6
+    literals (e.g., `http://[::ffff:127.0.0.1]/`) to bypass SSRF (Server-Side
+    Request Forgery) protection, potentially allowing attackers to access
+    internal network resources.
 
 
 Version 0.3.1
