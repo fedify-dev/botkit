@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "deno serve --allow-net --allow-env --watch multi.ts",
+    "prod": "deno serve --allow-net --allow-env multi.ts"
+  }
+}

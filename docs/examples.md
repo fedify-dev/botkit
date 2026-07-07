@@ -86,6 +86,26 @@ interactions with traditional web applications.
 <!-- hongdown-enable -->
 
 
+Multiple bots on one server
+---------------------------
+
+This example shows how to host multiple bots on a single server using
+`createInstance()`.  The instance owns the shared infrastructure, while each
+bot has its own actor identity and event handlers.  Two bots are created:
+a greet bot that replies to mentions with a friendly message, and an echo
+bot that repeats what you say back to you.
+
+<!-- hongdown-disable -->
+
+::: code-group
+
+<<< @/../examples/multi/multi.ts [multi.ts]
+
+:::
+
+<!-- hongdown-enable -->
+
+
 FediChatBot
 -----------
 
