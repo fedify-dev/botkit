@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet" />
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      width: 1200px;
+      height: 630px;
+    }
+    .card {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 120% at 88% 12%, rgba(158, 205, 84, 0.28), transparent
+        55%),
+        linear-gradient(160deg, #f7f9f1 0%, #eef3e3 100%);
+      font-family: "Inter", system-ui, sans-serif;
+      color: #1c1d21;
+    }
+    .inner {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 80px;
+      gap: 40px;
+    }
+    .left {
+      flex: 1;
+    }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      font-size: 21px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #33790f;
+      margin-bottom: 26px;
+    }
+    .eyebrow .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      background: #398712;
+      box-shadow: 0 0 0 6px rgba(57, 135, 18, 0.16);
+    }
+    .wordmark {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: 132px;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      color: #2f4d12;
+    }
+    .tagline {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      font-size: 46px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #1c1d21;
+      margin-top: 26px;
+      max-width: 560px;
+    }
+    .sub {
+      font-size: 26px;
+      line-height: 1.4;
+      color: #5f636c;
+      margin-top: 22px;
+      max-width: 520px;
+    }
+    .url {
+      position: absolute;
+      left: 80px;
+      bottom: 54px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 500;
+      font-size: 23px;
+      letter-spacing: 0.01em;
+      color: #33790f;
+      z-index: 2;
+    }
+    .right {
+      width: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .kit {
+      width: 420px;
+      filter: drop-shadow(0 22px 44px rgba(54, 83, 20, 0.22));
+    }
+    .kit svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="inner">
+        <div class="left">
+          <div class="eyebrow"><span class="dot"></span>A Fedify project</div>
+          <div class="wordmark">BotKit</div>
+          <div class="tagline">Fediverse bots, as standalone servers.</div>
+          <div
+            class="sub">A TypeScript framework for the fediverse, built by the Fedify team.</div>
+        </div>
+        <div class="right">
+          <div class="kit">
+            <svg width="101.479" height="82.268997"
+              viewBox="0 0 101.479 82.268997" fill="none" version="1.1"
+              xmlns="http://www.w3.org/2000/svg">
+              <rect
+                style="fill:#ffffff;fill-opacity:1;stroke:#9ecd54;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
+                width="88.479385" height="69.268829" x="6.5" y="6.5"
+                ry="4.9873557" />
+              <g transform="translate(9.9480484,-25.209731)">
+                <path
+                  d="m 55.0804,63.1186 c 0.9092,2.0782 3.1174,6.4686 4.6761,7.4038"
+                  stroke="#65a30d" stroke-opacity="0.5" stroke-width="3"
+                  stroke-linecap="round" />
+                <path
+                  d="M 64.7762,46.1724 C 57.3724,38.379 47.2409,44.2241 43.7338,48.9001 32.0436,43.8344 25.129,46.3632 19.1844,58.2523 c -2.338,4.6761 -6.2347,4.6761 -10.13148,7.0141 -0.62348,2.4939 4.41628,3.3772 7.01408,3.5071 0,0 0.3897,8.1831 5.0658,12.8592 5.4135,5.4135 10.9108,3.5071 12.4695,5.0657 1.5587,1.5587 3.5071,5.4555 7.7935,6.2348 4.2864,0.7794 10.1315,-5.4554 7.0141,-8.5728 1.9483,-0.3897 3.1174,-1.9484 4.6761,-2.7277 1.9483,3.5071 10.9108,1.7707 10.9108,-1.5587 0,-3.8967 -5.4554,-12.4695 -7.4038,-14.4179 10.8176,0 16.1558,-11.0914 8.1832,-19.4837 z"
+                  fill="#d9f99d" stroke="#365314" stroke-width="3"
+                  stroke-linejoin="round" />
+                <path
+                  d="m 57.762,65.6561 c -1.5587,0 -5.1436,-0.4676 -7.0141,-2.338"
+                  stroke="#65a30d" stroke-opacity="0.5" stroke-width="3"
+                  stroke-linecap="round" />
+                <path
+                  d="m 30.0952,80.4637 c 0.9093,2.0782 3.1174,6.4686 4.6761,7.4038"
+                  stroke="#65a30d" stroke-opacity="0.5" stroke-width="3"
+                  stroke-linecap="round" />
+                <circle cx="54.644699" cy="54.355598" r="1.94837"
+                  fill="#000000" />
+                <circle cx="63.217499" cy="51.238201" r="1.94837"
+                  fill="#000000" />
+              </g>
+              <rect
+                style="fill:#d9f99d;fill-opacity:1;stroke:#9ecd54;stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
+                width="20.811436" height="9.6668501" x="73.983238" y="7.3620138"
+                ry="0.86096066" />
+              <rect
+                style="fill:none;fill-opacity:1;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
+                width="88.479385" height="69.268829" x="6.5" y="6.5"
+                ry="4.9873557" />
+              <path
+                d="M 76.053447,12.593457 V 8.7107929 h 1.375999 q 0.405333,0 0.666667,0.1439999 0.266666,0.1386666 0.394666,0.3733331 0.128,0.2293332 0.128,0.5119997 0,0.2506665 -0.09067,0.4159994 -0.08533,0.16 -0.229333,0.256 -0.144,0.096 -0.314666,0.144 v 0.03733 q 0.181333,0.01067 0.362666,0.128 0.181333,0.112 0.304,0.325333 0.122667,0.208 0.122667,0.512 0,0.293333 -0.138667,0.528 -0.133333,0.234666 -0.421333,0.373333 -0.282667,0.133333 -0.741333,0.133333 z m 0.496,-0.437333 h 0.911999 q 0.453333,0 0.64,-0.170666 0.192,-0.176 0.192,-0.432 0,-0.192 -0.101333,-0.357333 -0.096,-0.165334 -0.277334,-0.261333 -0.181333,-0.101334 -0.431999,-0.101334 h -0.933333 z m 0,-1.738665 h 0.853333 q 0.309333,0 0.522666,-0.181334 0.218667,-0.186666 0.218667,-0.4853328 0,-0.2506665 -0.176,-0.4266664 Q 77.797446,9.1481259 77.41878,9.1481259 h -0.869333 z"
+                style="fill:#365314" aria-label="B" />
+              <path
+                d="m 80.666771,12.657457 q -0.394666,0 -0.693333,-0.186666 -0.298666,-0.192 -0.464,-0.528 -0.165333,-0.341333 -0.165333,-0.789333 0,-0.453333 0.165333,-0.789333 0.165334,-0.341333 0.464,-0.5279995 0.298667,-0.1919999 0.693333,-0.1919999 0.4,0 0.698666,0.1919999 0.298667,0.1866665 0.464,0.5279995 0.170667,0.336 0.170667,0.789333 0,0.448 -0.170667,0.789333 -0.165333,0.336 -0.464,0.528 -0.298666,0.186666 -0.698666,0.186666 z m 0,-0.421333 q 0.293333,0 0.485333,-0.149333 0.192,-0.154667 0.282667,-0.4 0.09067,-0.245333 0.09067,-0.533333 0,-0.288 -0.09067,-0.533333 -0.09067,-0.250666 -0.282667,-0.4 -0.192,-0.154666 -0.485333,-0.154666 -0.288,0 -0.48,0.154666 -0.186666,0.149334 -0.277333,0.4 -0.09067,0.245333 -0.09067,0.533333 0,0.288 0.09067,0.533333 0.09067,0.245333 0.277333,0.4 0.192,0.149333 0.48,0.149333 z"
+                style="fill:#365314" aria-label="o" />
+              <path
+                d="m 83.829442,9.681459 v 0.4 h -0.597333 v 1.754665 q 0,0.197334 0.07467,0.288 0.08,0.09067 0.266667,0.09067 0.04267,0 0.111999,-0.01067 0.06933,-0.01067 0.128,-0.02133 l 0.096,0.394666 q -0.07467,0.02667 -0.165333,0.03733 -0.09067,0.016 -0.181333,0.016 -0.378667,0 -0.592,-0.197334 -0.208,-0.202666 -0.208,-0.559999 v -1.791999 h -0.437333 v -0.4 h 0.437333 V 8.988126 h 0.469333 v 0.693333 z"
+                style="fill:#365314" aria-label="t" />
+              <path
+                d="M 84.485439,12.593457 V 8.7107929 h 0.495999 v 1.3279991 l -0.01067,0.714666 q 0.16,-0.208 0.325333,-0.399999 0.165333,-0.197334 0.346666,-0.3893335 l 1.157333,-1.2533326 h 0.650666 l -1.567999,1.6799991 1.567999,2.202665 h -0.586666 l -1.322666,-1.866665 -0.56,0.591999 v 1.274666 z"
+                style="fill:#365314" aria-label="K" />
+              <path
+                d="M 88.096114,12.593457 V 9.681459 h 0.469333 v 2.911998 z m 0.24,-3.3866644 q -0.133333,0 -0.229333,-0.090667 -0.096,-0.090667 -0.096,-0.2186666 0,-0.1333332 0.096,-0.2186665 0.096,-0.090667 0.229333,-0.090667 0.133333,0 0.229333,0.090667 0.096,0.085333 0.096,0.2186665 0,0.1279999 -0.096,0.2186666 -0.096,0.090667 -0.229333,0.090667 z"
+                style="fill:#365314" aria-label="i" />
+              <path
+                d="m 90.533445,9.681459 v 0.4 h -0.597333 v 1.754665 q 0,0.197334 0.07467,0.288 0.08,0.09067 0.266667,0.09067 0.04267,0 0.112,-0.01067 0.06933,-0.01067 0.128,-0.02133 l 0.096,0.394666 q -0.07467,0.02667 -0.165334,0.03733 -0.09067,0.016 -0.181333,0.016 -0.378666,0 -0.591999,-0.197334 -0.208,-0.202666 -0.208,-0.559999 v -1.791999 h -0.437333 v -0.4 h 0.437333 V 8.988126 h 0.469333 v 0.693333 z"
+                style="fill:#365314" aria-label="t" />
+              <path
+                style="fill:none;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"
+                d="M 49.436779,8.1921379 V 19.090434" />
+              <path
+                style="fill:none;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"
+                d="M 7.1772951,40.672623 H 15.982132" />
+              <path
+                style="fill:none;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"
+                d="M 52.371359,75.584114 V 70.719903" />
+              <path
+                style="fill:none;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"
+                d="M 93.378507,55.142113 H 76.877132" />
+              <path
+                style="fill:none;stroke:#365314;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"
+                d="M 94.055802,30.082189 H 81.495054" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="url">botkit.fedify.dev</div>
+    </div>
+  </body>
+</html>

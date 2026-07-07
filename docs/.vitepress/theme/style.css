@@ -4,6 +4,37 @@
  */
 
 /**
+ * Fonts
+ *
+ * Space Grotesk (the Expression-mode display face) is self-hosted so the docs
+ * site never sends a visitor's IP to a third-party font CDN. The Canvas-mode
+ * Inter is already bundled by VitePress. The two subsets and their
+ * unicode-ranges mirror Google Fonts' own slicing.
+ * -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/space-grotesk-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/**
  * Colors
  *
  * Each colors have exact same color scale system with 3 levels of solid
@@ -44,10 +75,13 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  --vp-c-green-1: #5f8027;
-  --vp-c-green-2: #688d2a;
-  --vp-c-green-3: #6a922b;
-  --vp-c-green-soft: rgba(82, 53, 33, 0.14);
+  /* BotKit brand greens, taken from the logo (dinosaur model kit).
+     -1 is the accessible link/ink green on light surfaces; -3 is the solid
+     fill that carries white text. */
+  --vp-c-green-1: #33790f;
+  --vp-c-green-2: #398712;
+  --vp-c-green-3: #3f950f;
+  --vp-c-green-soft: rgba(57, 135, 18, 0.14);
 
   --vp-c-default-1: var(--vp-c-gray-1);
   --vp-c-default-2: var(--vp-c-gray-2);
@@ -73,6 +107,33 @@
   --vp-c-danger-2: var(--vp-c-red-2);
   --vp-c-danger-3: var(--vp-c-red-3);
   --vp-c-danger-soft: var(--vp-c-red-soft);
+}
+
+/* On dark surfaces the ink green lifts so links and text stay legible. */
+.dark {
+  --vp-c-green-1: #7ec93b;
+  --vp-c-green-2: #6bbb2a;
+  --vp-c-green-3: #4eb31b;
+  --vp-c-green-soft: rgba(120, 200, 70, 0.16);
+}
+
+/**
+ * Typography
+ *
+ * Body and UI stay on Inter (the bundled Canvas-mode face).  Headlines use
+ * Space Grotesk, BotKit's Expression-mode display face.
+ * -------------------------------------------------------------------------- */
+
+:root {
+  --bk-font-display: "Space Grotesk", "Inter", var(--vp-font-family-base);
+}
+
+.VPHomeHero .name,
+.VPHomeHero .text,
+.vp-doc h1,
+.vp-doc h2 {
+  font-family: var(--bk-font-display);
+  letter-spacing: -0.015em;
 }
 
 /**

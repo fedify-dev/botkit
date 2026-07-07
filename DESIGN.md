@@ -184,10 +184,13 @@ of the typographic work: names and section titles are 700, everything else is
 400 to 600.
 
 Expression mode is where a more characterful display face belongs. BotKit's own
-sites may pair Inter with an expressive display typeface for headlines. That
-face is a brand asset for those surfaces and is not bundled with the library.
+sites pair Inter with [Space Grotesk] for headlines, used with restraint. Space
+Grotesk is loaded only on those surfaces, self-hosted as woff2 rather than
+pulled from a font CDN so a visitor's IP is never handed to a third party; it is
+not bundled with the library and never reaches a hosted bot's pages.
 
 [Inter]: https://rsms.me/inter/
+[Space Grotesk]: https://fonts.google.com/specimen/Space+Grotesk
 
 ### Space and geometry
 
@@ -354,13 +357,23 @@ Expression mode is BotKit's own voice, for BotKit's own surfaces. It is not
 part of the shipped library; it is recorded here so BotKit-branded work stays
 consistent.
 
- -  *Mark.* BotKit's mark is a bracketed node: a small circular node held
-    between two brackets, evoking an addressable actor on the network. It is a
-    brand element for BotKit's surfaces and does not appear on hosted bot pages.
+ -  *Mark.* BotKit's mascot is a dinosaur, and the logo presents that dinosaur
+    as an unassembled plastic model kit: the character sits inside a sprue
+    frame, still attached to the runner by small gates, with a labeled tab in
+    one corner. The “Kit” in BotKit is literal: it is a kit of parts you
+    assemble into a bot. The frame doubles as the bracketed node of the earlier
+    mark, evoking an addressable actor on the network. It is a brand element
+    for BotKit's own surfaces and does not appear on hosted bot pages.
 
- -  *Type.* Expression mode may pair Inter with an expressive display typeface
-    for headlines, used with restraint. Where Canvas mode keeps a single quiet
-    face, Expression mode is allowed one confident one.
+ -  *Type.* Expression mode pairs Inter with Space Grotesk for headlines, used
+    with restraint. Where Canvas mode keeps a single quiet face, Expression mode
+    is allowed one confident one.
+
+ -  *Motif.* The sprue frame is the repeating device on BotKit's own surfaces.
+    A hero presents the dinosaur on its runner as the one bold element, and a
+    small gate node sitting on a hairline separates sections, echoing parts held
+    on a runner (and, loosely, the edges between actors on the network). The
+    project site's landing page is built from this motif.
 
  -  *Color.* Expression mode still draws from the same twenty-name palette, but
     may use it more boldly, including BotKit's own signature accent.
