@@ -21,17 +21,22 @@ a dependency:
 deno add jsr:@fedify/botkit
 ~~~~
 
-Since BotKit uses the [Temporal] API which is still unstable in Deno, you need
-to turn it on in your *deno.json* settings:
+Since BotKit uses the [Temporal] API, it is recommended to use Deno 2.7 or
+later, where the Temporal API is stabilized and available by default.
 
-~~~~ json [deno.json] {5}
-{
-  "imports": {
-    "@fedify/botkit": "jsr:@fedify/botkit@0.3.0"
-  },
-  "unstable": ["temporal"]
-}
-~~~~
+> [!NOTE]
+> If you are using Deno version 2.6 or older, you must enable the unstable
+> Temporal API by adding the `"unstable": ["temporal"]` option to your
+> *deno.json* file:
+>
+> ~~~~ json [deno.json]
+> {
+>   "imports": {
+>     "@fedify/botkit": "jsr:@fedify/botkit@0.3.0"
+>   },
+>   "unstable": ["temporal"]
+> }
+> ~~~~
 
 [Temporal]: https://tc39.es/proposal-temporal/docs/
 
