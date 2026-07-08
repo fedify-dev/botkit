@@ -316,36 +316,35 @@ const targets = [
           <p class="bk-kicker">Standalone</p>
           <h2 class="bk-h2">Its own server, not an account</h2>
           <p class="bk-feature__body">
-            Each BotKit bot is a complete ActivityPub server, with its own
-            actor, inbox, and outbox. There's no Mastodon or Misskey account to
-            create or maintain, message length is yours to define, and you keep
-            direct control over the database and message queue. It still
-            federates with Mastodon, Misskey, and the rest of the fediverse.
+            A BotKit bot is not a script driving an account on someone else's
+            Mastodon or Misskey server. It is an ActivityPub actor served by
+            your app, on your domain, backed by your storage, your queue, and
+            your code. It still federates with Mastodon, Misskey, and the rest
+            of the fediverse.
           </p>
           <a class="bk-link" href="/intro">More on standalone bots →</a>
         </div>
         <div class="bk-feature__visual">
-          <div class="bk-spec">
-            <div class="bk-spec__head">Bot · spec sheet</div>
-            <div class="bk-spec__row">
-              <span class="bk-spec__k">Actor</span>
-              <span class="bk-spec__v">@weatherbot@example.com</span>
+          <div class="bk-model">
+            <div class="bk-model__col">
+              <div class="bk-model__head">Account automation</div>
+              <ul class="bk-model__list">
+                <li>Mastodon or Misskey account</li>
+                <li>Access token</li>
+                <li>Platform database</li>
+                <li>Platform limits</li>
+                <li>One account at a time</li>
+              </ul>
             </div>
-            <div class="bk-spec__row">
-              <span class="bk-spec__k">Server</span>
-              <span class="bk-spec__v">standalone ActivityPub</span>
-            </div>
-            <div class="bk-spec__row">
-              <span class="bk-spec__k">Post length</span>
-              <span class="bk-spec__v">yours to define</span>
-            </div>
-            <div class="bk-spec__row">
-              <span class="bk-spec__k">Storage</span>
-              <span class="bk-spec__v">Repository, your backend</span>
-            </div>
-            <div class="bk-spec__row">
-              <span class="bk-spec__k">Federates</span>
-              <span class="bk-spec__v">Mastodon · Misskey · …</span>
+            <div class="bk-model__col bk-model__col--botkit">
+              <div class="bk-model__head">BotKit server</div>
+              <ul class="bk-model__list">
+                <li>ActivityPub actor on your domain</li>
+                <li>Your repository</li>
+                <li>Your queue</li>
+                <li>Your message rules</li>
+                <li>One app, many bots</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1222,39 +1221,66 @@ a.bk-notes__k:hover {
   }
 }
 
-/* Spec sheet visual */
-.bk-spec {
+/* Account/server model visual */
+.bk-model {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.bk-model__col {
   border: 1px solid var(--vp-c-divider);
   border-radius: 16px;
   background: var(--vp-c-bg-soft);
   overflow: hidden;
-  font-family: var(--vp-font-family-mono);
 }
-.bk-spec__head {
-  padding: 12px 18px;
+.bk-model__col--botkit {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 45%, var(--vp-c-divider));
+  background: color-mix(in srgb, var(--vp-c-brand-soft) 42%, var(--vp-c-bg-soft));
+}
+.bk-model__head {
+  padding: 12px 16px;
+  font-family: var(--vp-font-family-mono);
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--vp-c-text-3);
   background: var(--vp-c-bg);
   border-bottom: 1px solid var(--vp-c-divider);
 }
-.bk-spec__row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 13px 18px;
-  font-size: 0.85rem;
+.bk-model__col--botkit .bk-model__head {
+  color: var(--vp-c-brand-1);
 }
-.bk-spec__row + .bk-spec__row {
+.bk-model__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+.bk-model__list li {
+  position: relative;
+  margin: 0;
+  padding: 12px 16px 12px 36px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--vp-c-text-2);
+}
+.bk-model__list li + li {
   border-top: 1px solid var(--vp-c-divider);
 }
-.bk-spec__k {
-  color: var(--vp-c-text-3);
+.bk-model__list li::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 1.05em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--vp-c-text-3);
 }
-.bk-spec__v {
+.bk-model__col--botkit .bk-model__list li {
   color: var(--vp-c-text-1);
-  text-align: right;
+}
+.bk-model__col--botkit .bk-model__list li::before {
+  background: var(--vp-c-brand-1);
 }
 
 /* Bot profile mock (web-pages visual) */
@@ -1538,6 +1564,9 @@ a.bk-chip--code:hover {
   }
   .bk-lede {
     max-width: 100%;
+  }
+  .bk-model {
+    grid-template-columns: 1fr;
   }
   .bk-code :deep(pre.shiki) {
     padding: 18px 10px;
