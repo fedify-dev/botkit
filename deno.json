@@ -6,6 +6,7 @@
     "@fedify/fedify": "jsr:@fedify/fedify@~2.3.1",
     "@fedify/vocab": "jsr:@fedify/vocab@~2.3.1",
     "@fedify/vocab-runtime": "jsr:@fedify/vocab-runtime@~2.3.1",
+    "@js-temporal/polyfill": "npm:@js-temporal/polyfill@^0.5.1",
     "@logtape/logtape": "jsr:@logtape/logtape@^2.2.3",
     "@std/fs": "jsr:@std/fs@^1.0.24",
     "@std/path": "jsr:@std/path@^1.1.6",

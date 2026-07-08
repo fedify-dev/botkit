@@ -49,6 +49,7 @@ const deploy = {
   items: [
     { text: "Storage and message queue", link: "/deploy/store-mq.md" },
     { text: "Deno Deploy", link: "/deploy/deno-deploy.md" },
+    { text: "Cloudflare Workers", link: "/deploy/cfworkers.md" },
     { text: "Docker", link: "/deploy/docker.md" },
     { text: "Self-hosting", link: "/deploy/self-hosting.md" },
   ],

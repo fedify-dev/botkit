@@ -153,6 +153,12 @@ To be released.
 
      -  Added `ReadonlyBot` interface.
 
+ -  Fixed the npm package's TypeScript declaration files so runtime Temporal
+    polyfill code is no longer emitted into _\*.d.ts_ files.
+
+ -  Added a Cloudflare Workers deployment guide and updated the documentation
+    landing page to list Cloudflare Workers as a deployment target.
+
  -  Upgraded Fedify to 2.3.1, Hono to 4.12.27, and LogTape to 2.2.3.
 
 [FEP-044f]: https://w3id.org/fep/044f

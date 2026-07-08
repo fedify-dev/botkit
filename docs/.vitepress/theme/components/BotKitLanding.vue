@@ -38,10 +38,10 @@ const capabilities = [
       "yourself before accepting.",
   },
   {
-    title: "Deno and Node.js",
+    title: "Deno, Node.js, and Workers",
     body:
-      "Runs on both with minimal dependencies. A whole bot fits in a single " +
-      "TypeScript file.",
+      "Runs on Deno, Node.js, and Cloudflare Workers with minimal " +
+      "dependencies. A whole bot fits in a single TypeScript file.",
   },
 ];
 
@@ -53,6 +53,7 @@ const repos = [
 ];
 const targets = [
   { name: "Deno Deploy", href: "/deploy/deno-deploy" },
+  { name: "Cloudflare Workers", href: "/deploy/cfworkers" },
   { name: "Docker · Fly.io / Railway", href: "/deploy/docker" },
   { name: "Self‑hosted", href: "/deploy/self-hosting" },
 ];
@@ -480,7 +481,7 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
         <p class="bk-sub">
           BotKit keeps storage behind its own
           <a href="/concepts/repository"><code>Repository</code></a> interface,
-          so switching backends never touches your bot code.
+          so switching backends and deploy targets never touches your bot code.
         </p>
       </div>
 

@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import "./temporal.ts";
 import type { KvKey, KvStore } from "@fedify/fedify/federation";
 import { exportJwk, importJwk } from "@fedify/fedify/sig";
 import {

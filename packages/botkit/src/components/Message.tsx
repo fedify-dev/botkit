@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @jsxImportSource hono/jsx */
+import "../temporal.ts";
 import { LanguageString } from "@fedify/vocab-runtime";
 import { Document, Emoji, getActorHandle, Image, Link } from "@fedify/vocab";
 import { htmlXss } from "../message-impl.ts";

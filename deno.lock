@@ -1058,6 +1058,7 @@
       "jsr:@logtape/logtape@^2.2.3",
       "jsr:@std/fs@^1.0.24",
       "jsr:@std/path@^1.1.6",
+      "npm:@js-temporal/polyfill@~0.5.1",
       "npm:tsdown@~0.12.8"
     ],
     "members": {
