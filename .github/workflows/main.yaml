@@ -154,7 +154,7 @@ jobs:
         generate_release_notes: false
 
   publish-docs:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     needs: [publish]
     runs-on: ubuntu-latest
     permissions:
@@ -170,6 +170,7 @@ jobs:
         cache: true
     - run: mise run docs:build
       env:
+        JSR_REF_VERSION: stable
         PLAUSIBLE_DOMAIN: ${{ vars.PLAUSIBLE_DOMAIN }}
         SITEMAP_HOSTNAME: https://${{ vars.PLAUSIBLE_DOMAIN }}
     - id: upload
@@ -179,4 +180,41 @@ jobs:
     - id: deploy
       uses: actions/deploy-pages@v4
 
-# cSpell: ignore submark softprops pipefail npmjs
+  publish-canary-docs:
+    if: github.event_name == 'push' && github.ref_type == 'branch'
+    needs: [publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      statuses: write
+    environment:
+      name: netlify-canary
+      url: https://canary.botkit.fedify.dev
+    steps:
+    - uses: actions/checkout@v4
+    - uses: jdx/mise-action@v4
+      with:
+        cache: true
+    - run: mise run docs:build
+      env:
+        JSR_REF_VERSION: unstable
+        PLAUSIBLE_DOMAIN: ${{ vars.CANARY_PLAUSIBLE_DOMAIN }}
+        SITEMAP_HOSTNAME: https://canary.botkit.fedify.dev
+    - uses: nwtgck/actions-netlify@v4.0.0
+      with:
+        publish-dir: docs/.vitepress/dist
+        production-branch: ${{ github.ref_name }}
+        production-deploy: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: Deploy canary docs from GitHub Actions
+        enable-pull-request-comment: false
+        enable-commit-comment: false
+        overwrites-pull-request-comment: true
+        github-deployment-environment: netlify-canary
+        github-deployment-description: Canary documentation
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+# cSpell: ignore submark softprops pipefail npmjs nwtgck Netlify
