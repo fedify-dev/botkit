@@ -15,7 +15,7 @@ To be released.
     adapts to light and dark color schemes automatically, and foregrounds the
     bot's own identity rather than BotKit's brand.  Reposts are now clearly
     distinguished from the bot's own posts.  The full system is described in
-    the new <DESIGN.md> document.
+    the new *DESIGN.md* document.
 
     The stylesheet and web fonts are bundled with the package and served
     locally, so the pages no longer load anything from an external CDN and
