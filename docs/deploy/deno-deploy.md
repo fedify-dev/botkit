@@ -1,108 +1,171 @@
 ---
 description: >-
-  Learn how to deploy your BotKit bot to Deno Deploy, a serverless hosting
-  platform for Deno applications.
+  Deploy your BotKit bot to Deno Deploy, Deno's serverless platform, from
+  a GitHub-connected app backed by a managed Deno KV database.
 ---
 
 Deno Deploy
 ===========
 
-[Deno Deploy] is a serverless hosting platform for Deno applications.  It allows
-you to deploy your bot without managing servers or infrastructure.  This guide
-shows you how to deploy your BotKit bot to Deno Deploy.
+[Deno Deploy] is Deno's serverless platform for running JavaScript and
+TypeScript in the cloud.  You connect a GitHub repository, and it builds and
+runs your bot with no servers to manage.  This guide targets the current Deno
+Deploy, whose dashboard lives at [console.deno.com].
+
+> [!IMPORTANT]
+> The original Deno Deploy is now called *Deno Deploy Classic* (at
+> `dash.deno.com`), and it shuts down on July 20, 2026 along with the
+> `deployctl` CLI.  This guide covers the rebuilt Deno Deploy.  If your bot
+> still runs on Classic, follow the [migration guide] to move it over.
 
 [Deno Deploy]: https://deno.com/deploy
+[console.deno.com]: https://console.deno.com/
+[migration guide]: https://docs.deno.com/deploy/migration_guide/
 
 
-Prerequisites
--------------
+Provisioning a Deno KV database
+-------------------------------
 
-1.  [Create a Deno Deploy account][1]
+BotKit needs a key–value store for Fedify's federation data.  On Deno Deploy,
+[Deno KV] provides it, and once a KV database is assigned to your app,
+`Deno.openKv()` connects to it automatically with no credentials in your code:
 
-2.  [Install the Deno CLI][2] if you haven't already
+1.  In the [console][console.deno.com], open your organization and click
+    *Databases*.
+2.  Click *Provision Database*, choose *Deno KV*, name it, and save.
+3.  Click *Assign* next to the database and pick your app.
 
-3.  [Install `deployctl`][3]:
+> [!IMPORTANT]
+> The rebuilt Deno Deploy does not support Deno KV *queues*, so BotKit cannot
+> use `DenoKvMessageQueue` here.  Without a message queue, BotKit processes
+> incoming and outgoing activities inline, which is fine for a bot with light to
+> moderate traffic.  For background delivery, provision managed PostgreSQL and
+> use its queue; see the [*Message queues*](./store-mq.md#message-queues)
+> section.
 
-    ~~~~ sh
-    deno install -gArf jsr:@deno/deployctl
-    ~~~~
+Deno Deploy also offers managed PostgreSQL for when you outgrow Deno KV's 64 KB
+per-value limit; see the [*Repositories*](./store-mq.md#repositories) section
+for moving the bot's own data onto a dedicated repository.
 
-4.  Install the [Fedify] Deno KV adapter package to your bot project:
-
-    ~~~~ sh
-    deno add jsr:@fedify/denokv
-    ~~~~
-
-5.  Configure your bot to use Deno KV for storage and message queue:
-
-    ~~~~ typescript
-    import { createBot } from "@fedify/botkit";
-    import { DenoKvMessageQueue, DenoKvStore } from "@fedify/denokv";
-
-    const kv = await Deno.openKv();
-
-    const bot = createBot<void>({
-      username: "mybot",
-      kv: new DenoKvStore(kv),
-      queue: new DenoKvMessageQueue(kv),
-      // ... other configuration
-    });
-    ~~~~
-
-[Fedify]: https://fedify.dev/
-[1]: https://dash.deno.com/login
-[2]: https://docs.deno.com/runtime/getting_started/installation/
-[3]: https://docs.deno.com/deploy/manual/deployctl/#install-deployctl
+[Deno KV]: https://docs.deno.com/deploy/reference/deno_kv/
 
 
-Deploying your bot
-------------------
+Preparing the entrypoint
+------------------------
 
-1.  Navigate to your project directory
+Deno Deploy runs your entrypoint the way `deno run` does, so the file has to
+start an HTTP server itself with [`Deno.serve()`].  Pass the bot's `fetch()`
+method as the handler:
 
-2.  Deploy your bot:
+~~~~ typescript [bot.ts] twoslash
+import { createBot } from "@fedify/botkit";
+import { DenoKvStore } from "@fedify/denokv";
 
-    ~~~~ sh
-    deployctl deploy
-    ~~~~
+const kv = await Deno.openKv();
 
-    On the first deployment, `deployctl` will:
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new DenoKvStore(kv),
+});
 
-     -  Guess the project name from your Git repo or directory name
-     -  Create the project automatically if it doesn't exist
-     -  Look for common entrypoint files like *main.ts* or *src/main.ts*
+Deno.serve((request) => bot.fetch(request));  // [!code highlight]
+~~~~
 
-    You can also specify these explicitly:
+This differs from the `export default bot` entrypoint that
+[*Running the bot*](../concepts/bot.md#running-the-bot) shows, because Deno
+Deploy executes the file directly instead of through the `deno serve` command.
 
-    ~~~~ sh
-    deployctl deploy --project=mybot --entrypoint=bot.ts
-    ~~~~
+The `DenoKvStore` class comes from Fedify's *@fedify/denokv* package:
 
-3.  Set up your custom domain in the Deno Deploy dashboard (optional)
+~~~~ sh
+deno add jsr:@fedify/denokv
+~~~~
+
+[`Deno.serve()`]: https://docs.deno.com/api/deno/~/Deno.serve
+
+
+Creating the app
+----------------
+
+Sign in to [console.deno.com] and create an organization if you don't have one.
+Click *+ New App* and choose the GitHub repository that holds your bot.
+
+> [!NOTE]
+> Deno Deploy does not yet support a bot that lives in a subdirectory of
+> a monorepo; the repository root has to be the bot itself.
+
+Open *Edit build config* and set the fields that matter for a BotKit bot:
+
+*Framework preset*
+:   *No Preset*.
+
+*Install command*
+:   `deno install`, to cache the bot's dependencies.
+
+*Build command*
+:   Leave it empty; a BotKit bot needs no build step.
+
+*Runtime configuration*
+:   *Dynamic*, because the bot is a long-running server.
+
+*Dynamic entrypoint*
+:   `bot.ts`, the file that calls `Deno.serve()`.
+
+Confirm the Deno KV database is assigned to the app, then start the first
+deployment.  Deno Deploy rebuilds and ships a new version on every push to the
+connected branch.
+
+
+Custom domain and origin
+------------------------
+
+Deno Deploy serves each app from a default domain of the form
+`app-name.org-name.deno.net`.  A bot's fediverse handle is `@username@domain`,
+where `domain` is that hostname, so settle on the final domain before you
+announce the bot: changing it later changes the handle and breaks existing
+follows.  You can attach a custom domain to the app in the console.
+
+BotKit reads the domain from each incoming request, so most of the bot needs no
+configuration.  The exception is code that publishes without a request to derive
+the origin from, such as a scheduled post.  There, pass the origin to
+[`getSession()`](../concepts/session.md) yourself, usually from an environment
+variable:
+
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+const session = bot.getSession(
+  Deno.env.get("ORIGIN") ?? "https://mybot.myorg.deno.net",
+);
+~~~~
 
 
 Environment variables
 ---------------------
 
-You can set environment variables in multiple ways:
+Set environment variables under the app's settings in the console.  Each
+variable is either plain text or a secret, and applies to the *Production*
+context (your production domains), the *Development* context (preview and branch
+domains), or both.
 
- -  During deployment using the `--env` flag:
+BotKit reads no environment variables of its own; these names are ones your bot
+code chooses.  A common convention is:
 
-    ~~~~ sh
-    deployctl deploy --env=SERVER_NAME=mybot.deno.dev
-    ~~~~
+ -  `ORIGIN` (or `SERVER_NAME`): the bot's public origin, including the scheme
+    (for example, `https://mybot.myorg.deno.net`), read when building a session
+    for request-less publishing as shown above.
+ -  Any credentials your bot needs, such as API tokens.
 
- -  Using an environment file:
 
-    ~~~~ sh
-    deployctl deploy --env-file=.env
-    ~~~~
+Deploying from the command line
+-------------------------------
 
- -  Or configure them in the Deno Deploy dashboard for project-wide settings
+If you would rather not connect a repository, the `deno deploy` subcommand
+deploys straight from your machine.  It replaces the old `deployctl`, which
+retires together with Deno Deploy Classic.  See the
+[Deno Deploy documentation][Deno Deploy docs] for its usage.
 
-Common variables include:
+[Deno Deploy docs]: https://docs.deno.com/deploy/
 
- -  `SERVER_NAME`: Your bot's domain (e.g., `mybot.deno.dev`)
- -  Other bot-specific configuration variables
-
-<!-- cSpell: ignore deployctl mybot -->
+<!-- cSpell: ignore deployctl mybot myorg -->

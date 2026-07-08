@@ -1,34 +1,49 @@
 ---
 description: >-
-  Learn how to deploy your BotKit bot on your own server using the Deno runtime.
+  Learn how to deploy your BotKit bot on your own Linux server with Deno or
+  Node.js, systemd, and a Caddy reverse proxy.
 ---
 
 Self-hosted deployment
 ======================
 
 For complete control over your bot's environment, you can self-host it on your
-own server.  This guide shows you how to deploy your BotKit bot using the Deno
-runtime on a Linux server with SSH access.
+own server.  This guide deploys a BotKit bot on a Linux server with SSH access,
+puts Caddy in front of it for HTTPS, and keeps it running under systemd.  It
+covers both the Deno and Node.js runtimes; follow the one your bot uses.
 
 
 Prerequisites
 -------------
 
 1.  A Linux server with SSH access
-2.  Domain name pointing to your server
-3.  [Deno] installed on your server
+2.  A domain name whose DNS points to your server
+3.  Either [Deno] or [Node.js] installed on your server, matching your bot
 
 [Deno]: https://deno.land/
+[Node.js]: https://nodejs.org/
 
 
 Installation steps
 ------------------
 
-1.  Install Deno:
+1.  Install the runtime your bot uses:
 
-    ~~~~ bash
+    ::: code-group
+
+    ~~~~ bash [Deno]
     curl -fsSL https://deno.land/install.sh | sh
     ~~~~
+
+
+    ~~~~ bash [Node.js]
+    # Install the current LTS from nodejs.org, your distribution, or a version
+    # manager such as fnm.  For example, with fnm:
+    curl -fsSL https://fnm.vercel.app/install | bash
+    fnm install --lts
+    ~~~~
+
+    :::
 
 2.  Clone your bot repository:
 
@@ -145,6 +160,16 @@ configuration:
     sudo journalctl -u caddy --follow
     ~~~~
 
+> [!IMPORTANT]
+> Caddy terminates TLS and forwards requests to the bot over plain HTTP, so the
+> bot has to trust the `X-Forwarded-*` headers to reconstruct its public HTTPS
+> origin.  Turn on
+> [`behindProxy`](../concepts/bot.md#createbotoptions-behindproxy) in
+> `createBot()`.  The systemd units in the next section export
+> `BEHIND_PROXY=true` for the bot to read into that option, following the
+> pattern in
+> [*Exposing the bot to the public internet*](../concepts/bot.md#exposing-the-bot-to-the-public-internet).
+
 [Caddy]: https://caddyserver.com/
 [Let's Encrypt]: https://letsencrypt.org/
 [Install Caddy]: https://caddyserver.com/docs/install
@@ -156,6 +181,11 @@ Creating a [systemd] service
 The [systemd] is a system and service manager for Linux that starts and manages
 services.  It is adopted by most modern Linux distributions including Debian,
 Ubuntu, Fedora, and Arch Linux.
+
+> [!NOTE]
+> A self-hosted bot runs as one long-lived process, so BotKit starts its
+> message queue automatically once the first task is enqueued.  You don't need
+> to start the queue worker yourself.
 
 To run your bot as a systemd service:
 
@@ -172,9 +202,14 @@ To run your bot as a systemd service:
     sudo chown botkit:botkit /opt/botkit
     ~~~~
 
-3.  Create a service file at */etc/systemd/system/botkit-bot.service*:
+3.  Create a service file at */etc/systemd/system/botkit-bot.service*.  The unit
+    is the same for both runtimes apart from `ExecStart`, which starts the bot
+    the way its runtime expects (see
+    [*Running the bot*](../start.md#running-the-bot)):
 
-    ~~~~ ini [/etc/systemd/system/botkit-bot.service]
+    ::: code-group
+
+    ~~~~ ini [Deno]
     [Unit]
     Description=BotKit Bot
     After=network.target
@@ -187,10 +222,12 @@ To run your bot as a systemd service:
     Environment=SERVER_NAME=your-domain.com
     # Add any other environment variables your bot needs
     Environment=NODE_ENV=production
+    Environment=BEHIND_PROXY=true
 
     WorkingDirectory=/opt/botkit
-    # Make sure to use the full path to deno
-    ExecStart=/home/botkit/.deno/bin/deno run -A bot.ts
+    # A bot uses `export default bot`, so start it with `deno serve`, not
+    # `deno run`.
+    ExecStart=/usr/local/bin/deno serve -A --port 8000 bot.ts
 
     # Restart policy
     Restart=always
@@ -210,6 +247,60 @@ To run your bot as a systemd service:
     [Install]
     WantedBy=multi-user.target
     ~~~~
+
+
+    ~~~~ ini [Node.js]
+    [Unit]
+    Description=BotKit Bot
+    After=network.target
+    Wants=caddy.service
+
+    [Service]
+    Type=simple
+    User=botkit
+    Group=botkit
+    Environment=SERVER_NAME=your-domain.com
+    # Add any other environment variables your bot needs
+    Environment=NODE_ENV=production
+    Environment=BEHIND_PROXY=true
+
+    WorkingDirectory=/opt/botkit
+    # Serve the `export default bot` entry through the srvx CLI, whose binary
+    # ships with the bot's dependencies under node_modules.
+    ExecStart=/opt/botkit/node_modules/.bin/srvx serve --prod --port 8000 --entry bot.ts
+
+    # Restart policy
+    Restart=always
+    RestartSec=10
+
+    # Security settings
+    NoNewPrivileges=true
+    ProtectSystem=strict
+    ProtectHome=true
+    PrivateTmp=true
+    PrivateDevices=true
+
+    # Resource limits
+    CPUQuota=80%
+    MemoryMax=1G
+
+    [Install]
+    WantedBy=multi-user.target
+    ~~~~
+
+    :::
+
+    The unit hardens the service with `ProtectHome=true`, so it cannot read
+    anything under */home*.  Install the runtime (the `deno` or `node` binary)
+    somewhere system-wide, such as */usr/local/bin*, so that `ExecStart` and,
+    on Node.js, srvx's `#!/usr/bin/env node` launcher can find it.
+
+    > [!NOTE]
+    > On Node.js, add the [srvx] package to the project's dependencies and
+    > install them in */opt/botkit* (for example, with `npm ci`), so that
+    > */opt/botkit/node\_modules/.bin/srvx* exists before the service starts.
+    > The *bot.ts* file should end with `export default bot`, exactly as on
+    > Deno.
 
 4.  Set proper permissions:
 
@@ -249,6 +340,7 @@ To run your bot as a systemd service:
 > 3.  Restart the service: `sudo systemctl restart botkit-bot`
 
 [systemd]: https://systemd.io/
+[srvx]: https://srvx.h3.dev/
 
 
 Monitoring logs
@@ -261,4 +353,4 @@ sudo journalctl -u botkit-bot -f
 ~~~~
 
 <!-- cSpell: ignore dearmor keyrings copr pacman Caddyfile clickjacking -->
-<!-- cSpell: ignore nosniff journalctl -->
+<!-- cSpell: ignore nosniff journalctl fnm srvx vercel -->

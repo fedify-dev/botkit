@@ -183,62 +183,38 @@ And your bot will be available at <http://localhost:8000/>.
 
 ### Node.js
 
-In Node.js, we will use the [srvx] package to run the bot.  First, you need to
-install the *srvx* package:
+On Node.js, export the `bot` as a default export the same way as on Deno:
+
+~~~~ typescript [bot.ts] twoslash
+import type { Bot } from "@fedify/botkit";
+const bot = {} as unknown as Bot<void>;
+// ---cut-before---
+export default bot;
+~~~~
+
+Then run it with the [srvx] CLI, which serves the fetch handler and executes
+the TypeScript entry directly, so you don't need a separate build step:
 
 ::: code-group
 
 ~~~~ bash [npm]
-npm add srvx
+npx srvx serve --port 8000 --entry ./bot.ts
 ~~~~
 
 ~~~~ bash [pnpm]
-pnpm add srvx
+pnpx srvx serve --port 8000 --entry ./bot.ts
 ~~~~
 
 ~~~~ bash [Yarn]
-yarn add srvx
+yarn dlx srvx serve --port 8000 --entry ./bot.ts
 ~~~~
 
 :::
 
-Then, import [`serve()`] function from `srvx` module:
-
-~~~~ typescript [bot.ts] twoslash
-import { serve } from "srvx";
-~~~~
-
-Finally, you can run the bot using the [`serve()`] function at the end of
-the *bot.ts* file:
-
-~~~~ typescript [bot.ts] twoslash
-import type { Bot } from "@fedify/botkit";
-import { serve } from "srvx";
-const bot = {} as unknown as Bot<void>;
-// ---cut-before---
-const server = serve({
-  ...bot,
-  port: 8000,
-});
-await server.ready();
-console.log(`Bot is running at ${server.url}`);
-~~~~
-
-Then, you can run the bot using the following command:
-
-~~~~ bash
-node --experimental-transform-types ./bot.ts
-~~~~
-
-The above command will start the bot and it will be available at
-<http://localhost:8000/>:
-
-~~~~
-Bot is running at http://localhost:8000/
-~~~~
+Your bot will be available at <http://localhost:8000/>.  The CLI defaults to
+port 3000 when you omit `--port`.
 
 [srvx]: https://srvx.h3.dev/
-[`serve()`]: https://srvx.h3.dev/guide/server
 
 
 Exposing the bot to the public internet

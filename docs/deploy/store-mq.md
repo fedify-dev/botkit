@@ -1,19 +1,35 @@
 ---
 description: >-
-  Learn how to configure and manage key–value stores and message queues for your
-  BotKit bot across different deployment environments.
+  Learn how to configure the key–value store, message queue, and repository
+  that back your BotKit bot, and how to choose backends for production.
 ---
 
-Key–value store and message queue
-=================================
+Storage and message queue
+=========================
 
-BotKit requires two main backend services for operation:
+A BotKit bot relies on three pieces of backing infrastructure, each configured
+through an option on [`createBot()`](../concepts/bot.md#instantiation) or
+[`createInstance()`](../concepts/instance.md):
 
-1.  A key–value store for persistent data storage
-2.  A message queue for handling background tasks
+[`kv`](../concepts/bot.md#createbotoptions-kv)
+:   A key–value store that Fedify uses for federation internals, such as the
+    bot's cryptographic keys and caches of remote objects.  This one is
+    required.
 
-This guide covers configuration options for different deployment environments
-and provides recommendations for production use.
+[`queue`](../concepts/bot.md#createbotoptions-queue)
+:   A message queue that processes incoming and outgoing activities in the
+    background.  It is optional during development but expected in production,
+    where you don't want activity delivery to block HTTP responses.
+
+[`repository`](../concepts/bot.md#createbotoptions-repository)
+:   A store for the bot's own data: its posts, followers, followees, sent
+    follow requests, and poll votes.  It is optional and, when omitted,
+    defaults to a [`KvRepository`](../concepts/repository.md#kvrepository)
+    layered on the same key–value store.
+
+This guide covers the choices for each and recommends pairings for production.
+For the repository API in full, see the
+[*Repository* concept chapter](../concepts/repository.md).
 
 
 Key–value stores
@@ -246,13 +262,17 @@ Message queues are used to handle background tasks, such as sending messages
 and processing incoming activities.  Usually you would want to pair a message
 queue with a key–value store for a compact and complete backend solution.
 
-### [Deno KV Queue] (Deno Deploy)
+### [Deno KV Queue]
 
-Built on top of [Deno KV], suitable for [Deno Deploy].  It requires no
-additional infrastructure, works seamlessly with Deno Deploy,
-and provides automatic scaling.  However, it's only available in Deno
-environments and has limited throughput compared to dedicated message queue
-solutions.
+Built on top of [Deno KV] and available in Deno runtimes.  It needs no
+additional infrastructure and pairs naturally with a `DenoKvStore`, though it
+has limited throughput compared to dedicated message queue solutions.
+
+> [!IMPORTANT]
+> Deno KV queues work only with a local Deno KV database, such as on a
+> self-hosted Deno process.  The rebuilt [Deno Deploy] does not support KV
+> queues, so use a dedicated queue (or none) there instead; see the
+> [*Deno Deploy*](./deno-deploy.md) guide.
 
 ~~~~ typescript
 import { DenoKvMessageQueue } from "@fedify/denokv";
@@ -264,8 +284,6 @@ const bot = createBot<void>({
   kv: new DenoKvStore(kv),
   queue: new DenoKvMessageQueue(kv),
 });
-
-bot.federation.startQueue();
 ~~~~
 
 Since [`DenoKvMessageQueue`] is provided by [Fedify], you need to install the
@@ -275,7 +293,7 @@ Since [`DenoKvMessageQueue`] is provided by [Fedify], you need to install the
 deno add jsr:@fedify/denokv
 ~~~~
 
-[Deno KV Queue]: https://docs.deno.com/deploy/kv/manual/queue_overview/
+[Deno KV Queue]: https://docs.deno.com/examples/queues/
 [`DenoKvMessageQueue`]: https://fedify.dev/manual/mq#denokvmessagequeue-deno-only
 
 ### [Redis] or [Valkey]
@@ -418,5 +436,94 @@ yarn add @fedify/postgres
 :::
 
 [`PostgresMessageQueue`]: https://fedify.dev/manual/mq#postgresmessagequeue
+
+
+Repositories
+------------
+
+The key–value store and message queue back Fedify's federation layer.  BotKit
+keeps its own data, the bot's posts, followers, followees, sent follow
+requests, and poll votes, in a *repository*.  When you omit the
+[`repository`](../concepts/bot.md#createbotoptions-repository) option, BotKit
+wraps your key–value store in a
+[`KvRepository`](../concepts/repository.md#kvrepository), so the default
+persists exactly as durably as the `kv` backend you chose above.  You only need
+to set `repository` explicitly when you want a different trade-off.
+
+> [!NOTE]
+> Choosing a dedicated repository does not remove the need for a key–value
+> store.  Fedify still uses `kv` for federation internals, so it stays required
+> whichever repository you run.
+
+The [*Repository* concept chapter](../concepts/repository.md) documents every
+class and its options.  For deployment, the practical question is which one to
+run:
+
+[`KvRepository`](../concepts/repository.md#kvrepository) (default)
+:   Stores everything through the key–value store you already configured.  When
+    that store is durable, such as Deno KV, Redis, or PostgreSQL, this needs no
+    extra setup and is a sound production choice.
+
+[`SqliteRepository`](../concepts/repository.md#sqliterepository)
+:   Keeps bot data in a local SQLite file with write-ahead logging.  It suits
+    a single-machine deployment where you would rather not run a separate
+    database server.  Provided by the *@fedify/botkit-sqlite* package.
+
+[`PostgresRepository`](../concepts/repository.md#postgresrepository)
+:   Stores bot data in PostgreSQL tables under a dedicated schema (named
+    `botkit` by default).  Reach for it when several bot processes share one
+    persistent store, or when you already operate PostgreSQL.  Provided by the
+    *@fedify/botkit-postgres* package.
+
+[`RedisRepository`](../concepts/repository.md#redisrepository)
+:   Stores bot data directly in Redis data structures.  Like
+    `PostgresRepository`, it fits deployments that span several processes, and
+    it is convenient when Redis is already part of your stack.  Provided by the
+    *@fedify/botkit-redis* package.
+
+A fourth class,
+[`MemoryCachedRepository`](../concepts/repository.md#memorycachedrepository),
+wraps any of the above with an in-memory cache that trades memory for lower
+read latency.  It changes performance, not durability.
+
+For a single-machine bot, SQLite can cover both roles without an external
+service.  Point the key–value store and the repository at separate files so
+they don't contend for the same database lock:
+
+~~~~ typescript twoslash
+import { createBot } from "@fedify/botkit";
+import { SqliteKvStore } from "@fedify/sqlite";
+import { SqliteRepository } from "@fedify/botkit-sqlite";
+import { DatabaseSync } from "node:sqlite";
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new SqliteKvStore(new DatabaseSync("federation.db")),
+  repository: new SqliteRepository({ path: "bot-data.db" }),
+});
+~~~~
+
+Install the package for whichever repository you choose.  For the SQLite
+example above:
+
+::: code-group
+
+~~~~ sh [Deno]
+deno add jsr:@fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [npm]
+npm add @fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [pnpm]
+pnpm add @fedify/botkit-sqlite
+~~~~
+
+~~~~ sh [Yarn]
+yarn add @fedify/botkit-sqlite
+~~~~
+
+:::
 
 <!-- cSpell: ignore mybot Valkey appendonly -->
