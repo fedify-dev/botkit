@@ -7,6 +7,7 @@ import InstanceCode from "./landing-code/instance.md";
 import MessagesCode from "./landing-code/messages.md";
 import PublishRichPostCode from "./landing-code/publish-rich-post.md";
 import ReplyMentionsCode from "./landing-code/reply-mentions.md";
+import TypeSafetyCode from "./landing-code/type-safety.md";
 import WeatherbotCode from "./landing-code/weatherbot.md";
 import WelcomeFollowersCode from "./landing-code/welcome-followers.md";
 
@@ -96,6 +97,7 @@ onUnmounted(() => stopCarousel());
 const capabilities = [
   {
     title: "Type‑safe API",
+    href: "#type-safety",
     body:
       "Written in TypeScript end to end: autocomplete, compile‑time checks, " +
       "and typed builders for every message you send.",
@@ -345,6 +347,46 @@ const targets = [
                 <li>Your message rules</li>
                 <li>One app, many bots</li>
               </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="bk-runner" />
+
+    <!-- ────────────────────  TYPE SAFETY  ──────────────────── -->
+    <section id="type-safety" class="bk-feature bk-feature--reverse">
+      <div class="bk-feature__grid">
+        <div class="bk-feature__text">
+          <p class="bk-kicker">Type safety</p>
+          <h2 class="bk-h2">The compiler knows your bot</h2>
+          <p class="bk-feature__body">
+            Give BotKit your app's context type once, and it follows your bot
+            through sessions, event handlers, message builders, and helper
+            functions. TypeScript catches mismatched context data and invalid
+            message options before a fediverse server ever sees the activity.
+          </p>
+          <a class="bk-link" href="/intro#typescript-all-the-way-down"
+            >More on BotKit's types →</a
+          >
+        </div>
+        <div class="bk-feature__visual">
+          <div class="bk-type-safety">
+            <div class="bk-window">
+              <div class="bk-window__bar">
+                <span class="bk-dot"></span><span class="bk-dot"></span
+                ><span class="bk-dot"></span>
+                <span class="bk-window__name">support-bot.ts</span>
+              </div>
+              <div class="bk-code">
+                <TypeSafetyCode />
+              </div>
+            </div>
+            <div class="bk-type-safety__facts" aria-label="Type safety coverage">
+              <span>Context travels with the session</span>
+              <span>Handlers receive typed messages</span>
+              <span>Publish options stay checked</span>
             </div>
           </div>
         </div>
@@ -1283,6 +1325,39 @@ a.bk-notes__k:hover {
   background: var(--vp-c-brand-1);
 }
 
+/* Type safety visual */
+.bk-type-safety {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bk-type-safety__facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.bk-type-safety__facts span {
+  position: relative;
+  min-width: 0;
+  padding: 12px 12px 12px 30px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.bk-type-safety__facts span::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 1.08em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--vp-c-brand-1);
+}
+
 /* Bot profile mock (web-pages visual) */
 .bk-web {
   border: 1px solid var(--vp-c-divider);
@@ -1566,6 +1641,9 @@ a.bk-chip--code:hover {
     max-width: 100%;
   }
   .bk-model {
+    grid-template-columns: 1fr;
+  }
+  .bk-type-safety__facts {
     grid-template-columns: 1fr;
   }
   .bk-code :deep(pre.shiki) {
