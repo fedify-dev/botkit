@@ -234,6 +234,7 @@ export default defineConfig({
       groupIconVitePlugin(),
       llmstxt({
         ignoreFiles: [
+          ".vitepress/theme/components/landing-code/*",
           "changelog.md",
         ],
       }),

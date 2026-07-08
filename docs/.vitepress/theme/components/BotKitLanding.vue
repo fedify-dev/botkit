@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import type { Component } from "vue";
 import { onMounted, onUnmounted, ref } from "vue";
+import CreateBotCode from "./landing-code/create-bot.md";
+import EventsCode from "./landing-code/events.md";
+import InstanceCode from "./landing-code/instance.md";
+import MessagesCode from "./landing-code/messages.md";
+import PublishRichPostCode from "./landing-code/publish-rich-post.md";
+import ReplyMentionsCode from "./landing-code/reply-mentions.md";
+import WeatherbotCode from "./landing-code/weatherbot.md";
+import WelcomeFollowersCode from "./landing-code/welcome-followers.md";
 
 const managers = [
   { id: "deno", label: "Deno", cmd: "deno add jsr:@fedify/botkit" },
@@ -29,46 +38,28 @@ const snippets = [
   {
     file: "bot.ts",
     label: "Create a bot",
-    code: `<span class="k">const</span> bot = <span class="fn">createBot</span>&lt;<span class="t">void</span>&gt;({
-  username: <span class="s">"weatherbot"</span>,
-  name: <span class="s">"Seoul Weather Bot"</span>,
-  summary: <span class="fn">text</span><span class="s">\`Daily weather for Seoul!\`</span>,
-  kv: <span class="k">new</span> <span class="fn">MemoryKvStore</span>(),
-});`,
+    component: CreateBotCode,
   },
   {
     file: "handlers.ts",
     label: "Reply to mentions",
-    code: `bot.onMention = <span class="k">async</span> (session, message) =&gt; {
-  <span class="k">await</span> message.<span class="fn">reply</span>(
-    <span class="fn">text</span><span class="s">\`Current weather: 22°C ☀️\`</span>
-  );
-};`,
+    component: ReplyMentionsCode,
   },
   {
     file: "handlers.ts",
     label: "Welcome new followers",
-    code: `bot.onFollow = <span class="k">async</span> (session, follower) =&gt; {
-  <span class="k">await</span> session.<span class="fn">publish</span>(
-    <span class="fn">text</span><span class="s">\`Welcome, \${follower}!\`</span>,
-    { visibility: <span class="s">"direct"</span> },
-  );
-};`,
+    component: WelcomeFollowersCode,
   },
   {
     file: "post.ts",
     label: "Publish rich posts",
-    code: `<span class="k">await</span> session.<span class="fn">publish</span>(
-  <span class="fn">text</span><span class="s">\`Chart update! \${</span><span class="fn">hashtag</span>(<span class="s">"BotKit"</span>)<span class="s">}\`</span>,
-  {
-    attachments: [
-      <span class="k">new</span> <span class="t">Image</span>({ url, mediaType: <span class="s">"image/png"</span> }),
-    ],
-    visibility: <span class="s">"public"</span>,
+    component: PublishRichPostCode,
   },
-);`,
-  },
-];
+] satisfies readonly {
+  readonly file: string;
+  readonly label: string;
+  readonly component: Component;
+}[];
 
 const currentIndex = ref(0); // 0 = logo, 1…n = code slides
 const carouselPaused = ref(false);
@@ -213,7 +204,9 @@ const targets = [
                     ><span class="bk-dot"></span>
                     <span class="bk-window__name">{{ snippets[currentIndex - 1].file }}</span>
                   </div>
-                  <pre class="bk-code"><code v-html="snippets[currentIndex - 1].code"></code></pre>
+                  <div class="bk-code">
+                    <component :is="snippets[currentIndex - 1].component" />
+                  </div>
                 </div>
               </div>
             </Transition>
@@ -267,25 +260,9 @@ const targets = [
             ><span class="bk-dot"></span>
             <span class="bk-window__name">weatherbot.ts</span>
           </div>
-          <pre class="bk-code"><code><span class="k">import</span> { createBot, MemoryKvStore, text } <span class="k">from</span> <span class="s">"@fedify/botkit"</span>;
-
-<span class="k">const</span> bot = <span class="fn">createBot</span>&lt;<span class="t">void</span>&gt;({
-  username: <span class="s">"weatherbot"</span>,
-  name: <span class="s">"Seoul Weather Bot"</span>,
-  summary: <span class="fn">text</span><span class="s">`I post daily weather updates for Seoul!`</span>,
-  kv: <span class="k">new</span> <span class="fn">MemoryKvStore</span>(),
-});
-
-<span class="c">// Reply when someone mentions the bot</span>
-bot.onMention = <span class="k">async</span> (session, message) =&gt; {
-  <span class="k">await</span> message.<span class="fn">reply</span>(<span class="fn">text</span><span class="s">`It's 18°C with clear skies in Seoul.`</span>);
-};
-
-<span class="c">// Publish on a schedule</span>
-<span class="fn">setInterval</span>(<span class="k">async</span> () =&gt; {
-  <span class="k">const</span> session = bot.<span class="fn">getSession</span>(<span class="s">"https://weather.example.com"</span>);
-  <span class="k">await</span> session.<span class="fn">publish</span>(<span class="fn">text</span><span class="s">`Good morning! Today: 22°C, clear skies ☀️`</span>);
-}, <span class="n">1000</span> * <span class="n">60</span> * <span class="n">60</span> * <span class="n">24</span>);</code></pre>
+          <div class="bk-code">
+            <WeatherbotCode />
+          </div>
         </div>
 
         <ul class="bk-notes">
@@ -388,13 +365,9 @@ bot.onMention = <span class="k">async</span> (session, message) =&gt; {
               ><span class="bk-dot"></span>
               <span class="bk-window__name">post.ts</span>
             </div>
-            <pre class="bk-code"><code><span class="k">await</span> session.<span class="fn">publish</span>(
-  <span class="fn">text</span><span class="s">`New chart is up! ${</span><span class="fn">hashtag</span>(<span class="s">"BotKit"</span>)<span class="s">}`</span>,
-  {
-    attachments: [<span class="k">new</span> <span class="t">Image</span>({ url, mediaType: <span class="s">"image/png"</span> })],
-    visibility: <span class="s">"public"</span>,
-  },
-);</code></pre>
+            <div class="bk-code">
+              <MessagesCode />
+            </div>
           </div>
         </div>
       </div>
@@ -434,15 +407,9 @@ bot.onMention = <span class="k">async</span> (session, message) =&gt; {
               ><span class="bk-dot"></span>
               <span class="bk-window__name">handlers.ts</span>
             </div>
-            <pre class="bk-code"><code>bot.onFollow = <span class="k">async</span> (session, follower) =&gt; {
-  <span class="k">await</span> session.<span class="fn">publish</span>(<span class="fn">text</span><span class="s">`Thanks for the follow, ${follower}!`</span>, {
-    visibility: <span class="s">"direct"</span>,
-  });
-};
-
-bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
-  <span class="k">await</span> reaction.message.<span class="fn">reply</span>(<span class="fn">text</span><span class="s">`Glad you liked it!`</span>);
-};</code></pre>
+            <div class="bk-code">
+              <EventsCode />
+            </div>
           </div>
         </div>
       </div>
@@ -478,19 +445,9 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
               ><span class="bk-dot"></span>
               <span class="bk-window__name">instance.ts</span>
             </div>
-            <pre class="bk-code"><code><span class="k">const</span> instance = <span class="fn">createInstance</span>&lt;<span class="t">void</span>&gt;({ kv: <span class="k">new</span> <span class="fn">MemoryKvStore</span>() });
-
-<span class="k">const</span> greetBot = instance.<span class="fn">createBot</span>(<span class="s">"greet"</span>, {
-  username: <span class="s">"greetbot"</span>,
-  name: <span class="s">"Greeting Bot"</span>,
-});
-
-<span class="k">const</span> echoBot = instance.<span class="fn">createBot</span>(<span class="s">"echo"</span>, {
-  username: <span class="s">"echobot"</span>,
-  name: <span class="s">"Echo Bot"</span>,
-});
-
-<span class="k">export default</span> instance;</code></pre>
+            <div class="bk-code">
+              <InstanceCode />
+            </div>
           </div>
         </div>
       </div>
@@ -775,6 +732,13 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   gap: 48px;
   align-items: center;
 }
+.bk-hero__text,
+.bk-hero__kit,
+.bk-feature__text,
+.bk-feature__visual,
+.bk-fedify__text {
+  min-width: 0;
+}
 .bk-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -1019,6 +983,8 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   align-items: start;
 }
 .bk-window {
+  display: flex;
+  flex-direction: column;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--vp-c-divider);
@@ -1047,8 +1013,8 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
 }
 .bk-code {
   margin: 0;
-  padding: 20px 22px;
-  overflow-x: auto;
+  min-width: 0;
+  min-height: 0;
   font-family: var(--vp-font-family-mono);
   font-size: 0.84rem;
   line-height: 1.65;
@@ -1056,23 +1022,35 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   background: transparent;
   tab-size: 2;
 }
-.bk-code code {
+.bk-kit__code-frame .bk-code {
+  flex: 1;
+}
+.bk-code :deep(div[class*="language-"]) {
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.bk-code :deep(div[class*="language-"] > button.copy),
+.bk-code :deep(div[class*="language-"] > span.lang) {
+  display: none;
+}
+.bk-code :deep(pre.shiki) {
+  margin: 0;
+  padding: 20px 22px;
+  overflow-x: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent !important;
+  tab-size: inherit;
+}
+.bk-code :deep(code) {
   background: none;
   padding: 0;
   font-size: inherit;
   color: inherit;
 }
-.bk-code :deep(.k) { color: #9333ea; font-weight: 500; }
-.bk-code :deep(.s) { color: #3f6212; }
-.bk-code :deep(.c) { color: var(--vp-c-text-3); font-style: italic; }
-.bk-code :deep(.fn) { color: var(--vp-c-brand-1); }
-.bk-code :deep(.t) { color: #0369a1; }
-.bk-code :deep(.n) { color: #b45309; }
-:global(.dark) .bk-code :deep(.k) { color: #d8b4fe; }
-:global(.dark) .bk-code :deep(.s) { color: #bef264; }
-:global(.dark) .bk-code :deep(.fn) { color: #86efac; }
-:global(.dark) .bk-code :deep(.t) { color: #7dd3fc; }
-:global(.dark) .bk-code :deep(.n) { color: #fcd34d; }
 
 .bk-notes {
   list-style: none;
@@ -1522,7 +1500,16 @@ a.bk-chip--code:hover {
     grid-template-columns: 1fr;
   }
   .bk-title {
-    font-size: clamp(2.2rem, 8vw, 2.8rem);
+    max-width: 100%;
+    font-size: clamp(2.05rem, 8vw, 2.55rem);
+    overflow-wrap: anywhere;
+  }
+  .bk-lede {
+    max-width: 100%;
+  }
+  .bk-code :deep(pre.shiki) {
+    padding: 18px 10px;
+    font-size: 0.72rem;
   }
 }
 
