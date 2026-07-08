@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 
 const managers = [
   { id: "deno", label: "Deno", cmd: "deno add jsr:@fedify/botkit" },
@@ -23,6 +23,84 @@ async function copyCmd() {
     /* clipboard unavailable */
   }
 }
+
+// ── Carousel ──────────────────────────────────────────────
+const snippets = [
+  {
+    file: "bot.ts",
+    label: "Create a bot",
+    code: `<span class="k">const</span> bot = <span class="fn">createBot</span>&lt;<span class="t">void</span>&gt;({
+  username: <span class="s">"weatherbot"</span>,
+  name: <span class="s">"Seoul Weather Bot"</span>,
+  summary: <span class="fn">text</span><span class="s">\`Daily weather for Seoul!\`</span>,
+  kv: <span class="k">new</span> <span class="fn">MemoryKvStore</span>(),
+});`,
+  },
+  {
+    file: "handlers.ts",
+    label: "Reply to mentions",
+    code: `bot.onMention = <span class="k">async</span> (session, message) =&gt; {
+  <span class="k">await</span> message.<span class="fn">reply</span>(
+    <span class="fn">text</span><span class="s">\`Current weather: 22°C ☀️\`</span>
+  );
+};`,
+  },
+  {
+    file: "handlers.ts",
+    label: "Welcome new followers",
+    code: `bot.onFollow = <span class="k">async</span> (session, follower) =&gt; {
+  <span class="k">await</span> session.<span class="fn">publish</span>(
+    <span class="fn">text</span><span class="s">\`Welcome, \${follower}!\`</span>,
+    { visibility: <span class="s">"direct"</span> },
+  );
+};`,
+  },
+  {
+    file: "post.ts",
+    label: "Publish rich posts",
+    code: `<span class="k">await</span> session.<span class="fn">publish</span>(
+  <span class="fn">text</span><span class="s">\`Chart update! \${</span><span class="fn">hashtag</span>(<span class="s">"BotKit"</span>)<span class="s">}\`</span>,
+  {
+    attachments: [
+      <span class="k">new</span> <span class="t">Image</span>({ url, mediaType: <span class="s">"image/png"</span> }),
+    ],
+    visibility: <span class="s">"public"</span>,
+  },
+);`,
+  },
+];
+
+const currentIndex = ref(0); // 0 = logo, 1…n = code slides
+const carouselPaused = ref(false);
+let carouselTimer: ReturnType<typeof setInterval> | null = null;
+
+function startCarousel() {
+  carouselTimer = setInterval(() => {
+    if (!carouselPaused.value) {
+      currentIndex.value = (currentIndex.value + 1) % (snippets.length + 1);
+    }
+  }, 4000);
+}
+
+function stopCarousel() {
+  if (carouselTimer !== null) {
+    clearInterval(carouselTimer);
+    carouselTimer = null;
+  }
+}
+
+function goToSlide(i: number) {
+  currentIndex.value = i;
+  stopCarousel();
+  startCarousel();
+}
+
+onMounted(() => {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    startCarousel();
+  }
+});
+onUnmounted(() => stopCarousel());
 
 const capabilities = [
   {
@@ -110,20 +188,62 @@ const targets = [
           </div>
         </div>
 
-        <!-- The mark: a dinosaur presented as a model kit on its runner.
-             The logo already carries the kit frame, so it sits on a plain
-             tinted stage rather than a second frame. -->
-        <div class="bk-hero__kit">
+        <!-- Slide 0: the BotKit dinosaur on its model-kit runner.
+             Slides 1–n: rotating code snippets showing BotKit at a glance. -->
+        <div
+          class="bk-hero__kit"
+          @mouseenter="carouselPaused = true"
+          @mouseleave="carouselPaused = false"
+        >
           <div class="bk-kit">
-            <img
-              class="bk-kit__art"
-              src="/logo.svg"
-              alt="The BotKit dinosaur, held on its model-kit runner"
-              width="360"
-              height="292"
-            />
+            <Transition name="bk-fade" mode="out-in">
+              <div v-if="currentIndex === 0" key="logo" class="bk-kit__logo-frame">
+                <img
+                  class="bk-kit__art"
+                  src="/logo.svg"
+                  alt="The BotKit dinosaur, held on its model-kit runner"
+                  width="360"
+                  height="292"
+                />
+              </div>
+              <div v-else :key="currentIndex" class="bk-kit__code-frame">
+                <div class="bk-window">
+                  <div class="bk-window__bar">
+                    <span class="bk-dot"></span><span class="bk-dot"></span
+                    ><span class="bk-dot"></span>
+                    <span class="bk-window__name">{{ snippets[currentIndex - 1].file }}</span>
+                  </div>
+                  <pre class="bk-code"><code v-html="snippets[currentIndex - 1].code"></code></pre>
+                </div>
+              </div>
+            </Transition>
           </div>
-          <p class="bk-kit__cap">No.&thinsp;01 · some assembly required</p>
+
+          <div class="bk-carousel__footer">
+            <p class="bk-kit__cap">
+              {{
+                currentIndex === 0
+                  ? 'No. 01 · some assembly required'
+                  : snippets[currentIndex - 1].label
+              }}
+            </p>
+            <div
+              class="bk-carousel__dots"
+              role="tablist"
+              aria-label="Code examples"
+            >
+              <button
+                v-for="n in (snippets.length + 1)"
+                :key="n - 1"
+                class="bk-carousel__dot"
+                :class="{ 'is-active': currentIndex === n - 1 }"
+                role="tab"
+                :aria-selected="currentIndex === n - 1"
+                :aria-label="n === 1 ? 'BotKit logo' : snippets[n - 2].label"
+                @click="goToSlide(n - 1)"
+              ></button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -794,14 +914,14 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 0;
 }
 .bk-kit {
   position: relative;
   width: min(100%, 440px);
   aspect-ratio: 5 / 4;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
   border-radius: 24px;
   background:
     radial-gradient(
@@ -811,6 +931,7 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
     ),
     var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-divider);
+  overflow: hidden;
 }
 .bk-kit__art {
   width: 80%;
@@ -824,6 +945,70 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   letter-spacing: 0.04em;
   color: var(--vp-c-text-3);
   text-transform: uppercase;
+}
+
+/* ── Hero kit logo / code frames ─────────────────────────── */
+.bk-kit__logo-frame {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px;
+}
+.bk-kit__code-frame {
+  flex: 1;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.bk-kit__code-frame .bk-window {
+  flex: 1;
+}
+
+/* ── Carousel ────────────────────────────────────────────── */
+.bk-carousel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: min(100%, 440px);
+  padding: 10px 4px 0;
+}
+.bk-carousel__dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.bk-carousel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--vp-c-border);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.25s, width 0.25s;
+}
+.bk-carousel__dot.is-active {
+  width: 22px;
+  background: var(--vp-c-brand-1);
+}
+.bk-carousel__dot:hover:not(.is-active) {
+  background: var(--vp-c-text-3);
+}
+.bk-carousel__dot:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 3px;
+}
+
+/* ── Fade transition ─────────────────────────────────────── */
+.bk-fade-enter-active,
+.bk-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.bk-fade-enter-from,
+.bk-fade-leave-to {
+  opacity: 0;
 }
 
 /* ── One-file code section ───────────────────────────────── */
@@ -877,17 +1062,17 @@ bot.onReact = <span class="k">async</span> (session, reaction) =&gt; {
   font-size: inherit;
   color: inherit;
 }
-.bk-code .k { color: #9333ea; font-weight: 500; }
-.bk-code .s { color: #3f6212; }
-.bk-code .c { color: var(--vp-c-text-3); font-style: italic; }
-.bk-code .fn { color: var(--vp-c-brand-1); }
-.bk-code .t { color: #0369a1; }
-.bk-code .n { color: #b45309; }
-:global(.dark) .bk-code .k { color: #d8b4fe; }
-:global(.dark) .bk-code .s { color: #bef264; }
-:global(.dark) .bk-code .fn { color: #86efac; }
-:global(.dark) .bk-code .t { color: #7dd3fc; }
-:global(.dark) .bk-code .n { color: #fcd34d; }
+.bk-code :deep(.k) { color: #9333ea; font-weight: 500; }
+.bk-code :deep(.s) { color: #3f6212; }
+.bk-code :deep(.c) { color: var(--vp-c-text-3); font-style: italic; }
+.bk-code :deep(.fn) { color: var(--vp-c-brand-1); }
+.bk-code :deep(.t) { color: #0369a1; }
+.bk-code :deep(.n) { color: #b45309; }
+:global(.dark) .bk-code :deep(.k) { color: #d8b4fe; }
+:global(.dark) .bk-code :deep(.s) { color: #bef264; }
+:global(.dark) .bk-code :deep(.fn) { color: #86efac; }
+:global(.dark) .bk-code :deep(.t) { color: #7dd3fc; }
+:global(.dark) .bk-code :deep(.n) { color: #fcd34d; }
 
 .bk-notes {
   list-style: none;
@@ -1343,7 +1528,10 @@ a.bk-chip--code:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .bk-card,
-  .bk-btn {
+  .bk-btn,
+  .bk-fade-enter-active,
+  .bk-fade-leave-active,
+  .bk-carousel__dot {
     transition: none;
   }
 }

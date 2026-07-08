@@ -17,6 +17,7 @@
   "nodeModulesDir": "none",
   "exclude": [
     ".github",
+    ".playwright-mcp",
     "docs",
     "dist",
     "junit.xml",
