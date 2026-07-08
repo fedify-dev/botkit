@@ -144,12 +144,60 @@ const repos = [
   { name: "RedisRepository", href: "/concepts/repository#redisrepository" },
   { name: "PostgresRepository", href: "/concepts/repository#postgresrepository" },
 ];
+const repositoryChoices = [
+  {
+    name: "KvRepository",
+    code: "new KvRepository(kv)",
+  },
+  {
+    name: "SqliteRepository",
+    code: "new SqliteRepository(db)",
+  },
+  {
+    name: "RedisRepository",
+    code: "new RedisRepository(redis)",
+  },
+  {
+    name: "PostgresRepository",
+    code: "new PostgresRepository(pool)",
+  },
+] satisfies readonly {
+  readonly name: string;
+  readonly code: string;
+}[];
+const currentRepositoryIndex = ref(0);
+let repositoryTimer: ReturnType<typeof setInterval> | null = null;
+
+function currentRepository() {
+  return repositoryChoices[currentRepositoryIndex.value];
+}
+
+function startRepositoryCycle() {
+  repositoryTimer = setInterval(() => {
+    currentRepositoryIndex.value =
+      (currentRepositoryIndex.value + 1) % repositoryChoices.length;
+  }, 2600);
+}
+
+function stopRepositoryCycle() {
+  if (repositoryTimer !== null) {
+    clearInterval(repositoryTimer);
+    repositoryTimer = null;
+  }
+}
 const targets = [
   { name: "Deno Deploy", href: "/deploy/deno-deploy" },
   { name: "Cloudflare Workers", href: "/deploy/cfworkers" },
   { name: "Docker · Fly.io / Railway", href: "/deploy/docker" },
   { name: "Self‑hosted", href: "/deploy/self-hosting" },
 ];
+
+onMounted(() => {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    startRepositoryCycle();
+  }
+});
+onUnmounted(() => stopRepositoryCycle());
 </script>
 
 <template>
@@ -622,46 +670,68 @@ const targets = [
       <div class="bk-section__head">
         <h2 class="bk-h2">Store it and ship it anywhere</h2>
         <p class="bk-sub">
-          BotKit keeps storage behind its own
-          <a href="/concepts/repository"><code>Repository</code></a> interface,
-          so switching backends and deploy targets never touches your bot code.
+          Put storage behind BotKit's
+          <a href="/concepts/repository"><code>Repository</code></a> interface.
+          Your handlers keep the same shape when you move from memory to Redis,
+          PostgreSQL, SQLite, Deno KV, or a hosted runtime.
         </p>
       </div>
 
-      <div class="bk-rows">
-        <div class="bk-row">
-          <span class="bk-row__label">Storage</span>
-          <div class="bk-row__body">
-            <div class="bk-chips">
-              <a
-                v-for="r in repos"
-                :key="r.name"
-                class="bk-chip bk-chip--code"
-                :href="r.href"
-                >{{ r.name }}</a
-              >
-            </div>
-            <p class="bk-row__note">
-              <a href="/concepts/repository#kvrepository"
-                ><code>KvRepository</code></a
-              >
-              adapts any Fedify
-              <a href="https://fedify.dev/manual/kv"><code>KvStore</code></a>
-              (Redis, PostgreSQL, Deno KV, or in‑memory);
-              <a href="/concepts/repository#sqliterepository"
-                ><code>SqliteRepository</code></a
-              >,
-              <a href="/concepts/repository#redisrepository"
-                ><code>RedisRepository</code></a
-              >, and
-              <a href="/concepts/repository#postgresrepository"
-                ><code>PostgresRepository</code></a
-              >
-              store to those backends directly.
-            </p>
+      <div class="bk-storage">
+        <div class="bk-window">
+          <div class="bk-window__bar">
+            <span class="bk-dot"></span><span class="bk-dot"></span
+            ><span class="bk-dot"></span>
+            <span class="bk-window__name">bot.ts</span>
+          </div>
+          <div class="bk-storage-code" aria-label="Repository swap example">
+            <pre><code><span class="line"><span class="kw">const</span> bot = createBot({</span>
+<span class="line">  username: <span class="str">"support"</span>,</span>
+<span class="line line--swap">  repository: <Transition name="bk-repo-swap" mode="out-in"><span :key="currentRepository().name" class="bk-repo-code">{{ currentRepository().code }}</span></Transition>,</span>
+<span class="line">});</span>
+<span class="line"></span>
+<span class="line">bot.onMention = <span class="kw">async</span> (session, message) => {</span>
+<span class="line">  <span class="kw">await</span> message.reply(text<span class="str">`Hello!`</span>);</span>
+<span class="line">};</span></code></pre>
           </div>
         </div>
-        <div class="bk-row">
+
+        <div class="bk-storage__side">
+          <p class="bk-storage__label">
+            Only the <code>repository</code> line changes
+          </p>
+          <p class="bk-storage__note">
+            The repository line owns persistence. The event handler below it
+            does not know whether the bot is backed by a process, a database,
+            or a serverless key-value store.
+          </p>
+          <div class="bk-storage__facts" aria-label="Storage boundary">
+            <div>
+              <span>Stable:</span>
+              <p>Handlers, sessions, and message builders</p>
+            </div>
+            <div>
+              <span>Swappable:</span>
+              <p>Repository adapter and deploy target</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-storage-options">
+        <div class="bk-storage__group">
+          <span class="bk-row__label">Storage</span>
+          <div class="bk-chips">
+            <a
+              v-for="r in repos"
+              :key="r.name"
+              class="bk-chip bk-chip--code"
+              :href="r.href"
+              >{{ r.name }}</a
+            >
+          </div>
+        </div>
+        <div class="bk-storage__group">
           <span class="bk-row__label">Deploy</span>
           <div class="bk-chips">
             <a
@@ -1484,6 +1554,141 @@ a.bk-notes__k:hover {
 }
 
 /* ── Store & ship ────────────────────────────────────────── */
+.bk-storage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 28px;
+  align-items: center;
+}
+.bk-storage-code {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-1);
+  background: transparent;
+  tab-size: 2;
+}
+.bk-storage-code pre {
+  margin: 0;
+  padding: 20px 22px;
+  overflow-x: auto;
+  white-space: normal;
+}
+.bk-storage-code code {
+  display: block;
+  min-width: max-content;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  white-space: normal;
+}
+.bk-storage-code .line {
+  display: block;
+  min-height: 1.7em;
+  white-space: pre;
+}
+.bk-storage-code .kw {
+  color: var(--vp-c-brand-1);
+}
+.bk-storage-code .str {
+  color: var(--vp-c-text-2);
+}
+.line--swap {
+  position: relative;
+  margin: 2px -8px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--vp-c-brand-1) 10%, transparent);
+}
+.bk-repo-code {
+  display: inline-block;
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+.bk-repo-swap-enter-active,
+.bk-repo-swap-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.bk-repo-swap-enter-from {
+  opacity: 0;
+  transform: translateY(0.45em);
+}
+.bk-repo-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-0.45em);
+}
+.bk-storage__side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bk-storage__label {
+  margin: 0;
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+}
+.bk-storage__label code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.9em;
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  padding: 3px 7px;
+  border-radius: 7px;
+}
+.bk-storage__note {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+.bk-storage__facts {
+  display: grid;
+  gap: 10px;
+  padding-top: 2px;
+}
+.bk-storage__facts div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 14px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-top: 1px solid var(--vp-c-divider);
+}
+.bk-storage__facts span {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--vp-c-brand-1);
+}
+.bk-storage__facts p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.bk-storage__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bk-storage__group .bk-row__label {
+  width: auto;
+  padding-top: 0;
+}
+.bk-storage-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--vp-c-divider);
+}
 .bk-rows {
   display: flex;
   flex-direction: column;
@@ -1609,7 +1814,9 @@ a.bk-chip--code:hover {
   .bk-hero__grid,
   .bk-code-grid,
   .bk-feature__grid,
-  .bk-fedify__grid {
+  .bk-fedify__grid,
+  .bk-storage,
+  .bk-storage-options {
     grid-template-columns: 1fr;
   }
   .bk-feature__grid {
@@ -1650,6 +1857,12 @@ a.bk-chip--code:hover {
     padding: 18px 10px;
     font-size: 0.72rem;
   }
+  .bk-storage-code {
+    font-size: 0.72rem;
+  }
+  .bk-storage-code pre {
+    padding: 18px 10px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1657,6 +1870,8 @@ a.bk-chip--code:hover {
   .bk-btn,
   .bk-fade-enter-active,
   .bk-fade-leave-active,
+  .bk-repo-swap-enter-active,
+  .bk-repo-swap-leave-active,
   .bk-carousel__dot {
     transition: none;
   }
