@@ -102,9 +102,31 @@ const capabilities = [
   },
   {
     title: "Follower policy",
+    href: "/concepts/events#follow",
     body:
       "Approve every follower automatically, or review each follow request " +
       "yourself before accepting.",
+  },
+  {
+    title: "Quote controls",
+    href: "/concepts/message#quote-policy",
+    body:
+      "Support Misskey-style quotes and Mastodon-style, consent-respecting " +
+      "quotes with FEP-044f policies.",
+  },
+  {
+    title: "Polls and votes",
+    href: "/concepts/message#polls",
+    body:
+      "Publish single-choice or multiple-choice polls, then react when " +
+      "people vote on your bot's questions.",
+  },
+  {
+    title: "Emoji reactions",
+    href: "/concepts/message#reacting-to-a-message-with-an-emoji",
+    body:
+      "Send emoji reactions, receive reaction events, and handle undo " +
+      "events when someone takes a reaction back.",
   },
   {
     title: "Deno, Node.js, and Workers",
@@ -509,7 +531,10 @@ const targets = [
       <div class="bk-cards">
         <div v-for="c in capabilities" :key="c.title" class="bk-card">
           <span class="bk-card__gate" aria-hidden="true"></span>
-          <h3 class="bk-card__title">{{ c.title }}</h3>
+          <h3 class="bk-card__title">
+            <a v-if="c.href" :href="c.href">{{ c.title }}</a>
+            <span v-else>{{ c.title }}</span>
+          </h3>
           <p class="bk-card__body">{{ c.body }}</p>
         </div>
       </div>
@@ -1119,6 +1144,13 @@ a.bk-notes__k:hover {
   font-weight: 600;
   margin: 0 0 8px;
   color: var(--vp-c-text-1);
+}
+.bk-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.bk-card__title a:hover {
+  color: var(--vp-c-brand-1);
 }
 .bk-card__body {
   margin: 0;
