@@ -1,0 +1,12 @@
+{
+  "name": "rss-bot",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@fedify/botkit": "workspace:^",
+    "@rowanmanning/feed-parser": "^2.1.3"
+  }
+}

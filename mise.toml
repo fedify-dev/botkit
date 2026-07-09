@@ -27,6 +27,7 @@ sources = [
   "pnpm-lock.yaml",
   "packages/*/package.json",
   "docs/package.json",
+  "examples/rss-bot/package.json",
 ]
 outputs = ["node_modules"]
 run = "pnpm install"
