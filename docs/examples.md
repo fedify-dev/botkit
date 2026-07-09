@@ -153,6 +153,33 @@ multiple bot groups are probed in the order they were created.
 <!-- hongdown-enable -->
 
 
+RSS/Atom feed bot
+-----------------
+
+The following example shows a bot that polls an RSS, Atom, or RDF feed on
+an interval and publishes new entries to the fediverse, replies to
+mentions with its status, and persists both its own state and BotKit's
+data across restarts using SQLite.  It's covered in depth, file by file,
+in the [*Building an RSS bot*](./tutorial/rss-bot.md) tutorial, which also
+grows it into a `createInstance()`-based instance hosting one bot per
+feed, registered by mentioning the instance with a feed's URL, and ends
+with a self-hosted deployment.
+
+<!-- hongdown-disable -->
+
+::: code-group
+
+<<< @/../examples/rss-bot/feed.ts [feed.ts]
+
+<<< @/../examples/rss-bot/db.ts [db.ts]
+
+<<< @/../examples/rss-bot/instance.ts [instance.ts]
+
+:::
+
+<!-- hongdown-enable -->
+
+
 FediChatBot
 -----------
 
