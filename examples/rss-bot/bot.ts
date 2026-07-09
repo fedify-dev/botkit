@@ -6,6 +6,7 @@
 // Set:  ORIGIN=https://your-domain
 //       FEED_URL=https://example.com/feed.xml (defaults to Hacker News)
 //       POLL_INTERVAL_MS=600000 (defaults to 10 minutes)
+//       BEHIND_PROXY=true (when running behind a tunnel or reverse proxy)
 
 import {
   createBot,
@@ -30,6 +31,8 @@ mkdirSync("./data", { recursive: true });
 
 const FEED_URL = process.env.FEED_URL ?? "https://news.ycombinator.com/rss";
 const ORIGIN = process.env.ORIGIN ?? "http://localhost:8000";
+const BEHIND_PROXY = process.env.BEHIND_PROXY?.trim()?.toLowerCase() ===
+  "true";
 
 const rawPollIntervalMs = process.env.POLL_INTERVAL_MS;
 const POLL_INTERVAL_MS = rawPollIntervalMs == null || rawPollIntervalMs === ""
@@ -48,6 +51,7 @@ const bot = createBot<void>({
   kv: new MemoryKvStore(),
   queue: new InProcessMessageQueue(),
   repository: new SqliteRepository({ path: "./data/bot.db" }),
+  behindProxy: BEHIND_PROXY,
 });
 
 const appDb = openAppDb("./data/app.db");
