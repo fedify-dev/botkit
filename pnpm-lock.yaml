@@ -119,6 +119,9 @@ importers:
       '@fedify/botkit':
         specifier: workspace:^
         version: link:../../packages/botkit
+      '@fedify/botkit-sqlite':
+        specifier: workspace:^
+        version: link:../../packages/botkit-sqlite
       '@rowanmanning/feed-parser':
         specifier: ^2.1.3
         version: 2.1.3

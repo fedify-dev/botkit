@@ -1,7 +1,7 @@
 // A bot that polls an RSS/Atom/RDF feed on an interval and posts new
 // entries to the fediverse.
 //
-// Run:  deno serve --allow-net --allow-env --watch bot.ts
+// Run:  deno serve --allow-net --allow-env --allow-read=./data --allow-write=./data --watch bot.ts
 //   or: npx srvx serve --port 8000 --entry ./bot.ts
 // Set:  ORIGIN=https://your-domain
 //       FEED_URL=https://example.com/feed.xml (defaults to Hacker News)
@@ -14,8 +14,19 @@ import {
   MemoryKvStore,
   text,
 } from "@fedify/botkit";
+import { SqliteRepository } from "@fedify/botkit-sqlite";
+import { mkdirSync } from "node:fs";
 import { fetchFeed } from "./feed.ts";
 import type { FeedItem } from "./feed.ts";
+import {
+  isBaselined,
+  isPosted,
+  markBaselined,
+  markPosted,
+  openAppDb,
+} from "./db.ts";
+
+mkdirSync("./data", { recursive: true });
 
 const FEED_URL = process.env.FEED_URL ?? "https://news.ycombinator.com/rss";
 const ORIGIN = process.env.ORIGIN ?? "http://localhost:8000";
@@ -36,7 +47,10 @@ const bot = createBot<void>({
   summary: text`I watch ${link(FEED_URL)} and post new entries here.`,
   kv: new MemoryKvStore(),
   queue: new InProcessMessageQueue(),
+  repository: new SqliteRepository({ path: "./data/bot.db" }),
 });
+
+const appDb = openAppDb("./data/app.db");
 
 function itemKey(item: FeedItem): string | null {
   return item.id ?? item.url;
@@ -61,41 +75,38 @@ bot.onMention = async (_session, message) => {
   );
 };
 
-const posted = new Set<string>();
-let firstPoll = true;
-
 async function poll(): Promise<void> {
   const feed = await fetchFeed(FEED_URL);
   feedTitle = feed.title;
   const items = [...feed.items].reverse(); // feeds list newest-first
 
-  if (firstPoll) {
-    // Don't flood followers with the feed's entire current front page on
-    // the very first poll.  Only items that show up in later polls count
-    // as "new".
-    firstPoll = false;
-    for (const item of items) {
-      const key = itemKey(item);
-      if (key != null) posted.add(key);
-    }
-    console.log(`Baseline: ${posted.size} existing item(s) from ${FEED_URL}.`);
-    return;
-  }
+  // Don't flood followers with the feed's entire current front page the
+  // very first time this bot ever runs.  Only items that show up in later
+  // polls count as "new".  This is tracked in app.db, so it only happens
+  // once ever, not once per restart.
+  const isFirstEverPoll = !isBaselined(appDb);
 
   const session = bot.getSession(ORIGIN);
   let publishedCount = 0;
   for (const item of items) {
     const key = itemKey(item);
-    if (key == null || posted.has(key)) continue;
-    await session.publish(
-      text`${item.title ?? "(untitled)"}
+    if (key == null || isPosted(appDb, key)) continue;
+    if (!isFirstEverPoll) {
+      await session.publish(
+        text`${item.title ?? "(untitled)"}
 
 ${link(item.url ?? FEED_URL)}`,
-    );
-    posted.add(key);
-    publishedCount++;
+      );
+      publishedCount++;
+    }
+    markPosted(appDb, key);
   }
-  console.log(`Posted ${publishedCount} new item(s) from ${FEED_URL}.`);
+  if (isFirstEverPoll) markBaselined(appDb);
+  console.log(
+    isFirstEverPoll
+      ? `Baseline: ${items.length} existing item(s) from ${FEED_URL}.`
+      : `Posted ${publishedCount} new item(s) from ${FEED_URL}.`,
+  );
 }
 
 let polling = false;
