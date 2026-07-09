@@ -31,6 +31,17 @@ if (process.env.PLAUSIBLE_DOMAIN) {
   ];
 }
 
+const learn = {
+  text: "Learn",
+  items: [
+    { text: "What is BotKit?", link: "/intro.md" },
+    { text: "Getting started", link: "/start.md" },
+    { text: "Building an RSS bot", link: "/tutorial/rss-bot.md" },
+    { text: "Recipes", link: "/recipes.md" },
+    { text: "Examples", link: "/examples.md" },
+  ],
+};
+
 const concepts = {
   text: "Concepts",
   items: [
@@ -83,14 +94,10 @@ export default defineConfig({
     logo: "/logo.svg",
     nav: [
       { text: "Home", link: "/" },
-      { text: "About", link: "/intro.md" },
-      { text: "Start", link: "/start.md" },
-      { text: "Tutorial", link: "/tutorial/rss-bot.md" },
+      learn,
       concepts,
       deploy,
       references,
-      { text: "Recipes", link: "/recipes.md" },
-      { text: "Examples", link: "/examples.md" },
     ],
 
     sidebar: [
