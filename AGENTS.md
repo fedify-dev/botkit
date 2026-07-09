@@ -700,3 +700,21 @@ mise run docs:dev      # Start development server
 
 Always run `mise run docs:build` before committing documentation changes to
 catch Twoslash type errors.
+
+
+Keeping tutorials in sync with their examples
+---------------------------------------------
+
+*docs/tutorial/rss-bot.md* and *examples/rss-bot/* are hand-synced: the
+tutorial's code samples are meant to be exact copies of the real, tested
+files, not paraphrased from memory.  A sample that merely reads plausibly
+can drift from the file it claims to show, missing a comment or a line,
+without failing any check, since `mise run docs:build` only type-checks
+a sample in isolation and has no idea what the real file looks like.
+Before treating a tutorial edit as done, diff every changed sample
+against the actual file, not just the parts that obviously changed.
+
+The same applies in the other direction: changing code under
+*examples/rss-bot/* without checking whether *docs/tutorial/rss-bot.md*
+needs a matching update is how that drift starts in the first place.
+When one changes, check the other.

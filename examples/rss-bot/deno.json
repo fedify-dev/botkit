@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "deno serve --allow-net --allow-env --allow-read=./data --allow-write=./data --watch instance.ts",
+    "prod": "deno serve --allow-net --allow-env --allow-read=./data --allow-write=./data instance.ts"
+  }
+}
