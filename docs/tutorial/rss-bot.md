@@ -1313,6 +1313,17 @@ Hey @registry, please watch https://xkcd.com/rss.xml
 few minutes, then look for
 @xkcd-com@…”](./rss-bot/07-academy-multi-bot-registration.png)
 
+The reply's handle is built with `mention()`, so the underlying Note
+carries a proper `Mention` tag and is addressed directly to the new bot,
+not just formatted to look like one. ActivityPub.Academy doesn't render
+that as a clickable link in the screenshot above, even though the
+underlying data is correct; BotKit's own page for the registry bot shows
+the exact same reply with the link intact:
+
+![The registry bot's own profile page, showing the same “Registered!”
+post with the new bot's handle rendered as a working
+link](./rss-bot/08-registry-profile-mention.png)
+
 A minute or two later, the new bot shows up under its slug. Following
 both it and the migrated original confirms they're genuinely separate
 actors, not aliases of each other:
@@ -1320,14 +1331,14 @@ actors, not aliases of each other:
 ![An account's following list showing three separate bots: the migrated
 original under its rssbot handle, the newly registered xkcd.com feed, and
 a third bot from a separate Node.js
-run](./rss-bot/08-academy-multi-bot-following.png)
+run](./rss-bot/09-academy-multi-bot-following.png)
 
 Mention the new bot directly, and `feedBots.onMention`, not the
 registry's, answers:
 
 ![A mention of the new feed bot and its reply: “I'm watching xkcd.com and
 check for new posts every 2
-minutes.”](./rss-bot/09-academy-multi-bot-mention-reply.png)
+minutes.”](./rss-bot/10-academy-multi-bot-mention-reply.png)
 
 Everything here runs the same way on Node.js: tunnel *instance.ts* behind
 a second hostname, register a feed the same way, and the same handle
