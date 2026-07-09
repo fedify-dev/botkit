@@ -286,8 +286,8 @@ POLL_INTERVAL_MS=60000 deno serve --allow-net --allow-env --watch bot.ts
 ### Replying to mentions
 
 A bot that only posts and never responds feels dead even when it's working.
-`onMention` gives it something to say back: which feed it's watching, and
-how often it checks.
+[`onMention`](../concepts/events.md#mention) gives it something to say
+back: which feed it's watching, and how often it checks.
 
 ~~~~ typescript [bot.ts] {3-10,13-19} twoslash
 import { createBot, link, MemoryKvStore, text } from "@fedify/botkit";
@@ -956,7 +956,7 @@ export function markPosted(
 }
 ~~~~
 
-`identifier` and `slug` both carry a `UNIQUE` constraint, but only `slug`
+`identifier` and `slug` both carry a [`UNIQUE`][21] constraint, but only `slug`
 gets recomputed and retried on collision; `identifier` is generated once
 by `addFeed()` and left alone. `baselined` used to live in Part 1's
 separate `app_meta` table, tracking whether the app had ever polled at
@@ -974,7 +974,7 @@ about the feed at all.
 The two `migrateLegacy*` functions above exist because an existing
 *app.db* from Part 1 still has the old `posted_items(item_id, posted_at)`
 table and a separate `app_meta` key–value table, neither of which
-`CREATE TABLE IF NOT EXISTS` touches: it only creates a table that isn't
+[`CREATE TABLE IF NOT EXISTS`][22] touches: it only creates a table that isn't
 there yet, so an old `posted_items` would sit untouched, missing the
 `feed_identifier` column the rest of this file expects, and the first
 call to `isPosted()` would fail with `no such column: feed_identifier`.
@@ -988,6 +988,8 @@ skips them on every run after the first: `posted_items` already has
 `feed_identifier`, and `app_meta` is already gone.
 
 [10]: https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID
+[21]: https://www.sqlite.org/lang_createtable.html#unique_constraints
+[22]: https://www.sqlite.org/lang_createtable.html
 
 ### From bot to instance
 
@@ -1047,7 +1049,7 @@ cached and could send back in a later `Accept` or `Like`.
 
 `seedFeed()` carries that same bot forward as an ordinary row: same
 identifier, same URL, same username as its slug. It's an
-`INSERT OR IGNORE`, so it's a no-op on every run after the first, and from
+[`INSERT OR IGNORE`][23], so it's a no-op on every run after the first, and from
 here on the original bot is handled by exactly the same dynamic bot group
 as any feed registered afterward, with no special-casing anywhere else in
 the code.
@@ -1064,6 +1066,8 @@ deployment*](../concepts/instance.md#migrating-a-single-bot-deployment)
 for the details. [`fedify lookup`][2] against the actor's URI before and
 after switching to `createInstance()` is worth running yourself: its
 public key and WebFinger handle should come out identical.
+
+[23]: https://www.sqlite.org/lang_insert.html
 
 ### One instance, many feeds
 
@@ -1115,15 +1119,19 @@ bots](../concepts/instance.md#dynamic-bots) pattern used for a
 bot-per-region weather service in BotKit's own docs. The dispatcher here
 does the same kind of lookup: given an identifier, find the matching row
 in `feeds`, and if there isn't one, return `null` so BotKit knows the
-identifier isn't a feed bot at all. `mapUsername` runs that lookup in the
-other direction, by `slug` instead of `identifier`, so `@xkcd-com@your-domain`
+identifier isn't a feed bot at all.
+[`mapUsername`](../concepts/instance.md#usernames-of-dynamic-bots) runs
+that lookup in the other direction, by `slug` instead of `identifier`, so
+`@xkcd-com@your-domain`
 and the actor whose identifier is some random `feed_a1b2c3d4e5f6` resolve
 to the same bot both ways.
 
 Because a `BotGroup` has no single identifier of its own, publishing
-through it needs to say which bot: `feedBots.getSession(origin, identifier)`
-instead of the `bot.getSession(origin)` Part 1 used. Polling walks every row in
-`feeds` and does exactly that, once per feed:
+through it needs to say which bot:
+[`feedBots.getSession(origin, identifier)`](../concepts/instance.md#sessions-for-dynamic-bots)
+instead of the
+[`bot.getSession(origin)`](../concepts/session.md#creating-a-session) Part 1
+used. Polling walks every row in `feeds` and does exactly that, once per feed:
 
 ~~~~ typescript [instance.ts] twoslash
 // @noErrors: 2307
@@ -1219,8 +1227,9 @@ to the next feed.
 Adding a bot to the group so far has meant one thing: insert a row into
 `feeds`. `feedBots`'s dispatcher already resolves any identifier that
 shows up there, whether it's been sitting in the table since startup or
-was inserted a second ago, so nothing needs to call `instance.createBot()`
-again once a feed is registered. That's the payoff of a dynamic bot group
+was inserted a second ago, so nothing needs to call
+[`instance.createBot()`](../concepts/instance.md#dynamic-bots) again once a
+feed is registered. That's the payoff of a dynamic bot group
 over a static one: registration is a database write, not a deploy.
 
 A small static bot, `registry`, is the front door for that write:
@@ -1278,7 +1287,7 @@ registryBot.onMention = async (_session, message) => {
 `extractUrl()` looks for the first thing in the mention's text that
 matches a URL and passes [`URL.canParse()`][16], rejecting a malformed
 one, a truncated `http://%`, say, that would otherwise reach `addFeed()`'s
-`new URL()` call and throw. Registering a URL that's already watched
+[`new URL()`][24] call and throw. Registering a URL that's already watched
 replies instead of hitting the `UNIQUE` constraint on `feeds.url` and
 crashing.
 
@@ -1292,12 +1301,14 @@ searching for it would, and falls back to plain text only if that lookup
 fails, so the reply degrades gracefully instead of breaking if the new
 bot's actor somehow isn't resolvable yet.
 
-What `registryBot.onMention` doesn't do is check who's asking, or whether
+What [`registryBot.onMention`](../concepts/events.md#mention) doesn't do is
+check who's asking, or whether
 the URL it's about to hand to `pollFeed()` actually points somewhere safe
 to fetch from. Both gaps are deliberate, and both are closed in [*Advanced
 exercises*](#advanced-exercises) below, not here.
 
 [16]: https://developer.mozilla.org/en-US/docs/Web/API/URL/canParse_static
+[24]: https://developer.mozilla.org/en-US/docs/Web/API/URL/URL
 
 ### Verifying the instance, on both runtimes
 
