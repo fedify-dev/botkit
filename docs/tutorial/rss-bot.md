@@ -80,6 +80,10 @@ The bot's code keeps that same split: a `feed.ts` module that does the
 fetching, separate from whatever polls it on a schedule.
 
 ~~~~ typescript [feed.ts] twoslash
+// Fetches and parses an RSS, Atom, or RDF feed.  Fetching is this module's
+// job; parsing is entirely @rowanmanning/feed-parser's, which only ever
+// sees a feed as an XML string and has no opinion about how it got there.
+
 import { parseFeed } from "@rowanmanning/feed-parser";
 
 // @rowanmanning/feed-parser's public entry only exports the `parseFeed`
@@ -120,6 +124,15 @@ meant for local development. They'll be replaced once restarts start to matter.
 
 ~~~~ typescript [bot.ts] twoslash
 // @noErrors: 2307
+// A bot that polls an RSS/Atom/RDF feed on an interval and posts new
+// entries to the fediverse.
+//
+// Run:  deno serve --allow-net --allow-env --watch bot.ts
+//   or: npx srvx serve --port 8000 --entry ./bot.ts
+// Set:  ORIGIN=https://your-domain
+//       FEED_URL=https://example.com/feed.xml (defaults to Hacker News)
+//       POLL_INTERVAL_MS=600000 (defaults to 10 minutes)
+
 import {
   createBot,
   InProcessMessageQueue,
@@ -437,8 +450,17 @@ happened to be markable when it was reached.
 `bot.ts` now creates both databases and swaps `posted`/`firstPoll` for the
 persisted equivalents:
 
-~~~~ typescript [bot.ts] {8-9,17,21,30,45,53-54,57,60,64} twoslash
+~~~~ typescript [bot.ts] {4,17-18,21-27,29,42,45,58-62,68-77,79-83} twoslash
 // @noErrors: 2307
+// A bot that polls an RSS/Atom/RDF feed on an interval and posts new
+// entries to the fediverse.
+//
+// Run:  deno serve --allow-net --allow-env --allow-read=./data --allow-write=./data --watch bot.ts
+//   or: npx srvx serve --port 8000 --entry ./bot.ts
+// Set:  ORIGIN=https://your-domain
+//       FEED_URL=https://example.com/feed.xml (defaults to Hacker News)
+//       POLL_INTERVAL_MS=600000 (defaults to 10 minutes)
+
 import {
   createBot,
   InProcessMessageQueue,
@@ -487,6 +509,10 @@ async function poll(): Promise<void> {
   feedTitle = feed.title;
   const items = [...feed.items].reverse(); // feeds list newest-first
 
+  // Don't flood followers with the feed's entire current front page the
+  // very first time this bot ever runs.  Only items that show up in later
+  // polls count as "new".  This is tracked in app.db, so it only happens
+  // once ever, not once per restart.
   const isFirstEverPoll = !isBaselined(appDb);
 
   const session = bot.getSession(ORIGIN);
