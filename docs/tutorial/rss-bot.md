@@ -1212,7 +1212,7 @@ A small static bot, `registry`, is the front door for that write:
 
 ~~~~ typescript [instance.ts] twoslash
 // @noErrors: 2307
-import { text } from "@fedify/botkit";
+import { mention, text } from "@fedify/botkit";
 import { addFeed, getFeedByUrl } from "./db.ts";
 declare const instance: import("@fedify/botkit").Instance<void>;
 declare const appDb: import("node:sqlite").DatabaseSync;
@@ -1245,16 +1245,16 @@ registryBot.onMention = async (_session, message) => {
   const existing = getFeedByUrl(appDb, url);
   if (existing != null) {
     await message.reply(
-      text`Already watching that feed: @${existing.slug}@${
-        new URL(ORIGIN).host
+      text`Already watching that feed: ${
+        mention(`@${existing.slug}@${new URL(ORIGIN).host}`)
       }.`,
     );
     return;
   }
   const feed = addFeed(appDb, url);
   await message.reply(
-    text`Registered! Give it a few minutes, then look for @${feed.slug}@${
-      new URL(ORIGIN).host
+    text`Registered! Give it a few minutes, then look for ${
+      mention(`@${feed.slug}@${new URL(ORIGIN).host}`)
     }.`,
   );
 };
@@ -1266,6 +1266,16 @@ truncated `http://%`, say, that would otherwise reach `addFeed()`'s
 `new URL()` call and throw. Registering a URL that's already watched
 replies instead of hitting the `UNIQUE` constraint on `feeds.url` and
 crashing.
+
+Both replies build the new bot's handle with
+[`mention()`](../concepts/text.md#mentions), not a plain
+`@${slug}@${host}` string interpolated into the template. A handle
+written as plain text is just text: it won't render as a link, and
+without the `Mention` tag `mention()` adds, it doesn't behave like an
+actual mention. `mention()` looks the handle up the same way a person
+searching for it would, and falls back to plain text only if that lookup
+fails, so the reply degrades gracefully instead of breaking if the new
+bot's actor somehow isn't resolvable yet.
 
 What `registryBot.onMention` doesn't do is check who's asking, or whether
 the URL it's about to hand to `pollFeed()` actually points somewhere safe

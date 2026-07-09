@@ -15,6 +15,7 @@ import {
   InProcessMessageQueue,
   link,
   MemoryKvStore,
+  mention,
   text,
 } from "@fedify/botkit";
 import { SqliteRepository } from "@fedify/botkit-sqlite";
@@ -145,16 +146,16 @@ registryBot.onMention = async (_session, message) => {
   const existing = getFeedByUrl(appDb, url);
   if (existing != null) {
     await message.reply(
-      text`Already watching that feed: @${existing.slug}@${
-        new URL(ORIGIN).host
+      text`Already watching that feed: ${
+        mention(`@${existing.slug}@${new URL(ORIGIN).host}`)
       }.`,
     );
     return;
   }
   const feed = addFeed(appDb, url);
   await message.reply(
-    text`Registered! Give it a few minutes, then look for @${feed.slug}@${
-      new URL(ORIGIN).host
+    text`Registered! Give it a few minutes, then look for ${
+      mention(`@${feed.slug}@${new URL(ORIGIN).host}`)
     }.`,
   );
 };
