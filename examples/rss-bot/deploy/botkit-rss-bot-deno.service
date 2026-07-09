@@ -32,8 +32,9 @@ PrivateDevices=true
 # WorkingDirectory itself, unless explicitly listed here.  Without this,
 # the bot can't write bot.db or app.db.  The path must already exist and
 # be owned by botkit:botkit before the service starts (mkdir -p
-# /opt/botkit/data && chown botkit:botkit /opt/botkit/data), or this
-# line has no effect and the directory stays read-only.
+# /opt/botkit/data && chown botkit:botkit /opt/botkit/data); systemd
+# refuses to start the unit at all (exit code 226/NAMESPACE) if it's
+# missing, rather than silently leaving the directory read-only.
 ReadWritePaths=/opt/botkit/data
 
 # Resource limits

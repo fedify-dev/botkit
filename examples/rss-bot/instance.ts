@@ -60,9 +60,12 @@ const instance = createInstance<void>({
   behindProxy: BEHIND_PROXY,
   // The single-bot deployment from part 1 never set an explicit
   // `identifier`, so createBot() defaulted it to "bot" -- "rssbot" was
-  // only ever its username, the human-readable part of the handle.  This
-  // keeps that actor's URIs and follower relationships working now that
-  // it's hosted on an instance instead of owning the whole server.
+  // only ever its username, the human-readable part of the handle.
+  // Reusing that same identifier (not legacyObjectUris below) is what
+  // keeps the actor's URI, keys, and follower relationships intact;
+  // legacyObjectUris only rewrites the *old* format of individual object
+  // URIs (posts, follows) that remote servers may still have cached from
+  // before this bot moved onto an instance.
   legacyObjectUris: { identifier: "bot" },
 });
 

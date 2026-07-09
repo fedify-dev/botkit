@@ -41,6 +41,7 @@ export function openAppDb(path: string): DatabaseSync {
       created_at TEXT NOT NULL
     )
   `);
+  migrateLegacyPostedItems(db);
   db.exec(`
     CREATE TABLE IF NOT EXISTS posted_items (
       feed_identifier TEXT NOT NULL,
@@ -50,6 +51,34 @@ export function openAppDb(path: string): DatabaseSync {
     )
   `);
   return db;
+}
+
+// Part 1's app.db had posted_items(item_id, posted_at), with no concept of
+// which feed an item belonged to, since there was only ever one.  Its rows
+// are carried forward here under the "bot" identifier, the only identifier
+// that could have posted them, before CREATE TABLE IF NOT EXISTS in
+// openAppDb() would otherwise leave the old (incompatible) table in place.
+function migrateLegacyPostedItems(db: DatabaseSync): void {
+  const columns = db.prepare("PRAGMA table_info(posted_items)").all() as {
+    readonly name: string;
+  }[];
+  const isLegacy = columns.length > 0 &&
+    !columns.some((column) => column.name === "feed_identifier");
+  if (!isLegacy) return;
+  db.exec("ALTER TABLE posted_items RENAME TO posted_items_legacy");
+  db.exec(`
+    CREATE TABLE posted_items (
+      feed_identifier TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      posted_at TEXT NOT NULL,
+      PRIMARY KEY (feed_identifier, item_id)
+    )
+  `);
+  db.exec(`
+    INSERT INTO posted_items (feed_identifier, item_id, posted_at)
+    SELECT 'bot', item_id, posted_at FROM posted_items_legacy
+  `);
+  db.exec("DROP TABLE posted_items_legacy");
 }
 
 function slugify(url: string): string {
@@ -97,6 +126,24 @@ export function seedFeed(
   db.prepare(
     "INSERT OR IGNORE INTO feeds (identifier, url, slug, created_at) VALUES (?, ?, ?, ?)",
   ).run(feed.identifier, feed.url, feed.slug, new Date().toISOString());
+  migrateLegacyBaselined(db, feed.identifier);
+}
+
+// Part 1's app.db tracked "has the first poll happened yet" in a separate
+// app_meta table, since there was only one feed to ask that about.  Once
+// this feed's row exists (just above), that flag is carried onto it and
+// app_meta is dropped; a no-op on every run after the first, since app_meta
+// won't exist anymore to check.
+function migrateLegacyBaselined(db: DatabaseSync, identifier: string): void {
+  const hasAppMeta = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'app_meta'",
+  ).get() != null;
+  if (!hasAppMeta) return;
+  const wasBaselined = db.prepare(
+    "SELECT 1 FROM app_meta WHERE key = 'baselined'",
+  ).get() != null;
+  if (wasBaselined) markFeedBaselined(db, identifier);
+  db.exec("DROP TABLE app_meta");
 }
 
 // Registers a newly mentioned feed URL under a fresh, opaque identifier.
