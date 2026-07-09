@@ -663,3 +663,700 @@ from the bot above its earlier mention
 reply](./rss-bot/06-academy-timeline-post.png)
 
 [ActivityPub.Academy]: https://activitypub.academy/
+
+
+Many bots, one instance
+-----------------------
+
+A single feed was enough to prove the idea works, but a hardcoded
+`FEED_URL` doesn't scale to what people actually want: several feeds
+running at once, a new one added without a redeploy, each with its own
+fediverse identity instead of all of them sharing one increasingly noisy
+timeline. [`Instance`](../concepts/instance.md) is the piece of BotKit
+built for that: one server hosting many bots, each with its own actor,
+followers, and inbox, all sharing the same key–value store, queue, and
+repository underneath.
+
+`createBot()` isn't going anywhere, and a bot that only ever needs to be
+one actor has no reason to switch. What follows turns `rssbot` into an
+instance that hosts one bot per registered feed, plus a small registry bot
+whose only job is adding a feed when someone mentions it with a URL.
+
+### A naive identifier, and why it breaks
+
+Each feed bot needs its own identifier: the internal name baked into its
+actor URI the moment it's federated. The obvious first idea is to derive
+one from something about the feed itself, its hostname, say, turning
+`https://xkcd.com/rss.xml` into `xkcd-com`. That string also happens to
+make a fine *username*, the human-readable half of `@xkcd-com@your-domain`
+that a person actually types to find the bot.
+
+Using it for both is where the idea falls apart. An identifier has to stay
+fixed forever once a bot is federated: remote servers embed it in the
+actor URI they cache, and changing it later orphans every follower
+relationship and every reference anyone else's server has stored. A
+feed's hostname doesn't have that kind of permanence. Sites move. A blog
+can migrate from one domain to another and still be the same feed with
+the same followers, and there's no way to rename an identifier to match
+without breaking everyone who already has the old one. What's stable
+enough to make a good username, memorable, tied to what the bot actually
+is, is exactly what makes a bad identifier.
+
+The fix keeps the two apart. An identifier is an opaque string assigned
+once, at registration, and never touched again. A slug is what's derived
+from the feed's URL, free to be recomputed, and only ever used to answer
+“what does a person type to find this bot,” never “what does this bot's
+actor URI contain.”
+
+### The feeds table
+
+`app.db` grows a `feeds` table to hold that split, and `posted_items`
+becomes scoped per feed instead of tracking one bot's history:
+
+~~~~ typescript [db.ts] twoslash
+// app.db: the feed poller's own state, kept separate from bot.db (which
+// belongs entirely to @fedify/botkit-sqlite's SqliteRepository).
+//
+// node:sqlite's DatabaseSync API is fully synchronous -- none of the calls
+// below need (or accept) an `await`.
+//
+// A feed's `identifier` is its opaque, immutable key: it's baked into the
+// actor URI once federated, so it must never be derived from anything that
+// could change (the feed's URL, its title).  `slug` is the human-readable
+// part of the handle, mapped to and from `identifier` via mapUsername.
+
+import { DatabaseSync } from "node:sqlite";
+
+export interface FeedRow {
+  readonly identifier: string;
+  readonly url: string;
+  readonly slug: string;
+  readonly title: string | null;
+  readonly baselined: boolean;
+}
+
+function toFeedRow(row: Record<string, unknown>): FeedRow {
+  return {
+    identifier: row.identifier as string,
+    url: row.url as string,
+    slug: row.slug as string,
+    title: row.title as string | null,
+    baselined: (row.baselined as number) !== 0,
+  };
+}
+
+export function openAppDb(path: string): DatabaseSync {
+  const db = new DatabaseSync(path);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feeds (
+      identifier TEXT PRIMARY KEY,
+      url TEXT NOT NULL UNIQUE,
+      slug TEXT NOT NULL UNIQUE,
+      title TEXT,
+      baselined INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    )
+  `);
+  migrateLegacyPostedItems(db);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS posted_items (
+      feed_identifier TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      posted_at TEXT NOT NULL,
+      PRIMARY KEY (feed_identifier, item_id)
+    )
+  `);
+  return db;
+}
+
+// Part 1's app.db had posted_items(item_id, posted_at), with no concept of
+// which feed an item belonged to, since there was only ever one.  Its rows
+// are carried forward here under the "bot" identifier, the only identifier
+// that could have posted them, before CREATE TABLE IF NOT EXISTS in
+// openAppDb() would otherwise leave the old (incompatible) table in place.
+function migrateLegacyPostedItems(db: DatabaseSync): void {
+  const columns = db.prepare("PRAGMA table_info(posted_items)").all() as {
+    readonly name: string;
+  }[];
+  const isLegacy = columns.length > 0 &&
+    !columns.some((column) => column.name === "feed_identifier");
+  if (!isLegacy) return;
+  db.exec("ALTER TABLE posted_items RENAME TO posted_items_legacy");
+  db.exec(`
+    CREATE TABLE posted_items (
+      feed_identifier TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      posted_at TEXT NOT NULL,
+      PRIMARY KEY (feed_identifier, item_id)
+    )
+  `);
+  db.exec(`
+    INSERT INTO posted_items (feed_identifier, item_id, posted_at)
+    SELECT 'bot', item_id, posted_at FROM posted_items_legacy
+  `);
+  db.exec("DROP TABLE posted_items_legacy");
+}
+
+function slugify(url: string): string {
+  return new URL(url).hostname.toLowerCase().replace(/\./g, "-");
+}
+
+export function getFeedByIdentifier(
+  db: DatabaseSync,
+  identifier: string,
+): FeedRow | undefined {
+  const row = db.prepare("SELECT * FROM feeds WHERE identifier = ?").get(
+    identifier,
+  );
+  return row == null ? undefined : toFeedRow(row);
+}
+
+export function getFeedBySlug(
+  db: DatabaseSync,
+  slug: string,
+): FeedRow | undefined {
+  const row = db.prepare("SELECT * FROM feeds WHERE slug = ?").get(slug);
+  return row == null ? undefined : toFeedRow(row);
+}
+
+export function getFeedByUrl(
+  db: DatabaseSync,
+  url: string,
+): FeedRow | undefined {
+  const row = db.prepare("SELECT * FROM feeds WHERE url = ?").get(url);
+  return row == null ? undefined : toFeedRow(row);
+}
+
+export function listFeeds(db: DatabaseSync): readonly FeedRow[] {
+  const rows = db.prepare("SELECT * FROM feeds").all();
+  return rows.map(toFeedRow);
+}
+
+// Used once, at startup, to carry an existing single-bot deployment's feed
+// forward as a row here.  A no-op on every run after the first, since
+// `identifier` is the primary key.
+export function seedFeed(
+  db: DatabaseSync,
+  feed: { identifier: string; url: string; slug: string },
+): void {
+  db.prepare(
+    "INSERT OR IGNORE INTO feeds (identifier, url, slug, created_at) VALUES (?, ?, ?, ?)",
+  ).run(feed.identifier, feed.url, feed.slug, new Date().toISOString());
+  migrateLegacyBaselined(db, feed.identifier);
+}
+
+// Part 1's app.db tracked "has the first poll happened yet" in a separate
+// app_meta table, since there was only one feed to ask that about.  Once
+// this feed's row exists (just above), that flag is carried onto it and
+// app_meta is dropped; a no-op on every run after the first, since app_meta
+// won't exist anymore to check.
+function migrateLegacyBaselined(db: DatabaseSync, identifier: string): void {
+  const hasAppMeta = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'app_meta'",
+  ).get() != null;
+  if (!hasAppMeta) return;
+  const wasBaselined = db.prepare(
+    "SELECT 1 FROM app_meta WHERE key = 'baselined'",
+  ).get() != null;
+  if (wasBaselined) markFeedBaselined(db, identifier);
+  db.exec("DROP TABLE app_meta");
+}
+
+// Registers a newly mentioned feed URL under a fresh, opaque identifier.
+// The identifier is never derived from the URL or title, since either can
+// change after the fact; the slug (the human-readable handle) is, and gets
+// a numeric suffix if it collides with one already in use.
+export function addFeed(db: DatabaseSync, url: string): FeedRow {
+  const baseSlug = slugify(url);
+  let slug = baseSlug;
+  for (let suffix = 2; getFeedBySlug(db, slug) != null; suffix++) {
+    slug = `${baseSlug}-${suffix}`;
+  }
+  const identifier = `feed_${
+    crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+  }`;
+  db.prepare(
+    "INSERT INTO feeds (identifier, url, slug, created_at) VALUES (?, ?, ?, ?)",
+  ).run(identifier, url, slug, new Date().toISOString());
+  return { identifier, url, slug, title: null, baselined: false };
+}
+
+export function updateFeedTitle(
+  db: DatabaseSync,
+  identifier: string,
+  title: string,
+): void {
+  db.prepare("UPDATE feeds SET title = ? WHERE identifier = ?").run(
+    title,
+    identifier,
+  );
+}
+
+export function markFeedBaselined(db: DatabaseSync, identifier: string): void {
+  db.prepare("UPDATE feeds SET baselined = 1 WHERE identifier = ?").run(
+    identifier,
+  );
+}
+
+export function isPosted(
+  db: DatabaseSync,
+  feedIdentifier: string,
+  itemId: string,
+): boolean {
+  return (
+    db.prepare(
+      "SELECT 1 FROM posted_items WHERE feed_identifier = ? AND item_id = ?",
+    ).get(feedIdentifier, itemId) != null
+  );
+}
+
+export function markPosted(
+  db: DatabaseSync,
+  feedIdentifier: string,
+  itemId: string,
+): void {
+  db.prepare(
+    "INSERT OR IGNORE INTO posted_items (feed_identifier, item_id, posted_at) VALUES (?, ?, ?)",
+  ).run(feedIdentifier, itemId, new Date().toISOString());
+}
+~~~~
+
+`identifier` and `slug` both carry a `UNIQUE` constraint, but only `slug`
+gets recomputed and retried on collision; `identifier` is generated once
+by `addFeed()` and left alone. `baselined` used to live in Part 1's
+separate `app_meta` table, tracking whether the app had ever polled at
+all; now that whether the first poll happened is a fact about one
+particular feed instead of the app as a whole, it collapses into an
+ordinary column on `feeds`.
+
+`slugify()` lowercases a feed's hostname and swaps dots for hyphens,
+`news.ycombinator.com` becomes `news-ycombinator-com`, and `addFeed()`
+appends a numeric suffix (`-2`, `-3`, …) if that slug is already taken.
+`identifier`, by contrast, is a short random string prefixed with `feed_`,
+generated from `crypto.randomUUID()` and never derived from anything
+about the feed at all.
+
+The two `migrateLegacy*` functions above exist because an existing
+*app.db* from Part 1 still has the old `posted_items(item_id, posted_at)`
+table and a separate `app_meta` key–value table, neither of which
+`CREATE TABLE IF NOT EXISTS` touches: it only creates a table that isn't
+there yet, so an old `posted_items` would sit untouched, missing the
+`feed_identifier` column the rest of this file expects, and the first
+call to `isPosted()` would fail with `no such column: feed_identifier`.
+`migrateLegacyPostedItems()` checks for that shape before
+`openAppDb()` creates anything and migrates it if found;
+`migrateLegacyBaselined()` does the same for `app_meta`'s baselined flag,
+called from `seedFeed()` once the feed row it belongs to actually exists.
+Both check for the old shape before doing anything, so a fresh install
+with no prior *app.db* skips them entirely, and an already-migrated one
+skips them on every run after the first: `posted_items` already has
+`feed_identifier`, and `app_meta` is already gone.
+
+### From bot to instance
+
+*bot.ts* becomes *instance.ts*, since it now hosts more than one bot:
+
+~~~~ typescript [instance.ts] twoslash
+// @noErrors: 2307
+import {
+  createInstance,
+  InProcessMessageQueue,
+  MemoryKvStore,
+} from "@fedify/botkit";
+import { SqliteRepository } from "@fedify/botkit-sqlite";
+import { mkdirSync } from "node:fs";
+import { openAppDb, seedFeed } from "./db.ts";
+
+declare const FEED_URL: string;
+declare const BEHIND_PROXY: boolean;
+
+mkdirSync("./data", { recursive: true });
+
+const instance = createInstance<void>({
+  kv: new MemoryKvStore(),
+  queue: new InProcessMessageQueue(),
+  repository: new SqliteRepository({ path: "./data/bot.db" }),
+  behindProxy: BEHIND_PROXY,
+  // The part 1 bot never set an explicit `identifier`, so createBot()
+  // defaulted it to "bot" -- "rssbot" was only ever its username.
+  // Reusing that same identifier (not legacyObjectUris below) is what
+  // keeps the actor's URI, keys, and follower relationships intact;
+  // legacyObjectUris only rewrites the *old* format of individual object
+  // URIs (posts, follows) that remote servers may still have cached from
+  // before this bot moved onto an instance.
+  legacyObjectUris: { identifier: "bot" },
+});
+
+const appDb = openAppDb("./data/app.db");
+
+// Carries the original feed forward as a row here, under the bot's actual
+// (default) identifier and its existing username, so it's handled by the
+// same dynamic bot group as every feed registered from now on.  A no-op
+// after the first run.
+seedFeed(appDb, { identifier: "bot", url: FEED_URL, slug: "rssbot" });
+~~~~
+
+`createInstance()` takes the same infrastructure options `createBot()`
+used to: `kv`, `queue`, `repository`, `behindProxy`. What's new is
+`legacyObjectUris`. Part 1's `rssbot` never set an explicit `identifier`
+option, so `createBot()` defaulted it to `"bot"`; `"rssbot"` was only ever
+its username. Reusing that same identifier, not `legacyObjectUris`, is
+what keeps the original bot's actor URI, cryptographic keys, and follower
+relationships intact now that it's one bot among several instead of the
+only one on the server. `legacyObjectUris` handles something narrower:
+the *old* format of individual object URIs, posts and follows published
+before the move to `createInstance()`, that remote servers may still have
+cached and could send back in a later `Accept` or `Like`.
+
+`seedFeed()` carries that same bot forward as an ordinary row: same
+identifier, same URL, same username as its slug. It's an
+`INSERT OR IGNORE`, so it's a no-op on every run after the first, and from
+here on the original bot is handled by exactly the same dynamic bot group
+as any feed registered afterward, with no special-casing anywhere else in
+the code.
+
+The migration this depends on isn't something this code does itself.
+BotKit already migrates a `createBot()` deployment's repository data to
+the layout `createInstance()` expects, but only the first time that
+deployment runs on BotKit 0.5.0 or later under `createBot()`; by the time
+you get here, Part 1's bot has already done that simply by having run. If
+you're migrating a deployment that's never run on 0.5.0 at all, run it
+once with `createBot()` first, or call the repository's `migrate()`
+method yourself; see [*Migrating a single-bot
+deployment*](../concepts/instance.md#migrating-a-single-bot-deployment)
+for the details. [`fedify lookup`][2] against the actor's URI before and
+after switching to `createInstance()` is worth running yourself: its
+public key and WebFinger handle should come out identical.
+
+### One instance, many feeds
+
+~~~~ typescript [instance.ts] twoslash
+// @noErrors: 2307
+import { link, text } from "@fedify/botkit";
+import {
+  getFeedByIdentifier,
+  getFeedBySlug,
+} from "./db.ts";
+declare const instance: import("@fedify/botkit").Instance<void>;
+declare const appDb: import("node:sqlite").DatabaseSync;
+declare function formatInterval(ms: number): string;
+declare const POLL_INTERVAL_MS: number;
+// ---cut-before---
+// A dynamic bot group: one bot per row in the feeds table, resolved on
+// demand.  This is what turns "one bot per feed" into a single
+// registration up front, instead of an imperative createBot() call every
+// time a feed is added -- see registryBot.onMention below.
+const feedBots = instance.createBot(
+  (_ctx, identifier) => {
+    const feed = getFeedByIdentifier(appDb, identifier);
+    if (feed == null) return null;
+    return { username: feed.slug, name: feed.title ?? feed.url };
+  },
+  {
+    mapUsername(_ctx, username) {
+      const feed = getFeedBySlug(appDb, username);
+      return feed?.identifier ?? null;
+    },
+  },
+);
+
+feedBots.onMention = async (session, message) => {
+  const feed = getFeedByIdentifier(appDb, session.bot.identifier);
+  if (feed == null) return;
+  await message.reply(
+    text`I'm watching ${
+      link(feed.title ?? feed.url, feed.url)
+    } and check for new posts every ${formatInterval(POLL_INTERVAL_MS)}.`,
+  );
+};
+~~~~
+
+Passing a function instead of a fixed identifier to `instance.createBot()`
+creates a `BotGroup`: a family of bots resolved on demand instead of
+declared up front, the same [dynamic
+bots](../concepts/instance.md#dynamic-bots) pattern used for a
+bot-per-region weather service in BotKit's own docs. The dispatcher here
+does the same kind of lookup: given an identifier, find the matching row
+in `feeds`, and if there isn't one, return `null` so BotKit knows the
+identifier isn't a feed bot at all. `mapUsername` runs that lookup in the
+other direction, by `slug` instead of `identifier`, so `@xkcd-com@your-domain`
+and the actor whose identifier is some random `feed_a1b2c3d4e5f6` resolve
+to the same bot both ways.
+
+Because a `BotGroup` has no single identifier of its own, publishing
+through it needs to say which bot: `feedBots.getSession(origin, identifier)`
+instead of the `bot.getSession(origin)` Part 1 used. Polling walks every row in
+`feeds` and does exactly that, once per feed:
+
+~~~~ typescript [instance.ts] twoslash
+// @noErrors: 2307
+import { link, text } from "@fedify/botkit";
+import { fetchFeed } from "./feed.ts";
+import type { FeedItem } from "./feed.ts";
+import {
+  type FeedRow,
+  isPosted,
+  listFeeds,
+  markFeedBaselined,
+  markPosted,
+  updateFeedTitle,
+} from "./db.ts";
+declare const feedBots: import("@fedify/botkit").BotGroup<void>;
+declare const appDb: import("node:sqlite").DatabaseSync;
+declare const ORIGIN: string;
+function itemKey(item: FeedItem): string | null {
+  return item.id ?? item.url;
+}
+// ---cut-before---
+async function pollFeed(feed: FeedRow): Promise<void> {
+  const parsed = await fetchFeed(feed.url);
+  if (parsed.title != null && parsed.title !== feed.title) {
+    updateFeedTitle(appDb, feed.identifier, parsed.title);
+  }
+  const items = [...parsed.items].reverse(); // feeds list newest-first
+
+  // Don't flood followers with the feed's entire current front page the
+  // very first time this feed is polled.  Only items that show up in
+  // later polls count as "new".
+  const isFirstEverPoll = !feed.baselined;
+
+  const session = await feedBots.getSession(ORIGIN, feed.identifier);
+  let publishedCount = 0;
+  for (const item of items) {
+    const key = itemKey(item);
+    if (key == null || isPosted(appDb, feed.identifier, key)) continue;
+    if (!isFirstEverPoll) {
+      await session.publish(
+        text`${item.title ?? "(untitled)"}
+
+${link(item.url ?? feed.url)}`,
+      );
+      publishedCount++;
+    }
+    markPosted(appDb, feed.identifier, key);
+  }
+  if (isFirstEverPoll) markFeedBaselined(appDb, feed.identifier);
+  console.log(
+    isFirstEverPoll
+      ? `Baseline: ${items.length} existing item(s) from ${feed.url}.`
+      : `Posted ${publishedCount} new item(s) from ${feed.url}.`,
+  );
+}
+
+async function pollAll(): Promise<void> {
+  for (const feed of listFeeds(appDb)) {
+    try {
+      await pollFeed(feed);
+    } catch (error) {
+      console.error(`Failed to poll feed ${feed.url}:`, error);
+    }
+  }
+}
+~~~~
+
+Nothing here differs from Part 1's polling logic except where the
+identifier and the “already posted” state come from: `feed.identifier`
+instead of a variable captured from the outer scope, `isPosted`/
+`markPosted` scoped to that identifier instead of one shared `Set`. One
+feed's failure, a fetch timeout, a feed that starts returning malformed
+XML, doesn't stop the rest: `pollAll()` catches per feed and moves on.
+
+### Registering a feed by mention
+
+Adding a bot to the group so far has meant one thing: insert a row into
+`feeds`. `feedBots`'s dispatcher already resolves any identifier that
+shows up there, whether it's been sitting in the table since startup or
+was inserted a second ago, so nothing needs to call `instance.createBot()`
+again once a feed is registered. That's the payoff of a dynamic bot group
+over a static one: registration is a database write, not a deploy.
+
+A small static bot, `registry`, is the front door for that write:
+
+~~~~ typescript [instance.ts] twoslash
+// @noErrors: 2307
+import { text } from "@fedify/botkit";
+import { addFeed, getFeedByUrl } from "./db.ts";
+declare const instance: import("@fedify/botkit").Instance<void>;
+declare const appDb: import("node:sqlite").DatabaseSync;
+declare const ORIGIN: string;
+// ---cut-before---
+function extractUrl(input: string): string | null {
+  const match = input.match(/https?:\/\/\S+/)?.[0];
+  return match != null && URL.canParse(match) ? match : null;
+}
+
+// A static bot: the registration desk.  Mentioning it with a feed URL adds
+// a row to the feeds table; feedBots's dispatcher picks up the new row on
+// its own the next time that identifier is resolved.
+//
+// This doesn't check who sent the mention, and doesn't validate the URL
+// before it's fetched by the polling loop below.  See the tutorial's
+// "Advanced exercises" section for what a real deployment needs here.
+const registryBot = instance.createBot("registry", {
+  username: "registry",
+  name: "Feed Registry",
+  summary: text`Mention me with a feed URL to register a new feed bot.`,
+});
+
+registryBot.onMention = async (_session, message) => {
+  const url = extractUrl(message.text);
+  if (url == null) {
+    await message.reply(text`Please include a feed URL in your mention.`);
+    return;
+  }
+  const existing = getFeedByUrl(appDb, url);
+  if (existing != null) {
+    await message.reply(
+      text`Already watching that feed: @${existing.slug}@${
+        new URL(ORIGIN).host
+      }.`,
+    );
+    return;
+  }
+  const feed = addFeed(appDb, url);
+  await message.reply(
+    text`Registered! Give it a few minutes, then look for @${feed.slug}@${
+      new URL(ORIGIN).host
+    }.`,
+  );
+};
+~~~~
+
+`extractUrl()` looks for the first thing in the mention's text that
+matches a URL and passes `URL.canParse()`, rejecting a malformed one, a
+truncated `http://%`, say, that would otherwise reach `addFeed()`'s
+`new URL()` call and throw. Registering a URL that's already watched
+replies instead of hitting the `UNIQUE` constraint on `feeds.url` and
+crashing.
+
+What `registryBot.onMention` doesn't do is check who's asking, or whether
+the URL it's about to hand to `pollFeed()` actually points somewhere safe
+to fetch from. Both gaps are deliberate, and both are closed in [*Advanced
+exercises*](#advanced-exercises) below, not here.
+
+### Verifying the instance, on both runtimes
+
+Same shape as Part 1's first run, on the file that now hosts an instance
+instead of a single bot:
+
+::: code-group
+
+~~~~ bash [Deno]
+deno serve --allow-net --allow-env --allow-read=./data --allow-write=./data --watch instance.ts
+~~~~
+
+~~~~ bash [Node.js]
+npx srvx serve --port 8000 --entry ./instance.ts
+~~~~
+
+:::
+
+Tunnel it the same way as before, then mention the registry bot with a
+feed URL from an account on ActivityPub.Academy. Type the full URL,
+scheme included, since `extractUrl()` only matches `http://` or
+`https://` links; Mastodon hides the scheme when it displays an
+auto-linked URL back to you, which is why it doesn't show up below:
+
+~~~~
+Hey @registry, please watch https://xkcd.com/rss.xml
+~~~~
+
+![The mention of the registry bot and its reply: “Registered! Give it a
+few minutes, then look for
+@xkcd-com@…”](./rss-bot/07-academy-multi-bot-registration.png)
+
+A minute or two later, the new bot shows up under its slug. Following
+both it and the migrated original confirms they're genuinely separate
+actors, not aliases of each other:
+
+![An account's following list showing three separate bots: the migrated
+original under its rssbot handle, the newly registered xkcd.com feed, and
+a third bot from a separate Node.js
+run](./rss-bot/08-academy-multi-bot-following.png)
+
+Mention the new bot directly, and `feedBots.onMention`, not the
+registry's, answers:
+
+![A mention of the new feed bot and its reply: “I'm watching xkcd.com and
+check for new posts every 2
+minutes.”](./rss-bot/09-academy-multi-bot-mention-reply.png)
+
+Everything here runs the same way on Node.js: tunnel *instance.ts* behind
+a second hostname, register a feed the same way, and the same handle
+resolves over WebFinger.
+
+### Deploying to a server
+
+Running *instance.ts* under a process manager instead of a terminal
+follows [*Self-hosted deployment*](../deploy/self-hosting.md)'s
+systemd-and-Caddy setup almost exactly; the full walkthrough, installing
+the runtime, creating a `botkit` user, setting up Caddy, enabling the
+service, lives there. Two things about this particular bot are worth
+calling out on top of it, and both are already reflected in the systemd
+units and Caddyfile under [*examples/rss-bot/deploy/*][4].
+
+`ExecStart` uses the same scoped Deno permissions this tutorial has used
+throughout, `--allow-net --allow-env --allow-read=./data --allow-write=./data`,
+rather than *self-hosting.md*'s generic `-A`. And because
+`ProtectSystem=strict` makes the whole working directory read-only unless a
+path is listed under `ReadWritePaths`, and this bot writes `bot.db` and
+`app.db` under *./data*, the unit adds:
+
+~~~~ ini
+ReadWritePaths=/opt/botkit/data
+~~~~
+
+That path has to already exist, owned by the `botkit` user, before the
+service starts:
+
+~~~~ bash
+sudo mkdir -p /opt/botkit/data
+sudo chown botkit:botkit /opt/botkit/data
+~~~~
+
+right after *self-hosting.md*'s own `mkdir -p /opt/botkit` step. Skip it
+and the unit refuses to start at all, exit code `226/NAMESPACE`, since
+systemd only allow-lists a `ReadWritePaths` entry that already exists.
+
+On Node.js, `srvx` needs to actually ship with the bot's dependencies
+this time, not just be run through `npx`: it's in *package.json* as a
+regular dependency, so `npm ci` (or the equivalent for whichever package
+manager built the deployment) installs
+*/opt/botkit/node\_modules/.bin/srvx*, the exact binary `ExecStart` calls.
+
+The Caddyfile follows *self-hosting.md*'s otherwise: automatic HTTPS with
+an ACME contact email, a reverse proxy to `localhost:8000`, and the same
+basic security headers.
+
+[4]: https://github.com/fedify-dev/botkit/tree/main/examples/rss-bot/deploy
+
+### Advanced exercises
+
+None of what follows is implemented in *examples/rss-bot/*. Each is a
+reasonable next step, in roughly the order a real deployment would need
+them.
+
+ -  *Feed-provided freshness hints*: RSS's optional [`<ttl>` element][5] and
+    the [Syndication module][6]'s `<sy:updatePeriod>`, `<sy:updateFrequency>`,
+    and `<sy:updateBase>` both let a feed suggest its own polling interval
+    instead of the bot guessing at `POLL_INTERVAL_MS` for every feed alike.
+    Atom has no standard equivalent.
+ -  *HTTP conditional requests*: sending `If-Modified-Since` or
+    `If-None-Match` with each poll, and handling a `304 Not Modified`
+    response, skips re-parsing a feed that hasn't changed at all.
+ -  [*WebSub*][7]: a feed advertising `<atom:link rel="hub" href="…">`
+    can push updates instead of waiting to be polled, trading
+    `setInterval()` for a webhook.
+ -  *An allowlist on who can register a feed*: right now, any mention of
+    the registry bot with a URL in it registers that URL, from anyone.
+ -  *Validating the mentioned URL before fetching it*:
+    `registryBot.onMention` hands whatever `extractUrl()` finds straight
+    to `pollFeed()`'s `fetch()` call, with nothing stopping it from
+    pointing at `localhost` or an internal address.
+    *@fedify/vocab-runtime*'s [`validatePublicUrl()`][8] exists for
+    exactly this, so it doesn't need to be written from scratch.
+
+[5]: https://www.rssboard.org/rss-specification#optionalChannelElements
+[6]: http://web.resource.org/rss/1.0/modules/syndication/
+[7]: https://www.w3.org/TR/websub/
+[8]: https://jsr.io/@fedify/vocab-runtime/doc/~/validatePublicUrl
