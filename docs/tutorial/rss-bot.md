@@ -76,7 +76,7 @@ never has to branch on which format a particular feed happens to use.
 
 What `parseFeed()` doesn't do is fetch anything. It only turns an XML string
 you already have into an object; getting that string is the caller's job.
-The bot's code keeps that same split: a `feed.ts` module that does the
+The bot's code keeps that same split: a *feed.ts* module that does the
 fetching, separate from whatever polls it on a schedule.
 
 ~~~~ typescript [feed.ts] twoslash
@@ -231,20 +231,23 @@ which is not what “new entries” should mean. Only items that show up in a
 *later* poll count as new.
 
 `pollOnce()` wraps the actual polling logic with a `polling` flag so a slow
-fetch can't overlap with the next scheduled tick. `setInterval()` doesn't
-wait for its callback to finish before scheduling the next one, so without
-this guard, a feed request that takes longer than `POLL_INTERVAL_MS` could
-run two polls at once, each one publishing the same items.
+fetch can't overlap with the next scheduled tick. [`setInterval()`][9]
+doesn't wait for its callback to finish before scheduling the next one, so
+without this guard, a feed request that takes longer than
+`POLL_INTERVAL_MS` could run two polls at once, each one publishing the
+same items.
 
 `POLL_INTERVAL_MS` gets parsed once at startup and checked for being a
 finite, positive number. An unset or malformed value falling through to
-`setInterval(fn, NaN)` doesn't error; it just runs on close to every tick of
-the event loop, hammering the feed. Better to fail loudly at startup than
-silently at runtime.
+[`setInterval(fn, NaN)`][9] doesn't error; it just runs on close to every
+tick of the event loop, hammering the feed. Better to fail loudly at
+startup than silently at runtime.
 
 `FEED_URL` defaults to Hacker News's front-page feed. Any RSS, Atom, or RDF
 feed works, but one that changes often is worth using while you're testing:
 it means not having to wait long to see the bot actually post something.
+
+[9]: https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
 
 ### Running the bot
 
@@ -342,12 +345,12 @@ restart or deploy.
 The fix is to keep both the bot's own state and the poller's state on disk.
 Two separate SQLite databases, not one:
 
-`bot.db` is entirely [`@fedify/botkit-sqlite`](../concepts/repository.md)'s.
+*bot.db* is entirely [`@fedify/botkit-sqlite`](../concepts/repository.md)'s.
 It's where BotKit persists the actor's cryptographic keys, sent activities,
 and everything else a `Repository` is responsible for. The bot's own code
 never has to know what's inside it, and shouldn't try to.
 
-`app.db` is this project's own schema: which items have already been
+*app.db* is this project's own schema: which items have already been
 posted, so restarts don't forget.
 
 Install *@fedify/botkit-sqlite*:
@@ -372,7 +375,8 @@ yarn add @fedify/botkit-sqlite
 
 :::
 
-`app.db` is opened directly, with Node's built-in `node:sqlite` module:
+*app.db* is opened directly, with Node's built-in [`node:sqlite`][11]
+module:
 
 ~~~~ typescript [db.ts] twoslash
 // app.db: the feed poller's own state, kept separate from bot.db (which
@@ -435,7 +439,7 @@ export function markPosted(db: DatabaseSync, itemId: string): void {
 ~~~~
 
 > [!NOTE]
-> On Node.js versions before `node:sqlite` was promoted out of its
+> On Node.js versions before [`node:sqlite`][11] was promoted out of its
 > experimental flag (22.13.0 and 23.4.0), you'll see an
 > `ExperimentalWarning: SQLite is an experimental feature` line at startup.
 > That's expected; the module still works.
@@ -447,7 +451,7 @@ items, or only items without a usable `id`/`url`, on that very first poll.
 `app_meta` tracks the milestone itself, independent of how many items
 happened to be markable when it was reached.
 
-`bot.ts` now creates both databases and swaps `posted`/`firstPoll` for the
+*bot.ts* now creates both databases and swaps `posted`/`firstPoll` for the
 persisted equivalents:
 
 ~~~~ typescript [bot.ts] {4,17-18,21-27,29,42,45,58-62,68-77,79-83} twoslash
@@ -540,9 +544,10 @@ ${link(item.url ?? FEED_URL)}`,
 ~~~~
 
 Both database files need somewhere to live, and Deno's permission model is a
-good reason to keep them out of the project root: `mkdirSync("./data", ...)`
-creates a dedicated directory for them, so the process only needs read and
-write access to that one path instead of the whole filesystem.
+good reason to keep them out of the project root:
+[`mkdirSync("./data", ...)`][12] creates a dedicated directory for them, so
+the process only needs read and write access to that one path instead of
+the whole filesystem.
 
 Run the bot again with the wider permissions this now needs:
 
@@ -561,6 +566,9 @@ npx srvx serve --port 8000 --entry ./bot.ts
 Restart it the same way as before, right after a new item lands. This time
 it shows up in the next poll instead of disappearing into the baseline.
 
+[11]: https://nodejs.org/api/sqlite.html
+[12]: https://nodejs.org/api/fs.html#fsmkdirsyncpath-options
+
 ### Going live
 
 So far the bot has only had to work on `localhost`. Other fediverse servers
@@ -570,8 +578,8 @@ Tunneling services solve the “public address” half without requiring a
 server of your own yet. Since they act as an L7 reverse proxy in front of
 the bot, turn on
 [`behindProxy`](../concepts/bot.md#createbotoptions-behindproxy) so it trusts
-the `X-Forwarded-*` headers they add, and read it from an environment variable
-so local development and a tunneled run can use the same code:
+the [`X-Forwarded-*`][13] headers they add, and read it from an environment
+variable so local development and a tunneled run can use the same code:
 
 ~~~~ typescript twoslash
 // @noErrors: 2345
@@ -647,6 +655,7 @@ and a follower/post count of zero](./rss-bot/01-bot-profile.png)
       tunneling service you used.
 
 [3]: https://fedify.dev/cli#fedify-tunnel-exposing-a-local-http-server-to-the-public-internet
+[13]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Forwarded
 
 ### Testing with ActivityPub.Academy
 
@@ -736,7 +745,7 @@ actor URI contain.”
 
 ### The feeds table
 
-`app.db` grows a `feeds` table to hold that split, and `posted_items`
+*app.db* grows a `feeds` table to hold that split, and `posted_items`
 becomes scoped per feed instead of tracking one bot's history:
 
 ~~~~ typescript [db.ts] twoslash
@@ -959,7 +968,7 @@ ordinary column on `feeds`.
 `news.ycombinator.com` becomes `news-ycombinator-com`, and `addFeed()`
 appends a numeric suffix (`-2`, `-3`, …) if that slug is already taken.
 `identifier`, by contrast, is a short random string prefixed with `feed_`,
-generated from `crypto.randomUUID()` and never derived from anything
+generated from [`crypto.randomUUID()`][10] and never derived from anything
 about the feed at all.
 
 The two `migrateLegacy*` functions above exist because an existing
@@ -977,6 +986,8 @@ Both check for the old shape before doing anything, so a fresh install
 with no prior *app.db* skips them entirely, and an already-migrated one
 skips them on every run after the first: `posted_items` already has
 `feed_identifier`, and `app_meta` is already gone.
+
+[10]: https://developer.mozilla.org/en-US/docs/Web/API/Crypto/randomUUID
 
 ### From bot to instance
 
@@ -1188,8 +1199,9 @@ async function pollAll(): Promise<void> {
 Nothing here differs from Part 1's polling logic except where the
 identifier and the “already posted” state come from: `feed.identifier`
 instead of a variable captured from the outer scope, `isPosted`/
-`markPosted` scoped to that identifier instead of one shared `Set`, and
-the explicit `AbortSignal.timeout()` on `fetchFeed()`. `pollAll()` awaits
+`markPosted` scoped to that identifier instead of one shared [`Set`][14],
+and the explicit [`AbortSignal.timeout()`][15] on `fetchFeed()`.
+`pollAll()` awaits
 each feed in turn, and `pollAllOnce()`'s `polling` guard means no later
 tick can start a new cycle until the current one finishes, so a server
 that accepts the connection and then never responds would otherwise wedge
@@ -1198,6 +1210,9 @@ the timeout in place, that's an ordinary per-feed failure like any other,
 a fetch timeout, a feed that starts returning malformed XML, and
 `pollAll()`'s `try`/`catch` handles it the same way: log it and move on
 to the next feed.
+
+[14]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
+[15]: https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout_static
 
 ### Registering a feed by mention
 
@@ -1261,8 +1276,8 @@ registryBot.onMention = async (_session, message) => {
 ~~~~
 
 `extractUrl()` looks for the first thing in the mention's text that
-matches a URL and passes `URL.canParse()`, rejecting a malformed one, a
-truncated `http://%`, say, that would otherwise reach `addFeed()`'s
+matches a URL and passes [`URL.canParse()`][16], rejecting a malformed
+one, a truncated `http://%`, say, that would otherwise reach `addFeed()`'s
 `new URL()` call and throw. Registering a URL that's already watched
 replies instead of hitting the `UNIQUE` constraint on `feeds.url` and
 crashing.
@@ -1281,6 +1296,8 @@ What `registryBot.onMention` doesn't do is check who's asking, or whether
 the URL it's about to hand to `pollFeed()` actually points somewhere safe
 to fetch from. Both gaps are deliberate, and both are closed in [*Advanced
 exercises*](#advanced-exercises) below, not here.
+
+[16]: https://developer.mozilla.org/en-US/docs/Web/API/URL/canParse_static
 
 ### Verifying the instance, on both runtimes
 
@@ -1352,14 +1369,14 @@ systemd-and-Caddy setup almost exactly; the full walkthrough, installing
 the runtime, creating a `botkit` user, setting up Caddy, enabling the
 service, lives there. Two things about this particular bot are worth
 calling out on top of it, and both are already reflected in the systemd
-units and Caddyfile under [*examples/rss-bot/deploy/*][4].
+units and *Caddyfile* under [*examples/rss-bot/deploy/*][4].
 
 `ExecStart` uses the same scoped Deno permissions this tutorial has used
 throughout, `--allow-net --allow-env --allow-read=./data --allow-write=./data`,
 rather than *self-hosting.md*'s generic `-A`. And because
 `ProtectSystem=strict` makes the whole working directory read-only unless a
-path is listed under `ReadWritePaths`, and this bot writes `bot.db` and
-`app.db` under *./data*, the unit adds:
+path is listed under `ReadWritePaths`, and this bot writes *bot.db* and
+*app.db* under *./data*, the unit adds:
 
 ~~~~ ini
 ReadWritePaths=/opt/botkit/data
@@ -1383,7 +1400,7 @@ regular dependency, so `npm ci` (or the equivalent for whichever package
 manager built the deployment) installs
 */opt/botkit/node\_modules/.bin/srvx*, the exact binary `ExecStart` calls.
 
-The Caddyfile follows *self-hosting.md*'s otherwise: automatic HTTPS with
+The *Caddyfile* follows *self-hosting.md*'s otherwise: automatic HTTPS with
 an ACME contact email, a reverse proxy to `localhost:8000`, and the same
 basic security headers.
 
@@ -1400,17 +1417,18 @@ them.
     and `<sy:updateBase>` both let a feed suggest its own polling interval
     instead of the bot guessing at `POLL_INTERVAL_MS` for every feed alike.
     Atom has no standard equivalent.
- -  *HTTP conditional requests*: sending `If-Modified-Since` or
-    `If-None-Match` with each poll, and handling a `304 Not Modified`
-    response, skips re-parsing a feed that hasn't changed at all.
+ -  *HTTP conditional requests*: sending [`If-Modified-Since`][18] or
+    [`If-None-Match`][19] with each poll, and handling a
+    [`304 Not Modified`][20] response, skips re-parsing a feed that hasn't
+    changed at all.
  -  [*WebSub*][7]: a feed advertising `<atom:link rel="hub" href="…">`
     can push updates instead of waiting to be polled, trading
-    `setInterval()` for a webhook.
+    [`setInterval()`][9] for a webhook.
  -  *An allowlist on who can register a feed*: right now, any mention of
     the registry bot with a URL in it registers that URL, from anyone.
  -  *Validating the mentioned URL before fetching it*:
     `registryBot.onMention` hands whatever `extractUrl()` finds straight
-    to `pollFeed()`'s `fetch()` call, with nothing stopping it from
+    to `pollFeed()`'s [`fetch()`][17] call, with nothing stopping it from
     pointing at `localhost` or an internal address.
     *@fedify/vocab-runtime*'s [`validatePublicUrl()`][8] exists for
     exactly this, so it doesn't need to be written from scratch.
@@ -1419,3 +1437,7 @@ them.
 [6]: http://web.resource.org/rss/1.0/modules/syndication/
 [7]: https://www.w3.org/TR/websub/
 [8]: https://jsr.io/@fedify/vocab-runtime/doc/~/validatePublicUrl
+[17]: https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
+[18]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Modified-Since
+[19]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-None-Match
+[20]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304
