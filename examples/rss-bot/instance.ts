@@ -159,8 +159,13 @@ registryBot.onMention = async (_session, message) => {
   );
 };
 
+const FETCH_TIMEOUT_MS = 30_000;
+
 async function pollFeed(feed: FeedRow): Promise<void> {
-  const parsed = await fetchFeed(feed.url);
+  const parsed = await fetchFeed(
+    feed.url,
+    AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  );
   if (parsed.title != null && parsed.title !== feed.title) {
     updateFeedTitle(appDb, feed.identifier, parsed.title);
   }

@@ -1134,8 +1134,13 @@ function itemKey(item: FeedItem): string | null {
   return item.id ?? item.url;
 }
 // ---cut-before---
+const FETCH_TIMEOUT_MS = 30_000;
+
 async function pollFeed(feed: FeedRow): Promise<void> {
-  const parsed = await fetchFeed(feed.url);
+  const parsed = await fetchFeed(
+    feed.url,
+    AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  );
   if (parsed.title != null && parsed.title !== feed.title) {
     updateFeedTitle(appDb, feed.identifier, parsed.title);
   }
@@ -1183,9 +1188,16 @@ async function pollAll(): Promise<void> {
 Nothing here differs from Part 1's polling logic except where the
 identifier and the “already posted” state come from: `feed.identifier`
 instead of a variable captured from the outer scope, `isPosted`/
-`markPosted` scoped to that identifier instead of one shared `Set`. One
-feed's failure, a fetch timeout, a feed that starts returning malformed
-XML, doesn't stop the rest: `pollAll()` catches per feed and moves on.
+`markPosted` scoped to that identifier instead of one shared `Set`, and
+the explicit `AbortSignal.timeout()` on `fetchFeed()`. `pollAll()` awaits
+each feed in turn, and `pollAllOnce()`'s `polling` guard means no later
+tick can start a new cycle until the current one finishes, so a server
+that accepts the connection and then never responds would otherwise wedge
+every feed on the instance forever, not just the one that's stuck. With
+the timeout in place, that's an ordinary per-feed failure like any other,
+a fetch timeout, a feed that starts returning malformed XML, and
+`pollAll()`'s `try`/`catch` handles it the same way: log it and move on
+to the next feed.
 
 ### Registering a feed by mention
 
