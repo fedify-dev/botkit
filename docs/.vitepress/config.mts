@@ -85,6 +85,7 @@ export default defineConfig({
       { text: "Home", link: "/" },
       { text: "About", link: "/intro.md" },
       { text: "Start", link: "/start.md" },
+      { text: "Tutorial", link: "/tutorial/rss-bot.md" },
       concepts,
       deploy,
       references,
@@ -95,6 +96,7 @@ export default defineConfig({
     sidebar: [
       { text: "What is BotKit?", link: "/intro.md" },
       { text: "Getting started", link: "/start.md" },
+      { text: "Building an RSS bot", link: "/tutorial/rss-bot.md" },
       concepts,
       deploy,
       references,
