@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - docs
+  - examples/rss-bot
 
 allowBuilds:
   esbuild: true

@@ -1,0 +1,18 @@
+your-domain.com {
+    # Automatic HTTPS; the email is for Let's Encrypt notifications
+    tls your-email@example.com
+
+    # Proxy all requests to the bot
+    reverse_proxy localhost:8000
+
+    # Basic security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000;"
+        # Prevent clickjacking
+        X-Frame-Options "DENY"
+        # XSS protection
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+    }
+}
