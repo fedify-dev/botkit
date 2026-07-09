@@ -42,11 +42,31 @@ function itemKey(item: FeedItem): string | null {
   return item.id ?? item.url;
 }
 
+function formatInterval(ms: number): string {
+  if (ms < 60_000) {
+    const seconds = Math.round(ms / 1000);
+    return `${seconds} second${seconds === 1 ? "" : "s"}`;
+  }
+  const minutes = Math.round(ms / 60_000);
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
+let feedTitle: string | null = null;
+
+bot.onMention = async (_session, message) => {
+  await message.reply(
+    text`I'm watching ${
+      link(feedTitle ?? FEED_URL, FEED_URL)
+    } and check for new posts every ${formatInterval(POLL_INTERVAL_MS)}.`,
+  );
+};
+
 const posted = new Set<string>();
 let firstPoll = true;
 
 async function poll(): Promise<void> {
   const feed = await fetchFeed(FEED_URL);
+  feedTitle = feed.title;
   const items = [...feed.items].reverse(); // feeds list newest-first
 
   if (firstPoll) {
