@@ -29,8 +29,8 @@ finished project is also browsable in BotKit's repository, under
 [1]: https://github.com/fedify-dev/botkit/tree/main/examples/rss-bot
 
 
-Part 1: a single bot
---------------------
+A single bot
+------------
 
 ### Setting up the project
 
