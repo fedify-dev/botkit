@@ -6,6 +6,14 @@ Version 0.4.5
 
 To be released.
 
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.1.19, which fixes an SSRF vulnerability in NodeInfo
+    lookups that could allow a malicious remote server to access non-public
+    network resources.  [[CVE-2026-62857]]
+
+[CVE-2026-62857]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-hqph-j65v-8cq5
+
 
 Version 0.4.4
 -------------

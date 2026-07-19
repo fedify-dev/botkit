@@ -46,8 +46,8 @@
     "@fedify/botkit": "^0.4.0"
   },
   "dependencies": {
-    "@fedify/fedify": "^2.1.2",
-    "@fedify/vocab": "^2.1.2",
+    "@fedify/fedify": "catalog:",
+    "@fedify/vocab": "catalog:",
     "@js-temporal/polyfill": "^0.5.1",
     "@logtape/logtape": "^1.3.5",
     "postgres": "^3.4.8"
