@@ -7,6 +7,21 @@ Version 0.6.0
 To be released.
 
 
+Version 0.5.1
+-------------
+
+Released on July 19, 2026.
+
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.3.3, which addresses CVE-2026-62857, an SSRF
+    vulnerability in NodeInfo lookups that could allow a malicious remote
+    server to access non-public network resources.
+    [[GHSA-hqph-j65v-8cq5]]
+
+[GHSA-hqph-j65v-8cq5]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-hqph-j65v-8cq5
+
+
 Version 0.5.0
 -------------
 
@@ -223,6 +238,20 @@ Released on July 8, 2026.
 
 [#12]: https://github.com/fedify-dev/botkit/issues/12
 [#35]: https://github.com/fedify-dev/botkit/pull/35
+
+
+Version 0.4.5
+-------------
+
+Released on July 19, 2026.
+
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.1.19, which fixes an SSRF vulnerability in NodeInfo
+    lookups that could allow a malicious remote server to access non-public
+    network resources.  [[CVE-2026-62857]]
+
+[CVE-2026-62857]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-hqph-j65v-8cq5
 
 
 Version 0.4.4
