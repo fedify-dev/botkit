@@ -14,10 +14,10 @@ minimumReleaseAgeExclude:
   - markdown-it-jsr-ref@0.5.0
 
 catalog:
-  "@fedify/denokv": ~2.3.3
-  "@fedify/fedify": ~2.3.3
-  "@fedify/vocab": ~2.3.3
-  "@fedify/vocab-runtime": ~2.3.3
+  "@fedify/denokv": ~2.3.5
+  "@fedify/fedify": ~2.3.5
+  "@fedify/vocab": ~2.3.5
+  "@fedify/vocab-runtime": ~2.3.5
   "@js-temporal/polyfill": ^0.5.1
   "@logtape/logtape": ^2.2.3
   hono: ^4.12.27
