@@ -13,7 +13,7 @@ import llmstxt from "vitepress-plugin-llms";
 
 const jsrRefPlugin = await jsrRef({
   package: "@fedify/botkit",
-  version: "unstable",
+  version: "stable",
   cachePath: ".jsr-cache.json",
 });
 
