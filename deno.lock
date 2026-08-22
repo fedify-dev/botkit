@@ -1,24 +1,23 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@fedify/denokv@~2.1.19": "2.1.19",
-    "jsr:@fedify/fedify@^2.1.19": "2.1.19",
-    "jsr:@fedify/fedify@~2.1.19": "2.1.19",
+    "jsr:@fedify/denokv@~2.1.21": "2.1.21",
+    "jsr:@fedify/fedify@^2.1.21": "2.1.21",
+    "jsr:@fedify/fedify@~2.1.21": "2.1.21",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
-    "jsr:@fedify/vocab-runtime@^2.1.19": "2.3.3",
-    "jsr:@fedify/vocab-runtime@^2.1.2": "2.3.3",
-    "jsr:@fedify/vocab-runtime@^2.3.3": "2.3.3",
-    "jsr:@fedify/vocab-runtime@~2.1.19": "2.1.19",
-    "jsr:@fedify/vocab@^2.1.19": "2.1.19",
-    "jsr:@fedify/vocab@^2.1.2": "2.1.19",
-    "jsr:@fedify/vocab@~2.1.19": "2.1.19",
-    "jsr:@fedify/webfinger@^2.1.19": "2.3.3",
+    "jsr:@fedify/vocab-runtime@^2.1.2": "2.3.5",
+    "jsr:@fedify/vocab-runtime@^2.1.21": "2.3.5",
+    "jsr:@fedify/vocab-runtime@^2.3.5": "2.3.5",
+    "jsr:@fedify/vocab@^2.1.2": "2.3.5",
+    "jsr:@fedify/vocab@^2.1.21": "2.3.5",
+    "jsr:@fedify/webfinger@^2.1.21": "2.3.5",
+    "jsr:@fedify/webfinger@^2.3.5": "2.3.5",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
     "jsr:@hono/hono@^4.8.2": "4.12.23",
     "jsr:@logtape/logtape@^1.3.5": "1.3.10",
-    "jsr:@logtape/logtape@^2.0.5": "2.2.4",
-    "jsr:@logtape/logtape@^2.2.0": "2.2.4",
+    "jsr:@logtape/logtape@^2.0.5": "2.3.2",
+    "jsr:@logtape/logtape@^2.2.0": "2.3.2",
     "jsr:@std/fs@^1.0.19": "1.0.24",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.12": "1.0.12",
@@ -33,14 +32,14 @@
     "npm:@multiformats/base-x@^4.0.1": "4.0.1",
     "npm:@opentelemetry/api@^1.9.0": "1.9.1",
     "npm:@opentelemetry/api@^1.9.1": "1.9.1",
-    "npm:@opentelemetry/core@^2.5.0": "2.9.0_@opentelemetry+api@1.9.1",
     "npm:@opentelemetry/semantic-conventions@^1.39.0": "1.43.0",
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:asn1js@^3.0.10": "3.0.10",
-    "npm:asn1js@^3.0.6": "3.0.10",
     "npm:byte-encodings@^1.0.11": "1.0.11",
     "npm:es-toolkit@^1.30.0": "1.49.0",
     "npm:es-toolkit@^1.43.0": "1.49.0",
+    "npm:es-toolkit@^1.46.1": "1.49.0",
+    "npm:hongdown@0.4.3": "0.4.3",
     "npm:hongdown@~0.1.0-dev.28": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.29": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.30": "0.1.0-dev.37",
@@ -68,23 +67,22 @@
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@fedify/denokv@2.1.19": {
-      "integrity": "c9435a47403f6a61c8ab80706d0a06f4b407cae8a75bb1036c6983bf10aa3ccc",
+    "@fedify/denokv@2.1.21": {
+      "integrity": "3b94a4b0fa9d4d67a8e0ba39592d0d348fd93bd24c143e99248c67902daa760c",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.1.19",
+        "jsr:@fedify/fedify@^2.1.21",
         "npm:es-toolkit@^1.30.0"
       ]
     },
-    "@fedify/fedify@2.1.19": {
-      "integrity": "8e6958d47511294de8160267aabdd9e70d8509394fdccee4f43fe4c804d93719",
+    "@fedify/fedify@2.1.21": {
+      "integrity": "7bbdbb13af197603688b9ce20f6c29ee71c6f997a0ba2fe2de714b1888ff00ff",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.1.19",
-        "jsr:@fedify/vocab-runtime@^2.1.19",
-        "jsr:@fedify/vocab@^2.1.19",
-        "jsr:@fedify/webfinger",
+        "jsr:@fedify/fedify@^2.1.21",
+        "jsr:@fedify/vocab-runtime@^2.1.21",
+        "jsr:@fedify/vocab@^2.1.21",
+        "jsr:@fedify/webfinger@^2.1.21",
         "jsr:@logtape/logtape@^2.0.5",
         "npm:@opentelemetry/api@^1.9.0",
-        "npm:@opentelemetry/core",
         "npm:@opentelemetry/semantic-conventions",
         "npm:byte-encodings",
         "npm:es-toolkit@^1.43.0",
@@ -108,44 +106,32 @@
         "npm:@types/markdown-it"
       ]
     },
-    "@fedify/vocab@2.1.19": {
-      "integrity": "44bc5221618b2fa9ee3b166c4b927bb9a3fee49d1e44dc688d0c67f1c4d49c8e",
+    "@fedify/vocab@2.3.5": {
+      "integrity": "5fac6f2dd96916404375609020f59c591b0e080d80e1b19d5865889b11f140d0",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.1.19",
-        "jsr:@fedify/webfinger",
-        "jsr:@logtape/logtape@^2.0.5",
-        "npm:@opentelemetry/api@^1.9.0",
-        "npm:es-toolkit@^1.43.0"
+        "jsr:@fedify/vocab-runtime@^2.3.5",
+        "jsr:@fedify/webfinger@^2.3.5",
+        "jsr:@logtape/logtape@^2.2.0",
+        "npm:@opentelemetry/api@^1.9.1",
+        "npm:es-toolkit@^1.46.1"
       ]
     },
-    "@fedify/vocab-runtime@2.1.19": {
-      "integrity": "274a3a51b920314c752654a8a4fea3b4171d689aa7c398a2eadf008e80b517d8",
-      "dependencies": [
-        "jsr:@logtape/logtape@^2.0.5",
-        "npm:@multiformats/base-x",
-        "npm:@opentelemetry/api@^1.9.0",
-        "npm:asn1js@^3.0.6",
-        "npm:byte-encodings",
-        "npm:jsonld",
-        "npm:pkijs"
-      ]
-    },
-    "@fedify/vocab-runtime@2.3.3": {
-      "integrity": "3bf1843028985e2c0738ba56c0c27fa7f3354937ff5c76a5979805506cdb35f2",
+    "@fedify/vocab-runtime@2.3.5": {
+      "integrity": "d53ba6d9adadbb776f20380304e3e6f1cf280309b0c79ac559478bfe7353cb5d",
       "dependencies": [
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@multiformats/base-x",
         "npm:@opentelemetry/api@^1.9.1",
-        "npm:asn1js@^3.0.10",
+        "npm:asn1js",
         "npm:byte-encodings",
         "npm:jsonld",
         "npm:pkijs"
       ]
     },
-    "@fedify/webfinger@2.3.3": {
-      "integrity": "cf9d85712439cbdd40f47fd64548ae021429e232ccfa3d5a630687143a2ae0ea",
+    "@fedify/webfinger@2.3.5": {
+      "integrity": "f025e271772a3f72335494022ae971d8cc096dc0d0abf107333260bcf0c81f9f",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.3.3",
+        "jsr:@fedify/vocab-runtime@^2.3.5",
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@opentelemetry/api@^1.9.1"
       ]
@@ -168,8 +154,8 @@
     "@logtape/logtape@1.3.10": {
       "integrity": "a499f5417acbbff82bda8baa28208db42cdf16149144f29d47d8d0b56367a728"
     },
-    "@logtape/logtape@2.2.4": {
-      "integrity": "8ee23b7c8d4b2e28c43a3a16027a7a27ed3d453c395c7d91b9960640399201ec"
+    "@logtape/logtape@2.3.2": {
+      "integrity": "bc18d70a494889ab64d13005cc857d65deb6eea483b1715197fa834582d6eb3c"
     },
     "@std/fs@1.0.21": {
       "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
@@ -245,8 +231,8 @@
         "@babel/helper-validator-identifier"
       ]
     },
-    "@digitalbazaar/http-client@4.3.0": {
-      "integrity": "sha512-6lMpxpt9BOmqHKGs9Xm6DP4LlZTBFer/ZjHvP3FcW3IaUWYIWC7dw5RFZnvw4fP57kAVcm1dp3IF+Y50qhBvAw==",
+    "@digitalbazaar/http-client@4.4.0": {
+      "integrity": "sha512-ODhCGmElUPmR3IR+KZmBNkRAFyjJ01rxvk2E+/qQ2h2EGPJH5k6bz3N24ympGc5+i4YCGk/ipIpmkwc0+iSmRg==",
       "dependencies": [
         "ky",
         "undici"
@@ -418,13 +404,6 @@
     },
     "@opentelemetry/api@1.9.1": {
       "integrity": "sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q=="
-    },
-    "@opentelemetry/core@2.9.0_@opentelemetry+api@1.9.1": {
-      "integrity": "sha512-m2nckMT80NnmjTYSPjJQObBJ+8dgkoajEOUbznL8AHZ3T3yHRk2P7gI1PhEBc1+lOnrYE9UWrWHqJDsmqjmNbw==",
-      "dependencies": [
-        "@opentelemetry/api",
-        "@opentelemetry/semantic-conventions"
-      ]
     },
     "@opentelemetry/semantic-conventions@1.43.0": {
       "integrity": "sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg=="
@@ -745,8 +724,8 @@
         "tslib"
       ]
     },
-    "pvutils@1.1.5": {
-      "integrity": "sha512-KTqnxsgGiQ6ZAzZCVlJH5eOjSnvlyEgx1m8bkRJfOhmGRqfo5KLvmAlACQkrjEtOQ4B7wF9TdSLIs9O90MX9xA=="
+    "pvutils@1.2.0": {
+      "integrity": "sha512-BbubeCEyTuQjVMakvJQ/Sxbc93F2pwmbsxONT/ZRrwU7Ua38d8unYTwXpTVLAKJ4BDuH9IGztCjQcd/N/39Dvg=="
     },
     "quansync@1.0.0": {
       "integrity": "sha512-5xZacEEufv3HSTPQuchrvV6soaiACMFnq1H8wkVioctoH3TRha9Sz66lOxRwPK/qZj7HPiSveih9yAyh98gvqA=="
@@ -862,8 +841,8 @@
         "unconfig-core"
       ]
     },
-    "undici@6.27.0": {
-      "integrity": "sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg=="
+    "undici@6.28.0": {
+      "integrity": "sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA=="
     },
     "uri-template-router@1.0.0": {
       "integrity": "sha512-WKcL9ZSIEhHE3f5P4Z47Tf0nWbcgV1ISb/OBuF8YKEYi0SQOyTLCzM6B/gAKFWZhRhqA+C/Ks8UXe2qU5W0FVg=="
@@ -889,10 +868,10 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/denokv@~2.1.19",
-      "jsr:@fedify/fedify@~2.1.19",
-      "jsr:@fedify/vocab-runtime@~2.1.19",
-      "jsr:@fedify/vocab@~2.1.19",
+      "jsr:@fedify/denokv@~2.1.21",
+      "jsr:@fedify/fedify@~2.1.21",
+      "jsr:@fedify/vocab-runtime@~2.1.21",
+      "jsr:@fedify/vocab@~2.1.21",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2",
       "jsr:@logtape/logtape@^1.3.5",
