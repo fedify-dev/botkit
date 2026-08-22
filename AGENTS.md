@@ -120,7 +120,7 @@ This project follows test-driven development (TDD) practices:
 
 ### Running tests
 
- -  Deno tests: `*.test.ts` files, run with `deno task test`
+ -  Deno tests: _\*.test.ts_ files, run with `deno task test`
  -  Node.js tests: Built output tested in *dist/* directory with Node's
     built-in test runner
  -  Coverage reports available via `deno task coverage`
@@ -135,8 +135,8 @@ and Node.js compatibility.
 3.  Tests should work in both Deno and Node.js environments
 4.  *Update documentation*: New features must be documented in the *docs/*
     directory
-5.  *Update changelog*: Any user-facing changes must be recorded in
-    *CHANGES.md*
+5.  *Update changelog*: Any user-facing change must include a Sacho fragment
+    under *changes.d/*
 
 ### Commit messages
 
@@ -161,72 +161,60 @@ and Node.js compatibility.
  -  When using LLMs or coding agents, include credit via `Co-Authored-By:`.
     Include a permalink to the agent session if available.
 
-### Changelog (*CHANGES.md*)
+### Changelog entries
 
-This repository uses *CHANGES.md* as a human-readable changelog.  Follow
-the same overall structure and writing style:
+BotKit uses [Sacho] to build *CHANGES.md* from Markdown fragments under
+*changes.d/*.  Do not edit the unreleased part of *CHANGES.md* directly.  Add
+or edit its source fragment and let Sacho update the generated region.
 
- -  *Structure*: Keep entries in reverse chronological order (newest version
-    at the top).
+Create one fragment for each user-visible change.  Select the affected package
+section and use a short, topic-based name rather than an issue or pull request
+number:
 
- -  *Version sections*: Each release is a top-level section:
+~~~~ bash
+sacho add --section @fedify/botkit clearer-errors
+~~~~
 
-    ~~~~
-    Version 0.1.0
-    -------------
-    ~~~~
+The configured sections are `@fedify/botkit`, `@fedify/botkit-postgres`,
+`@fedify/botkit-redis`, and `@fedify/botkit-sqlite`.  Keep the fragment on the
+same branch and in the same commit series as the code it describes.
 
- -  *Unreleased version*: The next version should start with:
+Each fragment must contain exactly one top-level unordered list.  Start every
+entry with a past-tense verb such as “Added,” “Changed,” “Deprecated,” “Fixed,”
+“Removed,” or “Security.”  Describe the effect on someone upgrading BotKit,
+not the implementation or commit history.  If the change evolves before
+release, update the existing fragment so it describes only the behavior users
+will receive.
 
-    ~~~~
-    To be released.
-    ~~~~
+Put issue and pull request references at the end of the first paragraph using
+shortcut links such as `[[#123]]`.  For an external contributor, add their name
+after the last reference, for example `[[#124] by Hong Minhee]`.  Sacho
+generates the corresponding link definitions.
 
- -  *Released versions*: Use a release-date line right after the version
-    header:
+After editing a fragment, format it, preview the compiled changelog, and check
+the repository:
 
-    ~~~~
-    Released on December 30, 2025.
-    ~~~~
+~~~~ bash
+sacho fmt
+sacho preview
+sacho check
+~~~~
 
- -  *Package grouping*: Within a version, group entries by package using
-    `###` headings (e.g., `### @fedify/botkit`).
+Review both the fragment and the generated *CHANGES.md* diff.  Changes with no
+user-visible effect, such as internal refactoring or test-only work, do not need
+a fragment.
 
- -  *Bullets and wrapping*: Use ` -  ` list items, wrap around ~80 columns,
-    and indent continuation lines by 4 spaces so they align with the bullet
-    text.
-
- -  *Multi-paragraph items*: For longer explanations, keep paragraphs inside
-    the same bullet item by indenting them by 4 spaces and separating
-    paragraphs with a blank line (also indented).
-
- -  *Code blocks in bullets*: If a bullet includes code, indent the entire
-    code fence by 4 spaces so it remains part of that list item.  Use `~~~~`
-    fences and specify a language (e.g., `~~~~ typescript`).
-
- -  *Nested lists*: If you need sub-items (e.g., a list of added exports),
-    use a nested list inside the parent bullet, indented by 4 spaces.
-
- -  *Issue and PR references*: Use `[[#123]]` markers in the text and add
-    reference links at the end of the relevant package subsection.
-
-    When the reference is for a PR authored by an external contributor,
-    append `by <NAME>` after the last reference marker
-    (e.g., `[[#123] by Hong Minhee]`).
-
-    ~~~~
-    [#123]: https://github.com/fedify-dev/botkit/issues/123
-    [#124]: https://github.com/fedify-dev/botkit/pull/124
-    ~~~~
+[Sacho]: https://sacho.dev/guide/everyday-workflow.md
 
 ### File organization
 
- -  Implementation files: `*-impl.ts` (internal implementations)
- -  Test files: `*.test.ts` (both unit and integration tests)
+ -  Implementation files: _\*-impl.ts_ (internal implementations)
+ -  Test files: _\*.test.ts_ (both unit and integration tests)
  -  Type definitions: Primarily in *events.ts* and exported through *mod.ts*
  -  UI components: *src/components/* for JSX/TSX files
  -  Documentation: *docs/* directory contains user-facing documentation
- -  Changelog: *CHANGES.md* records all user-facing changes
+ -  Changelog fragments: *changes.d/* contains unreleased user-facing changes
+ -  Changelog: *CHANGES.md* is generated from fragments by Sacho
 
 
 Code style
