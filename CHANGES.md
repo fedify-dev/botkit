@@ -6,6 +6,19 @@ Version 0.5.2
 
 To be released.
 
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.3.5, which addresses two security vulnerabilities:
+     -  Fixed an SSRF vulnerability in authenticated document loaders where
+        public document URLs could redirect signed requests to loopback,
+        link-local, or private addresses.  \[[CVE-2026-77632]]
+     -  Prevented remote actors from causing unbounded circuit-breaker state
+        growth through failed deliveries, which could eventually exhaust
+        storage or memory.  \[[CVE-2026-69132]]
+
+[CVE-2026-77632]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-cxc3-7q96-6cpx
+[CVE-2026-69132]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-fx98-wc5v-jrg5
+
 
 Version 0.5.1
 -------------
@@ -238,6 +251,19 @@ Released on July 8, 2026.
 
 [#12]: https://github.com/fedify-dev/botkit/issues/12
 [#35]: https://github.com/fedify-dev/botkit/pull/35
+
+
+Version 0.4.6
+-------------
+
+Released on August 22, 2026.
+
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.1.21, which fixes an SSRF vulnerability in
+    authenticated document loaders where public document URLs could redirect
+    signed requests to loopback, link-local, or private addresses.
+    [[CVE-2026-77632]]
 
 
 Version 0.4.5

@@ -1,0 +1,24 @@
+[changelog]
+path = "CHANGES.md"
+title = "BotKit changelog"
+unreleased-heading = "To be released."
+materialize = true
+region-detection = "heading"
+
+[fragments]
+directory = "changes.d"
+next-file = "next.txt"
+
+[links]
+"#" = "https://github.com/fedify-dev/botkit/issues/{n}"
+
+[vcs]
+preset = "git"
+
+[check]
+paths = []
+
+[[section-patterns]]
+source = "packages/{name}"
+id = "@fedify/{name}"
+directory = "{name}"
