@@ -16,8 +16,11 @@
 import { type Context, MemoryKvStore } from "@fedify/fedify/federation";
 import {
   type Activity,
+  Article,
   Create,
   Follow,
+  Hashtag,
+  Mention,
   Note,
   Person,
   PUBLIC_COLLECTION,
@@ -27,13 +30,14 @@ import {
   Undo,
   Update,
 } from "@fedify/vocab";
+import { LanguageString } from "@fedify/vocab-runtime";
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
 import { createMessage } from "./message-impl.ts";
 import { MemoryRepository, type Uuid } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
-import { mention, text } from "./text.ts";
+import { em, hashtag, inline, mention, text } from "./text.ts";
 
 test("SessionImpl.follow()", async (t) => {
   const repository = new MemoryRepository();
@@ -338,6 +342,14 @@ test("SessionImpl.publish()", async (t) => {
     assert.deepStrictEqual(object.toIds, [PUBLIC_COLLECTION]);
     assert.deepStrictEqual(object.ccIds, [ctx.getFollowersUri(bot.identifier)]);
     assert.deepStrictEqual(object.content, "<p>Hello, world!</p>");
+    assert.deepStrictEqual(
+      object.url,
+      bot.instance.getMessageWebUrl(
+        bot,
+        publicMsg.id.pathname.split("/").at(-1)!,
+        ctx.origin,
+      ),
+    );
     assert.deepStrictEqual(object.tagIds, []);
     assert.deepStrictEqual(publicMsg.id, object.id);
     assert.deepStrictEqual(publicMsg.text, "Hello, world!");
@@ -349,6 +361,85 @@ test("SessionImpl.publish()", async (t) => {
         ?.automaticApprovals,
       [PUBLIC_COLLECTION],
     );
+  });
+
+  await t.test("name, summary, URL, and language", async () => {
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    const sourceUrl = new URL("https://blog.example/posts/cane-sugar");
+    ctx.sentActivities = [];
+    const article = await session.publish(text`Read the full article.`, {
+      class: Article,
+      language: "en",
+      name: "Cane Sugar Processing",
+      summary: inline`A simple ${em("article")} by ${mentioned}.`,
+      url: sourceUrl,
+    });
+
+    assert.deepStrictEqual(ctx.sentActivities.length, 2);
+    const { activity } = ctx.sentActivities[0];
+    assert.ok(activity instanceof Create);
+    const object = await activity.getObject(ctx);
+    assert.ok(object instanceof Article);
+    assert.deepStrictEqual(object.names.length, 2);
+    assert.ok(object.names[0] instanceof LanguageString);
+    assert.deepStrictEqual(object.names[0].toString(), "Cane Sugar Processing");
+    assert.deepStrictEqual(object.names[0].locale, new Intl.Locale("en"));
+    assert.deepStrictEqual(object.names[1], "Cane Sugar Processing");
+    assert.deepStrictEqual(object.summaries.length, 2);
+    assert.ok(object.summaries[0] instanceof LanguageString);
+    assert.deepStrictEqual(
+      object.summaries[0].toString(),
+      'A simple <em>article</em> by <a href="https://remote.example/@john" ' +
+        'translate="no" class="h-card u-url mention" target="_blank">' +
+        "@<span>john@remote.example</span></a>.",
+    );
+    assert.deepStrictEqual(object.summaries[0].locale, new Intl.Locale("en"));
+    assert.deepStrictEqual(object.summaries[1], object.summaries[0].toString());
+    assert.deepStrictEqual(object.url, sourceUrl);
+    assert.deepStrictEqual(object.toIds, [PUBLIC_COLLECTION, mentioned.id]);
+    const tags = await Array.fromAsync(object.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, mentioned.id);
+    assert.deepStrictEqual(ctx.sentActivities[1].recipients, [mentioned]);
+    assert.deepStrictEqual(article.raw, object);
+  });
+
+  await t.test("deduplicates content and summary tags", async () => {
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    const message = await session.publish(
+      text`Content for ${mentioned} ${hashtag("BotKit")}`,
+      {
+        summary: inline`Summary for ${mentioned} ${hashtag("BotKit")}`,
+      },
+    );
+
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 2);
+    assert.ok(tags[0] instanceof Mention);
+    assert.ok(tags[1] instanceof Hashtag);
+    assert.deepStrictEqual(message.mentions, [mentioned]);
+    assert.deepStrictEqual(message.hashtags.length, 1);
+  });
+
+  await t.test("plain string summary", async () => {
+    ctx.sentActivities = [];
+    await session.publish(text`Hello`, {
+      summary: "A <simple> summary",
+    });
+    const activity = ctx.sentActivities[0].activity;
+    assert.ok(activity instanceof Create);
+    const object = await activity.getObject(ctx);
+    assert.ok(object instanceof Note);
+    assert.deepStrictEqual(object.summary, "A &lt;simple&gt; summary");
   });
 
   await t.test("quotePolicy", async () => {

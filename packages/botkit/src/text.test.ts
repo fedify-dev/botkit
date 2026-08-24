@@ -35,6 +35,7 @@ import {
   CustomEmojiText,
   em,
   hashtag,
+  inline,
   isText,
   link,
   markdown,
@@ -304,6 +305,36 @@ ${"First line.\nSecond line."}`;
   );
   assert.deepStrictEqual(await Array.fromAsync(t10.getTags(session)), []);
   assert.deepStrictEqual(t10.getCachedObjects(), []);
+});
+
+test("inline`...`", async () => {
+  const session = bot.getSession("https://example.com");
+  const actor = new Person({
+    id: new URL("https://example.com/users/john"),
+    preferredUsername: "john",
+    url: new URL("https://example.com/@john"),
+  });
+  const t: Text<"inline", void> = inline`Hello, <${em("World")}>!\n${
+    mention(actor)
+  }`;
+  assert.deepStrictEqual(
+    (await Array.fromAsync(t.getHtml(session))).join(""),
+    "Hello, &lt;<em>World</em>&gt;!<br>" +
+      '<a href="https://example.com/@john" translate="no" ' +
+      'class="h-card u-url mention" target="_blank">@<span>' +
+      "john@example.com</span></a>",
+  );
+  const tags = await Array.fromAsync(t.getTags(session));
+  assert.deepStrictEqual(tags.length, 1);
+  assert.ok(tags[0] instanceof Mention);
+  assert.deepStrictEqual(tags[0].href, actor.id);
+  assert.deepStrictEqual(t.getCachedObjects(), [actor]);
+
+  assert.throws(
+    () => inline`This is ${text`a block`}.`,
+    TypeError,
+    "Block text cannot be interpolated into inline text.",
+  );
 });
 
 test("mention()", async () => {

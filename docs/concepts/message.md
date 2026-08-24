@@ -126,6 +126,44 @@ setTimeout(async () => {
 For more information about the `Message` object, see the [*Message*
 section](./message.md).
 
+### Names, summaries, and URLs
+
+Messages can have a plain-text name or title, a short rich-text summary, and a
+human-facing URL:
+
+~~~~ typescript twoslash
+import { Article, em, inline, type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+await session.publish(text`The full article goes here.`, {
+  class: Article,
+  name: "Cane Sugar Processing",
+  summary: inline`A simple ${em("article")}`,
+  url: new URL("https://example.com/articles/cane-sugar"),
+});
+~~~~
+
+The `~SessionPublishOptions.summary` option accepts either a string or an
+inline [`Text`](./text.md) object.  Strings are treated as plain text and
+escaped.  Use the `inline()` template string tag to compose formatting,
+mentions, hashtags, and custom emojis without adding a paragraph around the
+summary.
+
+Servers can assign type-specific meanings to a summary.  Mastodon treats a
+`Note` summary as [content-warning text][Mastodon ActivityPub documentation]
+and may collapse the content behind it.  For converted object types such as
+`Article`, Mastodon includes the summary in the converted status text instead.
+
+BotKit's hosted pages use names and summaries for document and feed metadata,
+but do not render them in the message body.  Federated servers may present
+these fields differently.
+
+If `~SessionPublishOptions.url` is omitted, BotKit uses the message page it
+serves locally.  Supplying a URL is useful when the canonical human-facing
+page is hosted elsewhere.
+
+[Mastodon ActivityPub documentation]: https://docs.joinmastodon.org/spec/activitypub/#sensitive-content
+
 ### Visibility
 
 You can control the visibility of the message by providing
@@ -275,8 +313,9 @@ await session.publish(text`Here's a cute dino!`, {
 ### Language hint
 
 You can provide a hint to the fediverse about the language of the message by
-providing `~SessionPublishOptions.language` option.  The value of the option
-has to be an [BCP 47], e.g., `"en"` for English, `"en-US"` for American English,
+providing `~SessionPublishOptions.language` option.  The hint applies to the
+content, name, and summary.  The value of the option has to be a [BCP 47]
+language tag, e.g., `"en"` for English, `"en-US"` for American English, or
 `"zh-Hant"` for Traditional Chinese.
 
 Here's an example of publishing a message with the language hint:
@@ -749,6 +788,26 @@ const message = await session.publish(
 setTimeout(async () => {
   await message.update(text`This message has been updated.`);  // [!code highlight]
 }, 1000 * 60);
+~~~~
+
+The name, summary, and URL can be changed at the same time.  Omitting one of
+these options preserves its current value, while setting it to `null` removes
+the field:
+
+~~~~ typescript twoslash
+import { inline, type Session, text } from "@fedify/botkit";
+const session = {} as unknown as Session<void>;
+// ---cut-before---
+const message = await session.publish(text`Original content.`, {
+  name: "Original title",
+  summary: inline`Original summary`,
+});
+
+await message.update(text`Revised content.`, {
+  name: "Revised title",
+  summary: null,  // Remove the existing summary.
+  url: new URL("https://example.com/revised"),
+});
 ~~~~
 
 > [!NOTE]

@@ -252,7 +252,7 @@ export interface AuthorizedMessage<T extends MessageClass, TContextData>
    */
   update(
     text: Text<"block", TContextData>,
-    options?: AuthorizedMessageUpdateOptions,
+    options?: AuthorizedMessageUpdateOptions<TContextData>,
   ): Promise<void>;
 
   /**
@@ -275,13 +275,35 @@ export interface AuthorizedMessage<T extends MessageClass, TContextData>
 
 /**
  * Options for updating an authorized message.
+ * @typeParam TContextData The type of the context data.
  * @since 0.5.0
  */
-export interface AuthorizedMessageUpdateOptions {
+export interface AuthorizedMessageUpdateOptions<TContextData = unknown> {
   /**
    * Who can quote the updated message.
    */
   readonly quotePolicy?: QuotePolicyOption;
+
+  /**
+   * The new plain-text name or title.  If omitted, the existing name is
+   * preserved.  If `null`, the existing name is removed.
+   * @since 0.6.0
+   */
+  readonly name?: string | null;
+
+  /**
+   * The new short HTML summary.  A string is treated as plain text and escaped.
+   * If omitted, the existing summary is preserved.  If `null`, it is removed.
+   * @since 0.6.0
+   */
+  readonly summary?: Text<"inline", TContextData> | string | null;
+
+  /**
+   * The new human-facing URL.  If omitted, the existing URL is preserved.
+   * If `null`, the existing URL is removed.
+   * @since 0.6.0
+   */
+  readonly url?: URL | null;
 }
 
 /**

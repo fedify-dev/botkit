@@ -110,6 +110,7 @@ export {
   customEmoji,
   em,
   hashtag,
+  inline,
   link,
   mention,
   plainText,

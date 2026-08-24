@@ -35,6 +35,7 @@ import {
   Undo,
   Update,
 } from "@fedify/vocab";
+import { LanguageString } from "@fedify/vocab-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
@@ -49,7 +50,15 @@ import { MemoryRepository, type Uuid } from "./repository.ts";
 import { InstanceImpl } from "./instance-impl.ts";
 import { createMockContext } from "./session-impl.test.ts";
 import { SessionImpl } from "./session-impl.ts";
-import { text } from "./text.ts";
+import {
+  customEmoji,
+  hashtag,
+  inline,
+  link,
+  mention,
+  type Text,
+  text,
+} from "./text.ts";
 
 test("isMessageObject()", () => {
   assert.ok(isMessageObject(new Article({})));
@@ -917,6 +926,356 @@ test("AuthorizedMessage.update()", async (t) => {
       object.interactionPolicy?.canQuote?.automaticApprovals,
       [ctx.getActorUri(bot.identifier)],
     );
+  });
+
+  await t.test("name, summary, and URL", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    const firstUrl = new URL("https://blog.example/posts/first");
+    const secondUrl = new URL("https://blog.example/posts/second");
+    const msg = await session.publish(text`Original content for ${mentioned}`, {
+      name: "Original title",
+      summary: inline`Original summary for ${mentioned}`,
+      url: firstUrl,
+    });
+
+    ctx.sentActivities = [];
+    await msg.update(text`Updated content for ${mentioned}`);
+    assert.deepStrictEqual(msg.raw.name, "Original title");
+    assert.deepStrictEqual(
+      msg.raw.summary,
+      'Original summary for <a href="https://remote.example/@john" ' +
+        'translate="no" class="h-card u-url mention" target="_blank">' +
+        "@<span>john@remote.example</span></a>",
+    );
+    assert.deepStrictEqual(msg.raw.url, firstUrl);
+    assert.ok(msg.raw.toIds.some((id) => id.href === mentioned.id?.href));
+    let tags = await Array.fromAsync(msg.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, mentioned.id);
+
+    await msg.update(text`Updated again for ${mentioned}`);
+    tags = await Array.fromAsync(msg.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+
+    await msg.update(text`Updated with replacement metadata`, {
+      name: "Replacement title",
+      summary: "Replacement <summary>",
+      url: secondUrl,
+    });
+    assert.deepStrictEqual(msg.raw.name, "Replacement title");
+    assert.deepStrictEqual(msg.raw.summary, "Replacement &lt;summary&gt;");
+    assert.deepStrictEqual(msg.raw.url, secondUrl);
+    assert.ok(!msg.raw.toIds.some((id) => id.href === mentioned.id?.href));
+    tags = await Array.fromAsync(msg.raw.getTags(ctx));
+    assert.deepStrictEqual(tags, []);
+
+    await msg.update(text`Updated once more`, {
+      name: null,
+      summary: null,
+      url: null,
+    });
+    assert.deepStrictEqual(msg.raw.names, []);
+    assert.deepStrictEqual(msg.raw.summaries, []);
+    assert.deepStrictEqual(msg.raw.urls, []);
+    const [create] = await Array.fromAsync(repository.getMessages("bot"));
+    assert.ok(create instanceof Create);
+    const object = await create.getObject(ctx);
+    assert.ok(object instanceof Note);
+    assert.deepStrictEqual(object.names, []);
+    assert.deepStrictEqual(object.summaries, []);
+    assert.deepStrictEqual(object.urls, []);
+  });
+
+  await t.test("preserves unresolved summary mentions", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    await session.publish(text`Original content`, {
+      summary: inline`Original summary for ${mentioned}`,
+      visibility: "direct",
+    });
+
+    let lookupCount = 0;
+    Object.defineProperty(ctx, "lookupObject", {
+      value: (url: URL) => {
+        if (url.href !== mentioned.id?.href) return Promise.resolve(null);
+        lookupCount++;
+        return Promise.resolve(lookupCount === 1 ? null : mentioned);
+      },
+      configurable: true,
+    });
+    ctx.sentActivities = [];
+    const [message] = await Array.fromAsync(session.getOutbox());
+    assert.deepStrictEqual(message.mentions, []);
+
+    await message.update(text`Updated content`);
+
+    assert.deepStrictEqual(lookupCount, 2);
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, mentioned.id);
+    assert.deepStrictEqual(message.raw.toIds, [mentioned.id]);
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    assert.deepStrictEqual(ctx.sentActivities[0].recipients, [mentioned]);
+    assert.ok(ctx.sentActivities[0].activity instanceof Update);
+  });
+
+  await t.test("preserves tags from every localized summary", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    const message = await session.publish(text`Original content`, {
+      summary: "Primary summary",
+      visibility: "direct",
+    });
+    let localizedSummary = "";
+    for await (
+      const chunk of inline`Localized summary for ${mentioned}`.getHtml(session)
+    ) {
+      localizedSummary += chunk;
+    }
+    const parsed = ctx.parseUri(message.id);
+    assert.ok(parsed?.type === "object");
+    await repository.updateMessage(
+      "bot",
+      parsed.values.id as Uuid,
+      async (create) => {
+        assert.ok(create instanceof Create);
+        const object = await create.getObject(ctx);
+        assert.ok(object instanceof Note);
+        return create.clone({
+          object: object.clone({
+            summaries: [
+              new LanguageString("Primary summary", "en"),
+              new LanguageString(localizedSummary, "ja"),
+              "Primary summary",
+            ],
+            tags: [
+              new Mention({
+                name: "@john@remote.example",
+                href: mentioned.id,
+              }),
+            ],
+            tos: [mentioned.id!],
+          }),
+        });
+      },
+    );
+    Object.defineProperty(ctx, "lookupObject", {
+      value: (url: URL) =>
+        Promise.resolve(url.href === mentioned.id?.href ? mentioned : null),
+      configurable: true,
+    });
+    ctx.sentActivities = [];
+
+    await message.update(text`Updated content`);
+
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, mentioned.id);
+    assert.deepStrictEqual(message.raw.toIds, [mentioned.id]);
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    assert.deepStrictEqual(ctx.sentActivities[0].recipients, [mentioned]);
+  });
+
+  await t.test("refreshes content-only mentions", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const contentActor = new Person({
+      id: new URL("https://remote.example/ap/actor/content"),
+      preferredUsername: "content",
+      name: "Old profile",
+      url: new URL("https://remote.example/@content"),
+    });
+    const summaryActor = new Person({
+      id: new URL("https://remote.example/ap/actor/summary"),
+      preferredUsername: "summary",
+      url: new URL("https://remote.example/@summary"),
+    });
+    const message = await session.publish(
+      text`Original content for ${contentActor}`,
+      {
+        summary: inline`Original summary for ${summaryActor}`,
+        visibility: "direct",
+      },
+    );
+    const refreshedContentActor = contentActor.clone({
+      name: "Fresh profile",
+    });
+    let lookupCount = 0;
+    Object.defineProperty(ctx, "lookupObject", {
+      value: (url: URL) => {
+        if (url.href === contentActor.id?.href) {
+          lookupCount++;
+          return Promise.resolve(refreshedContentActor);
+        }
+        return Promise.resolve(null);
+      },
+      configurable: true,
+    });
+    const updatedText: Text<"block", void> = {
+      type: "block",
+      async *getHtml() {
+        yield "<p>Updated content</p>";
+      },
+      async *getTags() {
+        yield new Mention({ name: "someone", href: contentActor.id });
+      },
+      getCachedObjects() {
+        return [];
+      },
+    };
+
+    await message.update(updatedText);
+
+    assert.deepStrictEqual(lookupCount, 1);
+    assert.deepStrictEqual(
+      message.mentions.find((actor) => actor.id?.href === contentActor.id?.href)
+        ?.name,
+      "Fresh profile",
+    );
+  });
+
+  await t.test("does not preserve mentions for ordinary summary links", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const actorUrl = new URL("https://remote.example/@john");
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: actorUrl,
+    });
+    const message = await session.publish(
+      text`Original content for ${mentioned}`,
+      {
+        summary: inline`Profile: ${link(actorUrl)}`,
+        visibility: "direct",
+      },
+    );
+
+    await message.update(text`Updated content`);
+
+    assert.deepStrictEqual(
+      message.raw.summary,
+      'Profile: <a href="https://remote.example/@john" target="_blank">' +
+        "https://remote.example/@john</a>",
+    );
+    assert.deepStrictEqual(await Array.fromAsync(message.raw.getTags(ctx)), []);
+    assert.deepStrictEqual(message.raw.toIds, []);
+  });
+
+  await t.test("preserves summary hashtags and custom emojis", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const emoji = new CustomEmoji({
+      id: new URL("https://example.com/emojis/party"),
+      name: ":party:",
+      icon: new Image({
+        url: new URL("https://example.com/emojis/party.png"),
+      }),
+    });
+    const message = await session.publish(text`Original content`, {
+      summary: inline`Summary for ${hashtag("BotKit")} ${customEmoji(emoji)}`,
+    });
+
+    await message.update(text`Updated content`);
+
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 2);
+    assert.ok(tags[0] instanceof Hashtag);
+    assert.ok(tags[1] instanceof CustomEmoji);
+    assert.deepStrictEqual(tags[1].id, emoji.id);
+  });
+
+  await t.test("disambiguates summary mentions with the same label", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const contentActor = new Person({
+      id: new URL("https://remote.example/ap/actor/content"),
+      preferredUsername: "content",
+      url: new URL("https://remote.example/@content"),
+    });
+    const summaryActor = new Person({
+      id: new URL("https://remote.example/ap/actor/summary"),
+      preferredUsername: "summary",
+      url: new URL("https://remote.example/@summary"),
+    });
+    const message = await session.publish(
+      text`Original content for ${mention("someone", contentActor)}`,
+      {
+        summary: inline`Original summary for ${
+          mention("someone", summaryActor)
+        }`,
+        visibility: "direct",
+      },
+    );
+
+    await message.update(text`Updated content`);
+
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, summaryActor.id);
+    assert.deepStrictEqual(message.raw.toIds, [summaryActor.id]);
   });
 });
 

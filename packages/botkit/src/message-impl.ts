@@ -39,7 +39,7 @@ import {
   Undo,
   Update,
 } from "@fedify/vocab";
-import { decode } from "html-entities";
+import { decode, encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import { parseLocalUri } from "./uri.ts";
 import xss from "xss";
@@ -66,7 +66,7 @@ import type {
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";
-import type { Text } from "./text.ts";
+import { plainText, type Text } from "./text.ts";
 
 export const messageClasses = [Article, ChatMessage, Note, Question];
 
@@ -414,7 +414,7 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
 
   async update(
     text: Text<"block", TContextData>,
-    options: AuthorizedMessageUpdateOptions = {},
+    options: AuthorizedMessageUpdateOptions<TContextData> = {},
   ): Promise<void> {
     const parsed = parseLocalUri(
       this.session.context,
@@ -438,22 +438,78 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
         if (create instanceof Announce) return;
         const message = await create.getObject(this.session.context);
         if (message == null || !isMessageObject(message)) return;
+        const existingSummaryHtml = message.summaries.map((summary) =>
+          summary.toString()
+        );
+        let existingSummaryTags: (Object | Link)[] = [];
+        if (options.summary === undefined && existingSummaryHtml.length > 0) {
+          const existingTags = await Array.fromAsync(
+            message.getTags(this.session.context),
+          );
+          existingSummaryTags = deduplicateTags(
+            existingTags.filter((tag) =>
+              existingSummaryHtml.some((html) =>
+                tagAppearsInHtml(
+                  tag,
+                  html,
+                  this.mentions,
+                  existingTags,
+                )
+              )
+            ),
+          );
+        }
         let contentHtml = "";
         for await (const chunk of text.getHtml(this.session)) {
           contentHtml += chunk;
         }
-        const tags = await Array.fromAsync(text.getTags(this.session));
+        const summary = typeof options.summary === "string"
+          ? plainText<TContextData>(options.summary)
+          : options.summary;
+        let summaryHtml: string | undefined;
+        if (summary != null) {
+          summaryHtml = "";
+          for await (const chunk of summary.getHtml(this.session)) {
+            summaryHtml += chunk;
+          }
+        }
+        const tagCandidates = await Array.fromAsync(text.getTags(this.session));
+        if (summary === undefined) {
+          tagCandidates.push(...existingSummaryTags);
+        } else if (summary !== null) {
+          tagCandidates.push(
+            ...await Array.fromAsync(summary.getTags(this.session)),
+          );
+        }
+        const tags = deduplicateTags(tagCandidates);
         const mentionedActorIds: URL[] = [];
         const hashtags: Hashtag[] = [];
         for (const tag of tags) {
-          if (tag instanceof Mention && tag.href != null) {
+          if (
+            tag instanceof Mention && tag.href != null &&
+            !mentionedActorIds.some((id) => id.href === tag.href?.href)
+          ) {
             mentionedActorIds.push(tag.href);
           } else if (tag instanceof Hashtag) {
             hashtags.push(tag);
           }
         }
         const cachedObjects: Record<string, Object> = {};
-        for (const cachedObject of text.getCachedObjects()) {
+        const existingSummaryMentionIds = new Set(
+          existingSummaryTags.flatMap((tag) =>
+            tag instanceof Mention && tag.href != null ? [tag.href.href] : []
+          ),
+        );
+        const textObjects = [
+          ...text.getCachedObjects(),
+          ...(summary?.getCachedObjects() ?? []),
+          ...(summary === undefined
+            ? this.mentions.filter((actor) =>
+              actor.id != null && existingSummaryMentionIds.has(actor.id.href)
+            )
+            : []),
+        ];
+        for (const cachedObject of textObjects) {
           if (cachedObject.id == null) continue;
           cachedObjects[cachedObject.id.href] = cachedObject;
         }
@@ -488,6 +544,29 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
           contents: this.language == null
             ? [contentHtml]
             : [new LanguageString(contentHtml, this.language), contentHtml],
+          ...(options.name === undefined ? {} : {
+            names: options.name === null
+              ? []
+              : this.language == null
+              ? [options.name]
+              : [
+                new LanguageString(options.name, this.language),
+                options.name,
+              ],
+          }),
+          ...(options.summary === undefined ? {} : {
+            summaries: summaryHtml == null
+              ? []
+              : this.language == null
+              ? [summaryHtml]
+              : [
+                new LanguageString(summaryHtml, this.language),
+                summaryHtml,
+              ],
+          }),
+          ...(options.url === undefined
+            ? {}
+            : { urls: options.url === null ? [] : [options.url] }),
           tags,
           tos: this.visibility === "public"
             ? [PUBLIC_COLLECTION, ...mentionedActorIds]
@@ -746,6 +825,94 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
     }
     return (await createMessage(object, this.session, {})).actor;
   }
+}
+
+function tagAppearsInHtml(
+  tag: Object | Link,
+  html: string,
+  mentionedActors: readonly Actor[],
+  tags: readonly (Object | Link)[],
+): boolean {
+  if (tag instanceof Mention && tag.href != null) {
+    const actor = mentionedActors.find((actor) =>
+      actor.id?.href === tag.href?.href
+    );
+    const actorUrl = actor?.url instanceof Link
+      ? actor.url.href
+      : actor?.url ?? actor?.id;
+    if (actorUrl != null && mentionAnchorAppearsInHtml(html, actorUrl)) {
+      return true;
+    }
+    if (mentionAnchorAppearsInHtml(html, tag.href)) return true;
+    if (tag.name == null || !mentionLabelIsUnambiguous(tag, tags)) return false;
+    const name = tag.name.toString();
+    const renderedName = name.startsWith("@")
+      ? `@<span>${encode(name.substring(1))}</span>`
+      : encode(name);
+    return html.includes(
+      `class="h-card u-url mention" target="_blank">${renderedName}</a>`,
+    );
+  }
+  if ((tag instanceof Hashtag || tag instanceof Link) && tag.href != null) {
+    return html.includes(encode(tag.href.href));
+  }
+  if (tag.id != null && html.includes(encode(tag.id.href))) return true;
+  return tag.name != null && html.includes(encode(tag.name.toString()));
+}
+
+function mentionLabelIsUnambiguous(
+  mention: Mention,
+  tags: readonly (Object | Link)[],
+): boolean {
+  if (mention.name == null) return false;
+  const name = mention.name.toString();
+  const hrefs = new Set<string>();
+  for (const tag of tags) {
+    if (
+      tag instanceof Mention && tag.href != null &&
+      tag.name?.toString() === name
+    ) {
+      hrefs.add(tag.href.href);
+    }
+  }
+  return hrefs.size === 1;
+}
+
+function mentionAnchorAppearsInHtml(html: string, href: URL): boolean {
+  return html.includes(
+    `<a href="${encode(href.href)}" translate="no" ` +
+      'class="h-card u-url mention" target="_blank">',
+  );
+}
+
+/** @internal */
+export function deduplicateTags(
+  tags: readonly (Object | Link)[],
+): (Object | Link)[] {
+  const result: (Object | Link)[] = [];
+  for (const tag of tags) {
+    if (!result.some((existing) => tagsHaveSameIdentity(existing, tag))) {
+      result.push(tag);
+    }
+  }
+  return result;
+}
+
+function tagsHaveSameIdentity(
+  left: Object | Link,
+  right: Object | Link,
+): boolean {
+  if (left.constructor !== right.constructor) return false;
+  if (left.id != null || right.id != null) {
+    return left.id?.href === right.id?.href;
+  }
+  if (left instanceof Link && right instanceof Link) {
+    if (left.href != null || right.href != null) {
+      return left.href?.href === right.href?.href;
+    }
+  }
+  return left.name != null && right.name != null &&
+    left.name.toString() === right.name.toString();
 }
 
 // @ts-ignore: The `xss` module has `getDefaultWhiteList` function.

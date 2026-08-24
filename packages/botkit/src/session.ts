@@ -173,7 +173,27 @@ export interface Session<TContextData> {
  */
 export interface SessionPublishOptions<TContextData> {
   /**
-   * The language of the published message.
+   * The plain-text name or title of the published message.
+   * @since 0.6.0
+   */
+  readonly name?: string;
+
+  /**
+   * The short HTML summary of the published message.  A string is treated as
+   * plain text and escaped before publication.
+   * @since 0.6.0
+   */
+  readonly summary?: Text<"inline", TContextData> | string;
+
+  /**
+   * The human-facing URL of the published message.  If omitted, the message's
+   * BotKit web page is used.
+   * @since 0.6.0
+   */
+  readonly url?: URL;
+
+  /**
+   * The language of the published message's content, name, and summary.
    */
   readonly language?: string | Intl.Locale;
 
