@@ -35,6 +35,7 @@ import {
   Undo,
   Update,
 } from "@fedify/vocab";
+import { LanguageString } from "@fedify/vocab-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { BotImpl } from "./bot-impl.ts";
@@ -1041,6 +1042,75 @@ test("AuthorizedMessage.update()", async (t) => {
     assert.deepStrictEqual(ctx.sentActivities.length, 1);
     assert.deepStrictEqual(ctx.sentActivities[0].recipients, [mentioned]);
     assert.ok(ctx.sentActivities[0].activity instanceof Update);
+  });
+
+  await t.test("preserves tags from every localized summary", async () => {
+    const repository = new MemoryRepository();
+    const bot = new BotImpl<void>({
+      kv: new MemoryKvStore(),
+      repository,
+      username: "bot",
+    });
+    const ctx = createMockContext(bot, "https://example.com");
+    const session = new SessionImpl(bot, ctx);
+    const mentioned = new Person({
+      id: new URL("https://remote.example/ap/actor/john"),
+      preferredUsername: "john",
+      url: new URL("https://remote.example/@john"),
+    });
+    const message = await session.publish(text`Original content`, {
+      summary: "Primary summary",
+      visibility: "direct",
+    });
+    let localizedSummary = "";
+    for await (
+      const chunk of inline`Localized summary for ${mentioned}`.getHtml(session)
+    ) {
+      localizedSummary += chunk;
+    }
+    const parsed = ctx.parseUri(message.id);
+    assert.ok(parsed?.type === "object");
+    await repository.updateMessage(
+      "bot",
+      parsed.values.id as Uuid,
+      async (create) => {
+        assert.ok(create instanceof Create);
+        const object = await create.getObject(ctx);
+        assert.ok(object instanceof Note);
+        return create.clone({
+          object: object.clone({
+            summaries: [
+              new LanguageString("Primary summary", "en"),
+              new LanguageString(localizedSummary, "ja"),
+              "Primary summary",
+            ],
+            tags: [
+              new Mention({
+                name: "@john@remote.example",
+                href: mentioned.id,
+              }),
+            ],
+            tos: [mentioned.id!],
+          }),
+        });
+      },
+    );
+    Object.defineProperty(ctx, "lookupObject", {
+      value: (url: URL) =>
+        Promise.resolve(url.href === mentioned.id?.href ? mentioned : null),
+      configurable: true,
+    });
+    ctx.sentActivities = [];
+
+    await message.update(text`Updated content`);
+
+    const tags = await Array.fromAsync(message.raw.getTags(ctx));
+    assert.deepStrictEqual(tags.length, 1);
+    assert.ok(tags[0] instanceof Mention);
+    assert.deepStrictEqual(tags[0].href, mentioned.id);
+    assert.deepStrictEqual(message.raw.toIds, [mentioned.id]);
+    assert.deepStrictEqual(ctx.sentActivities.length, 1);
+    assert.deepStrictEqual(ctx.sentActivities[0].recipients, [mentioned]);
   });
 
   await t.test("refreshes content-only mentions", async () => {

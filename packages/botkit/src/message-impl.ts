@@ -438,19 +438,23 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
         if (create instanceof Announce) return;
         const message = await create.getObject(this.session.context);
         if (message == null || !isMessageObject(message)) return;
-        const existingSummaryHtml = message.summary?.toString();
+        const existingSummaryHtml = message.summaries.map((summary) =>
+          summary.toString()
+        );
         let existingSummaryTags: (Object | Link)[] = [];
-        if (options.summary === undefined && existingSummaryHtml != null) {
+        if (options.summary === undefined && existingSummaryHtml.length > 0) {
           const existingTags = await Array.fromAsync(
             message.getTags(this.session.context),
           );
           existingSummaryTags = deduplicateTags(
             existingTags.filter((tag) =>
-              tagAppearsInHtml(
-                tag,
-                existingSummaryHtml,
-                this.mentions,
-                existingTags,
+              existingSummaryHtml.some((html) =>
+                tagAppearsInHtml(
+                  tag,
+                  html,
+                  this.mentions,
+                  existingTags,
+                )
               )
             ),
           );
