@@ -126,13 +126,7 @@ export class TemplatedText<TContextData>
    */
   constructor(strings: TemplateStringsArray, ...values: unknown[]) {
     this.#strings = strings;
-    this.#values = values.map((v) => {
-      if (isText<TContextData>(v)) return v;
-      if (v instanceof URL) return link(v);
-      if (isActor(v)) return mention(v);
-      if (v instanceof Emoji) return customEmoji(v);
-      return new PlainText(String(v));
-    });
+    this.#values = values.map(toText);
   }
 
   async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
@@ -219,6 +213,94 @@ export function text<TContextData>(
   ...values: unknown[]
 ): Text<"block", TContextData> {
   return new TemplatedText<TContextData>(strings, ...values);
+}
+
+/**
+ * A text tree that renders an inline template string with values.  You normally
+ * don't need to instantiate this directly; use the {@link inline} function
+ * instead.
+ * @typeParam TContextData The type of the context data.
+ * @since 0.6.0
+ */
+export class InlineTemplatedText<TContextData>
+  implements Text<"inline", TContextData> {
+  readonly type = "inline";
+  readonly #strings: TemplateStringsArray;
+  readonly #values: Text<"inline", TContextData>[];
+
+  /**
+   * Creates an inline text tree with a template string and values.
+   * @param strings The template strings.
+   * @param values The values to interpolate.
+   * @throws {TypeError} If a block text is interpolated.
+   */
+  constructor(strings: TemplateStringsArray, ...values: unknown[]) {
+    this.#strings = strings;
+    this.#values = values.map((value) => {
+      const converted = toText<TContextData>(value);
+      if (!isInlineText(converted)) {
+        throw new TypeError(
+          "Block text cannot be interpolated into inline text.",
+        );
+      }
+      return converted;
+    });
+  }
+
+  async *getHtml(session: Session<TContextData>): AsyncIterable<string> {
+    for (let i = 0; i < this.#strings.length; i++) {
+      yield* new PlainText<TContextData>(this.#strings[i]).getHtml(session);
+      if (i < this.#values.length) {
+        yield* this.#values[i].getHtml(session);
+      }
+    }
+  }
+
+  async *getTags(session: Session<TContextData>): AsyncIterable<Link | Object> {
+    for (const value of this.#values) {
+      yield* value.getTags(session);
+    }
+  }
+
+  getCachedObjects(): Object[] {
+    return this.#values.flatMap((value) => value.getCachedObjects());
+  }
+}
+
+/**
+ * A template string tag that creates an inline {@link Text} tree.
+ *
+ * Literal text is HTML-escaped, line breaks are rendered as `<br>` elements,
+ * and inline text values can be interpolated.  Block text values are rejected.
+ *
+ * @typeParam TContextData The type of the context data.
+ * @param strings The template strings.
+ * @param values The values to interpolate.
+ * @returns An inline {@link Text} tree.
+ * @throws {TypeError} If a block text is interpolated.
+ * @since 0.6.0
+ */
+export function inline<TContextData>(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): Text<"inline", TContextData> {
+  return new InlineTemplatedText<TContextData>(strings, ...values);
+}
+
+function toText<TContextData>(
+  value: unknown,
+): Text<"block" | "inline", TContextData> {
+  if (isText<TContextData>(value)) return value;
+  if (value instanceof URL) return link(value);
+  if (isActor(value)) return mention(value);
+  if (value instanceof Emoji) return customEmoji(value);
+  return new PlainText(String(value));
+}
+
+function isInlineText<TContextData>(
+  value: Text<"block" | "inline", TContextData>,
+): value is Text<"inline", TContextData> {
+  return value.type === "inline";
 }
 
 /**

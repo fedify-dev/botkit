@@ -28,12 +28,11 @@ include a paragraph inside an emphasis construct.  Since the concept of blocks
 and inlines corresponds to the same concept in the HTML, you can think of them
 as the `<div>` and `<span>` elements in the HTML, respectively.
 
-The parameters that take the `Text` object, such as `Session.publish()` method
-or [`createBot()` function's `summary`
-parameter](./bot.md#createbotoptions-summary), are usually of the type
-`Text<"block">`.  The simplest way to create a `Text<"block">` object is to
-use the `text()` template string tag, which we will discuss in the right next
-section.
+Parameters that represent a document, such as the content passed to
+`Session.publish()` or the [`createBot()` function's `summary`
+parameter](./bot.md#createbotoptions-summary), usually take a `Text<"block">`.
+Short fields without paragraphs, such as a message summary, instead take a
+`Text<"inline">`.  BotKit provides a template string tag for each kind.
 
 [^1]: More precisely, the `Text` type has two type parameters: the first one is
       the type of the element: `"block"` or `"inline"`, and the second one is
@@ -77,6 +76,26 @@ together using the template string tag.  In this document, we will discuss
 various formatting constructs that you can use in the `Text` object.
 
 
+Inline template string tag
+--------------------------
+
+*This API is available since BotKit 0.6.0.*
+
+The `inline()` template string tag creates a `Text<"inline">` without wrapping
+it in a paragraph.  It is useful for short rich-text fields such as a message
+summary:
+
+~~~~ typescript twoslash
+import { em, inline } from "@fedify/botkit";
+// ---cut-before---
+const summary = inline`A short ${em("summary")}.`;
+~~~~
+
+Inline text supports the same formatting constructs and safe interpolation as
+`text()`.  A line break becomes a `<br>` element.  A block `Text` object cannot
+be interpolated into `inline()` because doing so would introduce paragraphs.
+
+
 Interpolation
 -------------
 
@@ -86,8 +105,8 @@ types:
 
 ### `Text` object
 
-If you put another `Text` object inside the interpolation, it will be
-concatenated to the parent `Text` object.  For example:
+If you put another compatible `Text` object inside the interpolation, it will
+be concatenated to the parent `Text` object.  For example:
 
 ~~~~ typescript twoslash
 import { text, em } from "@fedify/botkit";

@@ -35,7 +35,11 @@ import { getLogger } from "@logtape/logtape";
 import { encode } from "html-entities";
 import { v7 as uuidv7 } from "uuid";
 import type { BotImpl } from "./bot-impl.ts";
-import { createMessage, isMessageObject } from "./message-impl.ts";
+import {
+  createMessage,
+  deduplicateTags,
+  isMessageObject,
+} from "./message-impl.ts";
 import {
   type AuthorizedMessage,
   type Message,
@@ -51,7 +55,7 @@ import type {
   SessionPublishOptionsWithClass,
   SessionPublishOptionsWithQuestion,
 } from "./session.ts";
-import type { Text } from "./text.ts";
+import { plainText, type Text } from "./text.ts";
 
 const logger = getLogger(["botkit", "session"]);
 
@@ -266,10 +270,27 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     for await (const chunk of content.getHtml(this)) {
       contentHtml += chunk;
     }
-    const tags = await Array.fromAsync(content.getTags(this));
+    const summary = typeof options.summary === "string"
+      ? plainText<TContextData>(options.summary)
+      : options.summary;
+    let summaryHtml: string | undefined;
+    if (summary != null) {
+      summaryHtml = "";
+      for await (const chunk of summary.getHtml(this)) {
+        summaryHtml += chunk;
+      }
+    }
+    const tagCandidates = await Array.fromAsync(content.getTags(this));
+    if (summary != null) {
+      tagCandidates.push(...await Array.fromAsync(summary.getTags(this)));
+    }
+    const tags = deduplicateTags(tagCandidates);
     const mentionedActorIds: URL[] = [];
     for (const tag of tags) {
-      if (tag instanceof Mention && tag.href != null) {
+      if (
+        tag instanceof Mention && tag.href != null &&
+        !mentionedActorIds.some((id) => id.href === tag.href?.href)
+      ) {
         mentionedActorIds.push(tag.href);
       }
     }
@@ -330,6 +351,22 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       contents: options.language == null
         ? [contentHtml]
         : [new LanguageString(contentHtml, options.language), contentHtml],
+      names: options.name == null
+        ? []
+        : options.language == null
+        ? [options.name]
+        : [
+          new LanguageString(options.name, options.language),
+          options.name,
+        ],
+      summaries: summaryHtml == null
+        ? []
+        : options.language == null
+        ? [summaryHtml]
+        : [
+          new LanguageString(summaryHtml, options.language),
+          summaryHtml,
+        ],
       replyTarget: options.replyTarget?.id,
       quote: options.quoteTarget?.id,
       quoteUrl: options.quoteTarget?.id,
@@ -360,11 +397,12 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         ? [PUBLIC_COLLECTION]
         : [],
       published: published.toTemporalInstant(),
-      url: this.bot.instance.getMessageWebUrl(
-        this.bot,
-        id,
-        this.context.origin,
-      ),
+      url: options.url ??
+        this.bot.instance.getMessageWebUrl(
+          this.bot,
+          id,
+          this.context.origin,
+        ),
     });
     const activity = new Create({
       id: this.context.getObjectUri(Create, {
@@ -390,7 +428,11 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       );
     }
     const cachedObjects: Record<string, Object> = {};
-    for (const cachedObject of content.getCachedObjects()) {
+    const textObjects = [
+      ...content.getCachedObjects(),
+      ...(summary?.getCachedObjects() ?? []),
+    ];
+    for (const cachedObject of textObjects) {
       if (cachedObject.id == null) continue;
       cachedObjects[cachedObject.id.href] = cachedObject;
     }
