@@ -51,6 +51,12 @@ export {
   isEmoji,
 } from "./emoji.ts";
 export type * from "./events.ts";
+export type {
+  CircuitBreakerOptions,
+  FederationInfrastructureOptions,
+  HttpMessageSignaturesSpec,
+  InboxChallengePolicy,
+} from "./federation.ts";
 export type { FollowRequest } from "./follow.ts";
 export {
   Article,

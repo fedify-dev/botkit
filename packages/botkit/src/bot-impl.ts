@@ -276,6 +276,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
         this.identifier,
       ),
       queue: options.queue,
+      federationOptions: options.federationOptions,
       software: options.software,
       behindProxy: options.behindProxy,
       pages: options.pages,

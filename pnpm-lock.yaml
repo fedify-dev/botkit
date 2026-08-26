@@ -21,6 +21,9 @@ catalogs:
     '@logtape/logtape':
       specifier: ^2.2.3
       version: 2.2.3
+    '@opentelemetry/api':
+      specifier: ^1.9.1
+      version: 1.9.1
     hono:
       specifier: ^4.12.27
       version: 4.12.27
@@ -155,6 +158,9 @@ importers:
       '@logtape/logtape':
         specifier: 'catalog:'
         version: 2.2.3
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.1
       hono:
         specifier: 'catalog:'
         version: 4.12.27

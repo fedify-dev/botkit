@@ -43,6 +43,7 @@ import type {
   UnlikeEventHandler,
   VoteEventHandler,
 } from "./events.ts";
+import type { FederationInfrastructureOptions } from "./federation.ts";
 import type { QuotePolicyOption } from "./quote.ts";
 import type { Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
@@ -413,6 +414,13 @@ export interface CreateBotOptions<TContextData> {
    * and outgoing activities are sent immediately.
    */
   readonly queue?: MessageQueue;
+
+  /**
+   * Selected options for configuring the underlying Fedify federation.  See
+   * {@link FederationInfrastructureOptions}.
+   * @since 0.6.0
+   */
+  readonly federationOptions?: FederationInfrastructureOptions;
 
   /**
    * The software information of the bot.  If omitted, the NodeInfo protocol

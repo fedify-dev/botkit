@@ -12,9 +12,14 @@ To be released.
     messages.  Updated messages can remove these fields by setting them to
     `null`, and the new `inline` template composes paragraphless rich text for
     summaries.  [[#40], [#42]]
+ -  Added the `federationOptions` option to `createBot()` and
+    `createInstance()` for private-address access in tests, circuit breaking,
+    OpenTelemetry providers, and HTTP Signature negotiation.  [[#41], [#43]]
 
 [#40]: https://github.com/fedify-dev/botkit/issues/40
+[#41]: https://github.com/fedify-dev/botkit/issues/41
 [#42]: https://github.com/fedify-dev/botkit/pull/42
+[#43]: https://github.com/fedify-dev/botkit/pull/43
 
 
 Version 0.5.2
