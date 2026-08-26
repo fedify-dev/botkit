@@ -108,6 +108,15 @@ repository packages such as
 [`SqliteRepository`](./repository.md#sqliterepository) and
 [`PostgresRepository`](./repository.md#postgresrepository).
 
+### `~CreateBotOptions.federationOptions`
+
+Selected options for the underlying Fedify federation.  These include private
+network access for local integration tests, queued-delivery circuit breaking,
+OpenTelemetry providers, and HTTP Signature negotiation.  See
+[*Federation infrastructure options*](./instance.md#federation-infrastructure-options)
+for the complete list and safety notes.  The same options are available to
+`createInstance()`.
+
 ### `~CreateBotOptions.identifier`
 
 The internal identifier of the bot actor.  It is used for the URI of the bot

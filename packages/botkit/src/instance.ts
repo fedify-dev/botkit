@@ -23,6 +23,7 @@ import type { Software } from "@fedify/fedify/nodeinfo";
 import type { Application, Image, Service } from "@fedify/vocab";
 import type { Bot, BotEventHandlers, PagesOptions } from "./bot.ts";
 import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
+import type { FederationInfrastructureOptions } from "./federation.ts";
 import { InstanceImpl } from "./instance-impl.ts";
 export { DEFAULT_INSTANCE_ACTOR_IDENTIFIER } from "./instance-impl.ts";
 import type { QuotePolicyOption } from "./quote.ts";
@@ -315,6 +316,13 @@ export interface CreateInstanceOptions {
    * and outgoing activities are sent immediately.
    */
   readonly queue?: MessageQueue;
+
+  /**
+   * Selected options for configuring the underlying Fedify federation.  See
+   * {@link FederationInfrastructureOptions}.
+   * @since 0.6.0
+   */
+  readonly federationOptions?: FederationInfrastructureOptions;
 
   /**
    * The software information of the instance.  If omitted, the NodeInfo

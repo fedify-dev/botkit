@@ -17,6 +17,7 @@ import {
   type Context,
   createFederation,
   type Federation,
+  type FederationOptions as FedifyFederationOptions,
   generateCryptoKeyPair,
   type InboxContext,
   type KvStore,
@@ -171,13 +172,20 @@ export class InstanceImpl<TContextData>
     if (this.instanceActorIdentifier === "") {
       throw new TypeError("The instance actor identifier cannot be empty.");
     }
-    this.federation = createFederation<TContextData>({
+    const federationOptions = {
+      allowPrivateAddress: options.federationOptions?.allowPrivateAddress,
+      circuitBreaker: options.federationOptions?.circuitBreaker,
+      tracerProvider: options.federationOptions?.tracerProvider,
+      meterProvider: options.federationOptions?.meterProvider,
+      firstKnock: options.federationOptions?.firstKnock,
+      inboxChallengePolicy: options.federationOptions?.inboxChallengePolicy,
       kv: options.kv,
       queue: options.queue,
       userAgent: {
         software: `BotKit/${metadata.version}`,
       },
-    });
+    } satisfies FedifyFederationOptions<TContextData>;
+    this.federation = createFederation<TContextData>(federationOptions);
     this.#initialize();
   }
 

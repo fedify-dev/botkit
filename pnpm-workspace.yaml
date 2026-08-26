@@ -20,6 +20,7 @@ catalog:
   "@fedify/vocab-runtime": ~2.3.5
   "@js-temporal/polyfill": ^0.5.1
   "@logtape/logtape": ^2.2.3
+  "@opentelemetry/api": ^1.9.1
   hono: ^4.12.27
   tsdown: ^0.12.8
   x-forwarded-fetch: ^0.2.0

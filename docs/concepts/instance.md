@@ -44,9 +44,11 @@ The `CreateInstanceOptions` take the infrastructure-related options that
 `createBot()` used to take: `~CreateInstanceOptions.kv`,
 `~CreateInstanceOptions.repository`, `~CreateInstanceOptions.queue`,
 `~CreateInstanceOptions.software`, `~CreateInstanceOptions.behindProxy`, and
-`~CreateInstanceOptions.pages`.  A single repository stores the data of every
-bot hosted on the instance, scoped by their identifiers; see the
-[*Repository* concept document](./repository.md) for details.
+`~CreateInstanceOptions.pages`.  It also accepts selected lower-level Fedify
+settings through `~CreateInstanceOptions.federationOptions`.  A single
+repository stores the data of every bot hosted on the instance, scoped by
+their identifiers; see the [*Repository* concept document](./repository.md)
+for details.
 
 Two options are specific to multi-bot instances:
 `~CreateInstanceOptions.instanceActorIdentifier` overrides the reserved
@@ -54,6 +56,55 @@ identifier of [the instance actor](#the-instance-actor), and
 `~CreateInstanceOptions.legacyObjectUris` keeps object URIs from an older
 single-bot deployment working (see [*Migrating a single-bot
 deployment*](#migrating-a-single-bot-deployment)).
+
+### Federation infrastructure options
+
+The `~CreateInstanceOptions.federationOptions` object exposes a deliberately
+limited part of Fedify's federation configuration:
+
+`~FederationInfrastructureOptions.allowPrivateAddress`
+:   Allows the document loader to fetch private network addresses.  This is
+    useful when integration tests run another fediverse server locally.
+
+`~FederationInfrastructureOptions.circuitBreaker`
+:   Configures the circuit breaker for queued outgoing activity delivery, or
+    disables it when set to `false`.
+
+`~FederationInfrastructureOptions.tracerProvider`
+:   Sets the OpenTelemetry tracer provider used for federation operations.
+
+`~FederationInfrastructureOptions.meterProvider`
+:   Sets the OpenTelemetry meter provider used for federation metrics.
+
+`~FederationInfrastructureOptions.firstKnock`
+:   Selects the HTTP Signatures specification Fedify tries first when it
+    encounters an unknown server.
+
+`~FederationInfrastructureOptions.inboxChallengePolicy`
+:   Configures `Accept-Signature` challenges on inbox authentication failures.
+
+For example, an integration test can opt into local federation traffic:
+
+~~~~ typescript twoslash
+import { createInstance } from "@fedify/botkit";
+import { MemoryKvStore } from "@fedify/fedify";
+
+const instance = createInstance({
+  kv: new MemoryKvStore(),
+  federationOptions: {
+    allowPrivateAddress: true,
+  },
+});
+~~~~
+
+> [!CAUTION]
+> Do not enable `allowPrivateAddress` in production.  It disables the document
+> loader's protection against requests to loopback, link-local, and private
+> network addresses.
+
+BotKit still owns the key–value store, message queue, and user agent passed to
+Fedify.  Other Fedify federation options are not accepted here; options that
+affect BotKit's lifecycle or delivery behavior need a BotKit-level API.
 
 Like a `Bot`, an `Instance` has a `~Instance.fetch()` method to be connected
 to the HTTP server:
