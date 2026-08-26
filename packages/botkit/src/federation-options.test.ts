@@ -82,7 +82,8 @@ describe("federationOptions", () => {
     const optionsWithUnsupportedProperty = {
       allowPrivateAddress: false,
       get manuallyStartQueue(): boolean {
-        throw new Error("Unsupported options must not be read.");
+        assert.fail("Unsupported options must not be read.");
+        return false;
       },
     };
     const federationOptions: FederationInfrastructureOptions =
