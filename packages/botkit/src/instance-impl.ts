@@ -369,6 +369,18 @@ export class InstanceImpl<TContextData>
     // acct: resources and mentions vary in casing), so two usernames
     // differing only in case would be indistinguishable:
     const username = bot.username.toLowerCase();
+    // A static bot holding the instance actor's name would leave the actor
+    // with no WebFinger record, which is the fault this reservation exists to
+    // prevent.  Registration is synchronous, so the collision is rejected
+    // outright here rather than resolved by ordering in mapHandle():
+    if (
+      !this.compatMode &&
+      username === this.instanceActorIdentifier.toLowerCase()
+    ) {
+      throw new TypeError(
+        `The username is reserved for the instance actor: ${bot.username}`,
+      );
+    }
     for (const existing of this.#bots.values()) {
       if (existing.username.toLowerCase() === username) {
         throw new TypeError(
@@ -534,6 +546,25 @@ export class InstanceImpl<TContextData>
     const bot = await this.resolveBot(ctx, username);
     if (bot instanceof GroupBotImpl && bot.group.mapUsername == null) {
       return username;
+    }
+    // The instance actor is served by the actor dispatcher but is not a
+    // registered bot, so it needs a mapping of its own.  Without one it has
+    // no WebFinger record, and implementations that resolve a signature's
+    // key owner through WebFinger rather than by URI (GoToSocial) reject
+    // every request the instance actor signs.
+    //
+    // It resolves last so that a mapping something else already owns keeps
+    // working: addBot() reserves the name against static bots, but a group's
+    // mapUsername() can only be evaluated per request, and one that claims
+    // the name resolved to its own bot before this method knew about the
+    // instance actor at all.  Deferring keeps that mapping rather than
+    // silently redirecting the handle away from a bot that is still
+    // dereferenceable under its own identifier:
+    if (
+      !this.compatMode &&
+      normalized === this.instanceActorIdentifier.toLowerCase()
+    ) {
+      return this.instanceActorIdentifier;
     }
     return null;
   }
