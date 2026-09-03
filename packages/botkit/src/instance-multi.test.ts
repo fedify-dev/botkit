@@ -143,6 +143,84 @@ describe("instance actor", () => {
     assert.ok(actor.publicKey != null);
   });
 
+  test("is discoverable through WebFinger", async () => {
+    // The instance actor signs the requests a multi-bot instance makes on
+    // its own behalf.  Implementations that dereference a signature's key
+    // owner through WebFinger rather than by URI (GoToSocial) reject every
+    // one of those requests unless the actor resolves here:
+    async function webFingerSelf(
+      instance: InstanceWithVoidContextData,
+      username: string,
+    ): Promise<string | undefined> {
+      const response = await instance.fetch(
+        new Request(
+          `https://example.com/.well-known/webfinger?resource=${
+            encodeURIComponent(`acct:${username}@example.com`)
+          }`,
+        ),
+      );
+      assert.deepStrictEqual(response.status, 200, `WebFinger ${username}`);
+      // Response.json() is typed as any, so the payload is narrowed rather
+      // than asserted into shape:
+      const jrd: unknown = await response.json();
+      const links = typeof jrd === "object" && jrd != null && "links" in jrd
+        ? jrd.links
+        : undefined;
+      if (!Array.isArray(links)) {
+        assert.fail(`WebFinger ${username} returned no links array`);
+      }
+      for (const link of links) {
+        if (
+          typeof link === "object" && link != null &&
+          "rel" in link && link.rel === "self" &&
+          "href" in link && typeof link.href === "string"
+        ) {
+          return link.href;
+        }
+      }
+      return undefined;
+    }
+
+    const instance = createInstance<void>({ kv: new MemoryKvStore() });
+    instance.createBot("alpha", { username: "alphabot" });
+    assert.deepStrictEqual(
+      await webFingerSelf(instance, DEFAULT_INSTANCE_ACTOR_IDENTIFIER),
+      `https://example.com/ap/actor/${DEFAULT_INSTANCE_ACTOR_IDENTIFIER}`,
+    );
+
+    // A renamed instance actor resolves under its new identifier, and the
+    // default one goes back to being an ordinary username:
+    const renamed = createInstance<void>({
+      kv: new MemoryKvStore(),
+      instanceActorIdentifier: "fetcher",
+    });
+    renamed.createBot("alpha", { username: "alphabot" });
+    assert.deepStrictEqual(
+      await webFingerSelf(renamed, "fetcher"),
+      "https://example.com/ap/actor/fetcher",
+    );
+
+    // A group's mapUsername() can only be evaluated per request, so it
+    // cannot be rejected at registration the way a static bot's username is.
+    // The instance actor therefore resolves last, leaving an explicit
+    // mapping that already worked on 0.5.2 pointing where it always did --
+    // the alternative silently redirects the handle away from a bot that is
+    // still dereferenceable under its own identifier:
+    const dynamic = createInstance<void>({ kv: new MemoryKvStore() });
+    dynamic.createBot(
+      (_ctx, identifier) =>
+        identifier === "lang_en" ? { username: "en" } : null,
+      {
+        mapUsername: (_ctx, username) =>
+          username === DEFAULT_INSTANCE_ACTOR_IDENTIFIER ? "lang_en" : null,
+      },
+    );
+    assert.deepStrictEqual(
+      await webFingerSelf(dynamic, DEFAULT_INSTANCE_ACTOR_IDENTIFIER),
+      "https://example.com/ap/actor/lang_en",
+    );
+  });
+
   test("signs the shared inbox on multi-bot instances", () => {
     const instance = createInstance<void>({ kv: new MemoryKvStore() });
     instance.createBot("alpha", { username: "alphabot" });
@@ -181,6 +259,43 @@ describe("instance actor", () => {
     assert.deepStrictEqual(response.status, 200);
     const actor = await response.json();
     assert.deepStrictEqual(actor.type, "Application");
+  });
+
+  test("cannot have its name taken as a bot's username", () => {
+    // Only the identifier was reserved before.  Since the instance actor now
+    // resolves ahead of the bots in mapHandle(), a bot holding its name would
+    // silently lose its own WebFinger mapping, so the username is reserved
+    // too -- case-insensitively, as WebFinger lookups vary in casing:
+    const instance = createInstance<void>({ kv: new MemoryKvStore() });
+    assert.throws(
+      () =>
+        instance.createBot("sneaky", {
+          username: DEFAULT_INSTANCE_ACTOR_IDENTIFIER,
+        }),
+      TypeError,
+    );
+    assert.throws(
+      () =>
+        instance.createBot("sneaky", {
+          username: DEFAULT_INSTANCE_ACTOR_IDENTIFIER.toUpperCase(),
+        }),
+      TypeError,
+    );
+
+    // The reservation follows instanceActorIdentifier rather than the
+    // default name: a renamed actor reserves its own, and frees the default.
+    const renamed = createInstance<void>({
+      kv: new MemoryKvStore(),
+      instanceActorIdentifier: "fetcher",
+    });
+    assert.throws(
+      () => renamed.createBot("sneaky", { username: "Fetcher" }),
+      TypeError,
+    );
+    const bot = renamed.createBot("underscores", {
+      username: DEFAULT_INSTANCE_ACTOR_IDENTIFIER,
+    });
+    assert.deepStrictEqual(bot.identifier, "underscores");
   });
 
   test("can be renamed through instanceActorIdentifier", async () => {
