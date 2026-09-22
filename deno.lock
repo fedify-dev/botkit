@@ -1,24 +1,24 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@fedify/denokv@~2.3.5": "2.3.5",
-    "jsr:@fedify/fedify@^2.3.3": "2.3.5",
-    "jsr:@fedify/fedify@^2.3.5": "2.3.5",
-    "jsr:@fedify/fedify@~2.3.5": "2.3.5",
+    "jsr:@fedify/denokv@~2.3.8": "2.3.8",
+    "jsr:@fedify/fedify@^2.3.3": "2.3.8",
+    "jsr:@fedify/fedify@^2.3.8": "2.3.8",
+    "jsr:@fedify/fedify@~2.3.8": "2.3.8",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
-    "jsr:@fedify/uri-template@^2.3.5": "2.3.5",
-    "jsr:@fedify/vocab-runtime@^2.3.3": "2.3.5",
-    "jsr:@fedify/vocab-runtime@^2.3.5": "2.3.5",
-    "jsr:@fedify/vocab-runtime@~2.3.5": "2.3.5",
-    "jsr:@fedify/vocab@^2.3.3": "2.3.5",
-    "jsr:@fedify/vocab@^2.3.5": "2.3.5",
-    "jsr:@fedify/vocab@~2.3.5": "2.3.5",
-    "jsr:@fedify/webfinger@^2.3.5": "2.3.5",
+    "jsr:@fedify/uri-template@^2.3.8": "2.3.8",
+    "jsr:@fedify/vocab-runtime@^2.3.3": "2.3.8",
+    "jsr:@fedify/vocab-runtime@^2.3.8": "2.3.8",
+    "jsr:@fedify/vocab-runtime@~2.3.8": "2.3.8",
+    "jsr:@fedify/vocab@^2.3.3": "2.3.8",
+    "jsr:@fedify/vocab@^2.3.8": "2.3.8",
+    "jsr:@fedify/vocab@~2.3.8": "2.3.8",
+    "jsr:@fedify/webfinger@^2.3.8": "2.3.8",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
-    "jsr:@hono/hono@^4.12.27": "4.13.3",
-    "jsr:@logtape/logtape@^2.2.0": "2.3.2",
-    "jsr:@logtape/logtape@^2.2.3": "2.3.2",
+    "jsr:@hono/hono@^4.12.27": "4.13.8",
+    "jsr:@logtape/logtape@^2.2.0": "2.3.7",
+    "jsr:@logtape/logtape@^2.2.3": "2.3.7",
     "jsr:@std/fs@^1.0.24": "1.0.24",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.12": "1.0.12",
@@ -41,7 +41,7 @@
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:asn1js@^3.0.10": "3.0.10",
     "npm:byte-encodings@^1.0.11": "1.0.11",
-    "npm:es-toolkit@^1.46.1": "1.49.0",
+    "npm:es-toolkit@^1.46.1": "1.51.0",
     "npm:hongdown@~0.1.0-dev.28": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.29": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.30": "0.1.0-dev.37",
@@ -70,20 +70,20 @@
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@fedify/denokv@2.3.5": {
-      "integrity": "e7739723f5206580034fcf65fd1349d953577dff4a39cbb898f15ab59d1b67aa",
+    "@fedify/denokv@2.3.8": {
+      "integrity": "96c937fe6a95897b2f6ccd5a2e4ab9642a112ca8b222e115620a2d5ed033058b",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.3.5",
+        "jsr:@fedify/fedify@^2.3.8",
         "npm:es-toolkit"
       ]
     },
-    "@fedify/fedify@2.3.5": {
-      "integrity": "6c92e502da331d5e26ad646b658c0a33b2f13a46e819d744655eb96aa5b11b43",
+    "@fedify/fedify@2.3.8": {
+      "integrity": "4d1a18b0d7ef6e0f427f188b0ca04c81eb6153bfb0b852b2302168b76947da71",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.3.5",
+        "jsr:@fedify/fedify@^2.3.8",
         "jsr:@fedify/uri-template",
-        "jsr:@fedify/vocab-runtime@^2.3.5",
-        "jsr:@fedify/vocab@^2.3.5",
+        "jsr:@fedify/vocab-runtime@^2.3.8",
+        "jsr:@fedify/vocab@^2.3.8",
         "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@opentelemetry/api",
@@ -111,21 +111,21 @@
         "npm:@types/markdown-it"
       ]
     },
-    "@fedify/uri-template@2.3.5": {
-      "integrity": "7f4aa1fbda57a9d187e1785509ff0aac310a66a608f25909d7d79600f48cfe71"
+    "@fedify/uri-template@2.3.8": {
+      "integrity": "51cd681f2f79c2935a900602021d2ea8e30f5eebaaeb01ce200563fde6f033d2"
     },
-    "@fedify/vocab@2.3.5": {
-      "integrity": "5fac6f2dd96916404375609020f59c591b0e080d80e1b19d5865889b11f140d0",
+    "@fedify/vocab@2.3.8": {
+      "integrity": "9e01dba587adbf638574c45ff171b82c8438b556eaf5a3fccc9a589e63431d33",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.3.5",
+        "jsr:@fedify/vocab-runtime@^2.3.8",
         "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@opentelemetry/api",
         "npm:es-toolkit"
       ]
     },
-    "@fedify/vocab-runtime@2.3.5": {
-      "integrity": "d53ba6d9adadbb776f20380304e3e6f1cf280309b0c79ac559478bfe7353cb5d",
+    "@fedify/vocab-runtime@2.3.8": {
+      "integrity": "8a06f5bd06c84e663e682ee263c8e06670ce77b2a74acdb7eb18812351538854",
       "dependencies": [
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@multiformats/base-x",
@@ -136,10 +136,10 @@
         "npm:pkijs"
       ]
     },
-    "@fedify/webfinger@2.3.5": {
-      "integrity": "f025e271772a3f72335494022ae971d8cc096dc0d0abf107333260bcf0c81f9f",
+    "@fedify/webfinger@2.3.8": {
+      "integrity": "98ea9ca12db7b9530c3694b6381ffebf9831959fa0eb3cdd97880ed2a3db5de8",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.3.5",
+        "jsr:@fedify/vocab-runtime@^2.3.8",
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@opentelemetry/api"
       ]
@@ -159,11 +159,14 @@
     "@hono/hono@4.13.3": {
       "integrity": "2d277e78219ea145202359af5296cfa136eba5e75ffb08fda6fbd54d72032b4f"
     },
+    "@hono/hono@4.13.8": {
+      "integrity": "bbb566d9ebb81e74c0d7eeff1f9221ba9f3fda6f1832e5ca66cbddcecb2f7fec"
+    },
     "@logtape/logtape@1.3.7": {
       "integrity": "d9dc1f8c7e2e1e4e3998006ea84eaf4054e40ad39325b056b3f517c013286bed"
     },
-    "@logtape/logtape@2.3.2": {
-      "integrity": "bc18d70a494889ab64d13005cc857d65deb6eea483b1715197fa834582d6eb3c"
+    "@logtape/logtape@2.3.7": {
+      "integrity": "b5b958c09692e07d687bc909d806481159edec5feffa6b69eb655726ae2a3106"
     },
     "@std/fs@1.0.21": {
       "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
@@ -485,7 +488,7 @@
         "quansync"
       ]
     },
-    "@redis/bloom@6.1.0_@redis+client@6.1.0__@opentelemetry+api@1.9.1_@opentelemetry+api@1.9.1": {
+    "@redis/bloom@6.1.0_@redis+client@6.1.0_@opentelemetry+api@1.9.1": {
       "integrity": "sha512-Rzascjd9J9bJsM45T/Z9CTg1QY/B63B6YO8QorLVMeXnbBDsKiSCVR/+GQ061hYPk8FpTzWmPY8tAv2sT+JEtQ==",
       "dependencies": [
         "@redis/client"
@@ -501,19 +504,19 @@
         "@opentelemetry/api"
       ]
     },
-    "@redis/json@6.1.0_@redis+client@6.1.0__@opentelemetry+api@1.9.1_@opentelemetry+api@1.9.1": {
+    "@redis/json@6.1.0_@redis+client@6.1.0_@opentelemetry+api@1.9.1": {
       "integrity": "sha512-/GFjQA6bu5pG9ClCJAI5Xx4bNXe7UTpxBBlIupBNTrn1+nY860apGnYJuaSCDV2BmEbTidpa7O2qa28oxKx+rg==",
       "dependencies": [
         "@redis/client"
       ]
     },
-    "@redis/search@6.1.0_@redis+client@6.1.0__@opentelemetry+api@1.9.1_@opentelemetry+api@1.9.1": {
+    "@redis/search@6.1.0_@redis+client@6.1.0_@opentelemetry+api@1.9.1": {
       "integrity": "sha512-kS5agg+3yZbrdrt8omrew7FLCD8eOm7tarG1CROekPBRe+QGDR9aOpnHIQaYsYi6wPRTH70nQiF06AIjgURefQ==",
       "dependencies": [
         "@redis/client"
       ]
     },
-    "@redis/time-series@6.1.0_@redis+client@6.1.0__@opentelemetry+api@1.9.1_@opentelemetry+api@1.9.1": {
+    "@redis/time-series@6.1.0_@redis+client@6.1.0_@opentelemetry+api@1.9.1": {
       "integrity": "sha512-uIDBtV8MmG/xpJsRqbGSO4iX6ryj37MLMP82lRpFvI7ykAVe5GyqgxigEbU+uZNv9kDPNMKw3dvI/S/J1BNBzA==",
       "dependencies": [
         "@redis/client"
@@ -691,8 +694,8 @@
     "entities@4.5.0": {
       "integrity": "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="
     },
-    "es-toolkit@1.49.0": {
-      "integrity": "sha512-G5iZ6Pc/FNRY/soKZHC+TxGDD83rHUDXxzaWhGCX44vAv/tMs56WMusnm/KMNK+luUPsgA9U28cGr4RDlSzL2g=="
+    "es-toolkit@1.51.0": {
+      "integrity": "sha512-zC2lQGkM7QX+Gm6iM3+WIdZJzthsEd14LvRNJneSO2hzyz/zNBENR8+YXWo1cKxgPBtV6ksPYHELbcwBRzmdCw=="
     },
     "fast-xml-builder@1.2.1": {
       "integrity": "sha512-tPb5TTWfgfVx5BNSi2xV0eLr89POeXXn0dXIsCJ9m1narrWxeIyx6je9d7Rce/3NyXLbvuQmLkxq+RuxMWejvw==",
@@ -1028,10 +1031,10 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/denokv@~2.3.5",
-      "jsr:@fedify/fedify@~2.3.5",
-      "jsr:@fedify/vocab-runtime@~2.3.5",
-      "jsr:@fedify/vocab@~2.3.5",
+      "jsr:@fedify/denokv@~2.3.8",
+      "jsr:@fedify/fedify@~2.3.8",
+      "jsr:@fedify/vocab-runtime@~2.3.8",
+      "jsr:@fedify/vocab@~2.3.8",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.12.27",
       "jsr:@logtape/logtape@^2.2.3",
