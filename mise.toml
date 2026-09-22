@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
 deno = "2"
+"github:dahlia/sacho" = "0.3.2"
 node = "22"
 "npm:pnpm" = "latest"
