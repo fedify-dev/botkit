@@ -15,7 +15,10 @@ To be released.
  -  Added the `federationOptions` option to `createBot()` and
     `createInstance()` for private-address access in tests, circuit breaking,
     OpenTelemetry providers, and HTTP Signature negotiation.  [[#41], [#43]]
+ -  Upgraded Fedify to 2.4.0, which adds support for [FEP-ef61] portable
+    objects and hardens HTTP Signature verification and document loading.
 
+[FEP-ef61]: https://w3id.org/fep/ef61
 [#40]: https://github.com/fedify-dev/botkit/issues/40
 [#41]: https://github.com/fedify-dev/botkit/issues/41
 [#42]: https://github.com/fedify-dev/botkit/pull/42

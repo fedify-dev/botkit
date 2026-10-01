@@ -14,13 +14,13 @@ minimumReleaseAgeExclude:
   - markdown-it-jsr-ref@0.5.0
 
 catalog:
-  "@fedify/denokv": "jsr:@fedify/denokv@^2.3.10"
-  "@fedify/fedify": ~2.3.10
-  "@fedify/postgres": ~2.3.10
-  "@fedify/redis": ~2.3.10
-  "@fedify/sqlite": ~2.3.10
-  "@fedify/vocab": ~2.3.10
-  "@fedify/vocab-runtime": ~2.3.10
+  "@fedify/denokv": "jsr:@fedify/denokv@^2.4.0"
+  "@fedify/fedify": ~2.4.0
+  "@fedify/postgres": ~2.4.0
+  "@fedify/redis": ~2.4.0
+  "@fedify/sqlite": ~2.4.0
+  "@fedify/vocab": ~2.4.0
+  "@fedify/vocab-runtime": ~2.4.0
   "@js-temporal/polyfill": ^0.5.1
   "@logtape/logtape": ^2.2.3
   "@opentelemetry/api": ^1.9.1

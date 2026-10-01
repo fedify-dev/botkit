@@ -1,24 +1,22 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@fedify/denokv@~2.3.10": "2.3.10",
-    "jsr:@fedify/fedify@^2.3.10": "2.3.10",
-    "jsr:@fedify/fedify@^2.3.3": "2.3.10",
-    "jsr:@fedify/fedify@~2.3.10": "2.3.10",
+    "jsr:@fedify/denokv@2.4": "2.4.0",
+    "jsr:@fedify/fedify@2.4": "2.4.0",
+    "jsr:@fedify/fedify@^2.4.0": "2.4.0",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
-    "jsr:@fedify/uri-template@^2.3.10": "2.4.0",
-    "jsr:@fedify/vocab-runtime@^2.3.10": "2.4.0",
-    "jsr:@fedify/vocab-runtime@^2.3.3": "2.4.0",
+    "jsr:@fedify/uri-template@^2.4.0": "2.4.0",
+    "jsr:@fedify/vocab-runtime@2.4": "2.4.0",
     "jsr:@fedify/vocab-runtime@^2.4.0": "2.4.0",
-    "jsr:@fedify/vocab@^2.3.10": "2.4.0",
-    "jsr:@fedify/vocab@^2.3.3": "2.4.0",
-    "jsr:@fedify/webfinger@^2.3.10": "2.4.0",
+    "jsr:@fedify/vocab@2.4": "2.4.0",
+    "jsr:@fedify/vocab@^2.4.0": "2.4.0",
     "jsr:@fedify/webfinger@^2.4.0": "2.4.0",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
     "jsr:@hono/hono@^4.12.27": "4.13.12",
     "jsr:@logtape/logtape@^2.2.0": "2.3.10",
     "jsr:@logtape/logtape@^2.2.3": "2.3.10",
+    "jsr:@standard-schema/spec@^1.1.0": "1.1.0",
     "jsr:@std/fs@^1.0.24": "1.0.24",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.12": "1.0.12",
@@ -39,6 +37,7 @@
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
     "npm:asn1js@^3.0.10": "3.0.10",
     "npm:byte-encodings@^1.0.11": "1.0.11",
+    "npm:devalue@^5.8.1": "5.9.2",
     "npm:es-toolkit@^1.46.1": "1.52.0",
     "npm:hongdown@~0.1.0-dev.28": "0.1.0-dev.37",
     "npm:hongdown@~0.1.0-dev.29": "0.1.0-dev.37",
@@ -68,26 +67,28 @@
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@fedify/denokv@2.3.10": {
-      "integrity": "55d087704a8dcf0bbdf977b0cf0d7ff5561285b04fc7c38218bef5434fdd8c2e",
+    "@fedify/denokv@2.4.0": {
+      "integrity": "9f18ec5836f14445b0fcbabbe20ba45a11723ad1cc7c3ea0b38893aebd60d370",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.3.10",
+        "jsr:@fedify/fedify@^2.4.0",
         "npm:es-toolkit"
       ]
     },
-    "@fedify/fedify@2.3.10": {
-      "integrity": "ad967057d20ab9e1aebcc252f04cd2aa81a62d7fce2ad779736528a06b9ea936",
+    "@fedify/fedify@2.4.0": {
+      "integrity": "29fec9317bff196361b1030723bd0bf89047d0f338b41edc3490fc67e1d8dc17",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.3.10",
+        "jsr:@fedify/fedify@^2.4.0",
         "jsr:@fedify/uri-template",
-        "jsr:@fedify/vocab-runtime@^2.3.10",
-        "jsr:@fedify/vocab@^2.3.10",
-        "jsr:@fedify/webfinger@^2.3.10",
+        "jsr:@fedify/vocab-runtime@^2.4.0",
+        "jsr:@fedify/vocab@^2.4.0",
+        "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.2.0",
+        "jsr:@standard-schema/spec",
         "npm:@opentelemetry/api",
         "npm:@opentelemetry/sdk-metrics",
         "npm:@opentelemetry/semantic-conventions",
         "npm:byte-encodings",
+        "npm:devalue",
         "npm:es-toolkit",
         "npm:json-canon",
         "npm:structured-field-values"
@@ -114,7 +115,7 @@
       "integrity": "2128ff130d55460bd753ddf42b074d9daa9c2906ddfde471bfd143c1fefd117a",
       "dependencies": [
         "jsr:@fedify/vocab-runtime@^2.4.0",
-        "jsr:@fedify/webfinger@^2.4.0",
+        "jsr:@fedify/webfinger",
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@opentelemetry/api",
         "npm:es-toolkit"
@@ -169,6 +170,9 @@
     },
     "@logtape/logtape@2.3.10": {
       "integrity": "9dd28c7bd3e8d622ffaa0ea303c5ad361844db8afe2b654c3a3cf1ccca87df1d"
+    },
+    "@standard-schema/spec@1.1.0": {
+      "integrity": "2ccd54513cd9c960bd155ab569b1a901bc99c6f9ad29559d3f38a28c91c1822d"
     },
     "@std/fs@1.0.21": {
       "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
@@ -650,6 +654,9 @@
     "defu@6.1.4": {
       "integrity": "sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg=="
     },
+    "devalue@5.9.2": {
+      "integrity": "sha512-po4PAY5c53tw5XMocSnf8A/5OHhbbUftpr93aEN6BBoAdntUmK7vu7wOATqvt7cXO7m1Cl4gMVn6p7n6n4mj0w=="
+    },
     "diff@8.0.2": {
       "integrity": "sha512-sSuxWU5j5SR9QQji/o2qMvqRNYRDOcBTgsJ/DeCf4iSN4gW+gNMXM7wFIP+fdXZxoNiAnHUTGjCr+TSWXdRDKg=="
     },
@@ -999,10 +1006,10 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/denokv@~2.3.10",
-      "jsr:@fedify/fedify@~2.3.10",
-      "jsr:@fedify/vocab-runtime@~2.3.10",
-      "jsr:@fedify/vocab@~2.3.10",
+      "jsr:@fedify/denokv@2.4",
+      "jsr:@fedify/fedify@2.4",
+      "jsr:@fedify/vocab-runtime@2.4",
+      "jsr:@fedify/vocab@2.4",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.12.27",
       "jsr:@logtape/logtape@^2.2.3",
@@ -1026,8 +1033,6 @@
         "dependencies": [
           "jsr:@fedify/markdown-it-hashtag@0.3",
           "jsr:@fedify/markdown-it-mention@0.3",
-          "jsr:@fedify/vocab-runtime@^2.3.3",
-          "jsr:@fedify/vocab@^2.3.3",
           "npm:html-entities@^2.6.0",
           "npm:markdown-it@^14.3.0",
           "npm:mime-db@^1.54.0",
@@ -1051,7 +1056,6 @@
       },
       "packages/botkit-postgres": {
         "dependencies": [
-          "jsr:@fedify/vocab@^2.3.3",
           "npm:postgres@^3.4.9"
         ],
         "packageJson": {
@@ -1065,8 +1069,6 @@
       },
       "packages/botkit-redis": {
         "dependencies": [
-          "jsr:@fedify/fedify@^2.3.3",
-          "jsr:@fedify/vocab@^2.3.3",
           "jsr:@logtape/logtape@^2.2.3",
           "npm:redis@^6.1.0"
         ],
@@ -1075,11 +1077,6 @@
             "npm:redis@^6.1.0"
           ]
         }
-      },
-      "packages/botkit-sqlite": {
-        "dependencies": [
-          "jsr:@fedify/vocab@^2.3.3"
-        ]
       }
     }
   }

@@ -6,7 +6,6 @@
     ".": "./src/mod.ts"
   },
   "imports": {
-    "@fedify/vocab": "jsr:@fedify/vocab@^2.3.3",
     "postgres": "npm:postgres@^3.4.9"
   },
   "exclude": [
