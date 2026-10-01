@@ -1,6 +1,6 @@
 {
   "name": "@fedify/botkit-redis",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Redis-based repository for BotKit",
   "license": "AGPL-3.0-only",
   "author": {
