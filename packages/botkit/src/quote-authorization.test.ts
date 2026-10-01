@@ -13,11 +13,17 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import { createFederation, MemoryKvStore } from "@fedify/fedify/federation";
 import { QuoteAuthorization } from "@fedify/vocab";
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateQuoteAuthorization } from "./quote-authorization.ts";
+import {
+  type QuoteAuthorizationVerificationOptions,
+  verifyQuoteAuthorization,
+} from "./quote-authorization.ts";
 
+const context = createFederation<void>({ kv: new MemoryKvStore() })
+  .createContext(new URL("https://example.com/"), undefined);
 const authorizationId = new URL("https://example.com/stamps/1");
 const quoteId = new URL("https://quote.example/notes/1");
 const targetId = new URL("https://example.com/notes/1");
@@ -39,18 +45,41 @@ function createAuthorization(
   });
 }
 
-test("validateQuoteAuthorization() accepts matching authorization", () => {
-  assert.ok(
-    validateQuoteAuthorization(createAuthorization(), {
+async function verify(
+  authorization: unknown,
+  options: Partial<QuoteAuthorizationVerificationOptions> = {},
+): Promise<boolean> {
+  return await verifyQuoteAuthorization(context, authorization, {
+    authorizationId,
+    quoteId,
+    targetId,
+    targetActorId,
+    source: "remote",
+    ...options,
+  }) != null;
+}
+
+test("verifyQuoteAuthorization() accepts matching authorization", async () => {
+  const authorization = createAuthorization();
+  assert.deepStrictEqual(
+    await verifyQuoteAuthorization(context, authorization, {
       authorizationId,
       quoteId,
       targetId,
       targetActorId,
+      source: "remote",
+    }),
+    authorization,
+  );
+  assert.ok(
+    await verify(authorization, {
+      authorizationId: undefined,
+      source: "repository",
     }),
   );
 });
 
-test("validateQuoteAuthorization() rejects mismatched authorizations", () => {
+test("verifyQuoteAuthorization() rejects mismatched authorizations", async () => {
   const cases: readonly [
     string,
     QuoteAuthorization,
@@ -93,35 +122,55 @@ test("validateQuoteAuthorization() rejects mismatched authorizations", () => {
 
   for (const [name, authorization, expectedAuthorizationId] of cases) {
     assert.ok(
-      !validateQuoteAuthorization(authorization, {
+      !await verify(authorization, {
         authorizationId: expectedAuthorizationId,
-        quoteId,
-        targetId,
-        targetActorId,
       }),
       name,
     );
   }
 });
 
-test("validateQuoteAuthorization() rejects non-authorization objects", () => {
+test("verifyQuoteAuthorization() rejects non-authorization objects", async () => {
+  assert.ok(!await verify({}));
+});
+
+test("verifyQuoteAuthorization() rejects missing target actors", async () => {
+  assert.ok(!await verify(createAuthorization(), { targetActorId: null }));
+});
+
+test("verifyQuoteAuthorization() requires IDs for remote authorizations", async () => {
   assert.ok(
-    !validateQuoteAuthorization({}, {
-      authorizationId,
-      quoteId,
-      targetId,
-      targetActorId,
-    }),
+    !await verify(createAuthorization(), { authorizationId: undefined }),
   );
 });
 
-test("validateQuoteAuthorization() rejects missing target actors", () => {
+test("verifyQuoteAuthorization() compares FEP-fe34 origins", async () => {
+  const opaqueId = new URL("urn:example:stamp");
   assert.ok(
-    !validateQuoteAuthorization(createAuthorization(), {
-      authorizationId,
-      quoteId,
-      targetId,
-      targetActorId: null,
+    !await verify(
+      createAuthorization({ id: opaqueId, attribution: opaqueId }),
+      {
+        authorizationId: opaqueId,
+        targetActorId: opaqueId,
+      },
+    ),
+    "opaque IDs",
+  );
+  const actor = new URL("did:example:alice");
+  const stamp = new URL("did:example:alice#stamp");
+  assert.ok(
+    await verify(createAuthorization({ id: stamp, attribution: actor }), {
+      authorizationId: stamp,
+      targetActorId: actor,
     }),
+    "same DID",
+  );
+  const other = new URL("did:example:bob#stamp");
+  assert.ok(
+    !await verify(createAuthorization({ id: other, attribution: actor }), {
+      authorizationId: other,
+      targetActorId: actor,
+    }),
+    "different DIDs",
   );
 });

@@ -12,6 +12,9 @@ catalogs:
     '@fedify/fedify':
       specifier: ~2.4.0
       version: 2.4.0
+    '@fedify/interaction-controls':
+      specifier: ~2.4.0
+      version: 2.4.0
     '@fedify/postgres':
       specifier: ~2.4.0
       version: 2.4.0
@@ -152,6 +155,9 @@ importers:
       '@fedify/fedify':
         specifier: 'catalog:'
         version: 2.4.0
+      '@fedify/interaction-controls':
+        specifier: 'catalog:'
+        version: 2.4.0(@fedify/fedify@2.4.0)
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -510,6 +516,11 @@ packages:
   '@fedify/fedify@2.4.0':
     resolution: {integrity: sha512-XlR202zMU5+tiISyU48cxe23IU9xXHVPunO+apSSgBgl922JnMNErM/l23HmHEMAtiFiRgiXG+AqC75ZxppWtw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
+
+  '@fedify/interaction-controls@2.4.0':
+    resolution: {integrity: sha512-lUZS1eOlFer33p1dgK7kH+cjxDFZLz1FP2JYXJr7/CRUw4h9fB4zk1/yBI0ws2xt2sPNwZh/dAFbtt4z1YPrug==}
+    peerDependencies:
+      '@fedify/fedify': ^2.4.0
 
   '@fedify/markdown-it-hashtag@0.3.0':
     resolution: {integrity: sha512-DCtfQ1OlFstob382d2iwEi77ezNqDQkUjS664q2r7ZOQQkBExvgvKDkL851tf1XRYp4A425/HO2yGRLZ1u1pSg==}
@@ -2397,6 +2408,13 @@ snapshots:
       structured-field-values: 2.0.4
       temporal-polyfill: 1.0.5
       urlpattern-polyfill: 10.1.0
+
+  '@fedify/interaction-controls@2.4.0(@fedify/fedify@2.4.0)':
+    dependencies:
+      '@fedify/fedify': 2.4.0
+      '@fedify/vocab': 2.4.0
+      '@fedify/vocab-runtime': 2.4.0
+      temporal-polyfill: 1.0.5
 
   '@fedify/markdown-it-hashtag@0.3.0':
     dependencies:

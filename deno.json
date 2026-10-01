@@ -4,6 +4,7 @@
   "imports": {
     "@fedify/denokv": "jsr:@fedify/denokv@~2.4.0",
     "@fedify/fedify": "jsr:@fedify/fedify@~2.4.0",
+    "@fedify/interaction-controls": "jsr:@fedify/interaction-controls@~2.4.0",
     "@fedify/vocab": "jsr:@fedify/vocab@~2.4.0",
     "@fedify/vocab-runtime": "jsr:@fedify/vocab-runtime@~2.4.0",
     "@js-temporal/polyfill": "npm:@js-temporal/polyfill@^0.5.1",

@@ -25,6 +25,7 @@ import {
   type Software,
   type UnverifiedActivityReason,
 } from "@fedify/fedify";
+import { quoteInteraction } from "@fedify/interaction-controls";
 import {
   type Accept,
   type Activity,
@@ -40,6 +41,8 @@ import {
   Endpoints,
   Follow,
   Image,
+  InteractionPolicy,
+  InteractionRule,
   isActor,
   Like as RawLike,
   Link,
@@ -53,7 +56,7 @@ import {
   QuoteRequest,
   type QuoteRequest as RawQuoteRequest,
   type Recipient,
-  Reject,
+  type Reject,
   Service,
   type Undo,
   Update,
@@ -110,9 +113,9 @@ import type {
   SharedMessage,
 } from "./message.ts";
 import type { Vote } from "./poll.ts";
-import { validateQuoteAuthorization } from "./quote-authorization.ts";
-import { QuoteRequestImpl } from "./quote-impl.ts";
-import { normalizeQuotePolicy, type QuotePolicyOption } from "./quote.ts";
+import { verifyQuoteAuthorization } from "./quote-authorization.ts";
+import { createQuoteReject, QuoteRequestImpl } from "./quote-impl.ts";
+import { type QuotePolicyOption, serializeQuotePolicy } from "./quote.ts";
 import type { Like, Reaction } from "./reaction.ts";
 import {
   ActorScopedRepository,
@@ -595,7 +598,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     ) {
       return null;
     }
-    return new QuoteRequest({
+    return quoteInteraction.createRequest({
       id: ctx.getObjectUri(QuoteRequest, {
         identifier: this.identifier,
         id: values.id,
@@ -967,7 +970,10 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     }
     | undefined
   > {
-    if (accept.actorId == null || accept.resultId == null) return undefined;
+    // Capture the stamp ID before dereferencing it, because getResult()
+    // replaces the property with whatever the fetched document claims to be:
+    const authorizationId = accept.resultId;
+    if (accept.actorId == null || authorizationId == null) return undefined;
     const actor = await accept.getActor({
       contextLoader: ctx.contextLoader,
       documentLoader: ctx.documentLoader,
@@ -982,22 +988,22 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       !isMessageObject(target) ||
       target.attributionId?.href !== actor.id.href
     ) return undefined;
-    let authorization = await accept.getResult({
+    // The result is either dereferenced from its ID or embedded in this
+    // authenticated Accept on the same origin; Fedify's accessors re-fetch
+    // cross-origin embedded objects instead of trusting them:
+    const result = await accept.getResult({
       contextLoader: ctx.contextLoader,
       documentLoader: ctx.documentLoader,
       suppressError: true,
+    }) ?? await lookupObjectSafely(this, ctx, authorizationId);
+    const authorization = await verifyQuoteAuthorization(ctx, result, {
+      authorizationId,
+      quoteId: object.id!,
+      targetId: object.quoteId!,
+      targetActorId: actor.id,
+      source: "remote",
     });
-    if (authorization == null) {
-      authorization = await lookupObjectSafely(this, ctx, accept.resultId);
-    }
-    if (
-      !validateQuoteAuthorization(authorization, {
-        authorizationId: accept.resultId,
-        quoteId: object.id!,
-        targetId: object.quoteId!,
-        targetActorId: actor.id,
-      })
-    ) return undefined;
+    if (authorization == null) return undefined;
     return { actor, authorization };
   }
 
@@ -1234,7 +1240,6 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     request: RawQuoteRequest,
   ): Promise<void> {
     if (request.id == null || request.actorId == null) return;
-    const requestId = request.id;
     const parsedObj = parseLocalUri(
       ctx,
       request.objectId,
@@ -1257,15 +1262,34 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       documentLoader,
       suppressError: true,
     });
-    if (!isMessageObject(instrument) || instrument.id == null) return;
-    const quotedObjectId = instrument.quoteId ?? instrument.quoteUrl;
-    if (quotedObjectId?.href !== targetObject.id.href) return;
+    if (!isMessageObject(instrument)) return;
     const actor = await request.getActor({
       contextLoader: ctx.contextLoader,
       documentLoader,
       suppressError: true,
     });
     if (!isActor(actor) || actor.id == null) return;
+    const requesterId = actor.id;
+    // Fedify's verifier requires the quote's attribution to match the
+    // requester and its quote and quoteUrl to agree, whereas BotKit fills in
+    // a missing attribution and lets quote take precedence over quoteUrl.
+    // So verify a normalized copy, and keep the original objects for the bot:
+    const verification = await quoteInteraction.verifyRequest(ctx, {
+      request: request.clone({
+        actor: actor.id,
+        object: targetObject,
+        instrument: instrument.clone({
+          attribution: instrument.attributionId ?? actor.id,
+          quoteUrl: instrument.quoteId ?? instrument.quoteUrl,
+        }),
+      }),
+    });
+    if (
+      !verification.verified &&
+      verification.failure.type !== "requesterMismatch"
+    ) {
+      return;
+    }
     const session = this.getSession(ctx);
     if (!await this.#canActorSeeObject(ctx, actor.id, targetObject)) {
       return;
@@ -1274,19 +1298,11 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       await session.context.sendActivity(
         this,
         actor,
-        new Reject({
-          id: new URL(`/#reject/${requestId.href}`, session.actorId),
-          actor: session.actorId,
-          to: actor.id,
-          object: request,
-        }),
+        createQuoteReject(session.actorId, request, requesterId),
         { excludeBaseUris: [new URL(session.context.origin)] },
       );
     };
-    if (
-      instrument.attributionId != null &&
-      instrument.attributionId.href !== actor.id.href
-    ) {
+    if (!verification.verified) {
       await rejectRequest();
       return;
     }
@@ -1343,28 +1359,14 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       }
       await quoteRequest.reject();
     };
-    const rule = targetObject.interactionPolicy?.canQuote;
-    if (rule == null) {
-      const policy = normalizeQuotePolicy(this.quotePolicy);
-      if (await this.#matchesQuoteAcceptance(ctx, actor.id, policy.automatic)) {
-        await quoteRequest.accept();
-      } else if (
-        await this.#matchesQuoteAcceptance(ctx, actor.id, policy.manual)
-      ) {
-        if (existingAuthorization != null) {
-          await quoteRequest.accept();
-          return;
-        }
-      } else {
-        await revokeAndRejectQuoteRequest();
-      }
-    } else if (
-      await this.#matchesQuoteApprovals(ctx, actor.id, rule.automaticApprovals)
-    ) {
+    const decision = await this.#evaluateQuotePolicy(
+      ctx,
+      targetObject,
+      actor.id,
+    );
+    if (decision === "automatic") {
       await quoteRequest.accept();
-    } else if (
-      await this.#matchesQuoteApprovals(ctx, actor.id, rule.manualApprovals)
-    ) {
+    } else if (decision === "manual") {
       if (existingAuthorization != null) {
         await quoteRequest.accept();
         return;
@@ -1373,6 +1375,56 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       await revokeAndRejectQuoteRequest();
     }
     await this.onQuoteRequest?.(session, quoteRequest);
+  }
+
+  async #evaluateQuotePolicy(
+    ctx: InboxContext<TContextData>,
+    target: MessageClass,
+    requester: URL,
+  ): Promise<"automatic" | "manual" | "denied"> {
+    const followersUri = ctx.getFollowersUri(this.identifier);
+    // Fedify denies requests when the target has no canQuote rule, whereas
+    // BotKit falls back to the bot's quote policy:
+    const rule = target.interactionPolicy?.canQuote ??
+      serializeQuotePolicy(
+        this.quotePolicy,
+        ctx.getActorUri(this.identifier),
+        followersUri,
+      ).canQuote;
+    // Fedify turns collection lookup failures into denials, which would make
+    // a transient repository error revoke an existing authorization, so
+    // capture the error and rethrow it instead:
+    let lookupFailure: { readonly error: unknown } | undefined;
+    const matchesApprovalCollection = async (collection: URL, actor: URL) => {
+      if (collection.href !== followersUri.href) return false;
+      try {
+        return await this.repository.hasFollower(actor);
+      } catch (error) {
+        lookupFailure ??= { error };
+        return false;
+      }
+    };
+    // Fedify can prefer an explicit actor entry in manual approvals over
+    // a broader automatic entry, whereas BotKit checks automatic approvals
+    // first, so evaluate each axis on its own:
+    for (const axis of ["automatic", "manual"] as const) {
+      const decision = await quoteInteraction.evaluatePolicy(ctx, {
+        subject: target.clone({
+          interactionPolicy: new InteractionPolicy({
+            canQuote: new InteractionRule(
+              axis === "automatic"
+                ? { automaticApprovals: rule?.automaticApprovals ?? [] }
+                : { manualApprovals: rule?.manualApprovals ?? [] },
+            ),
+          }),
+        }),
+        requester,
+        matchesApprovalCollection,
+      });
+      if (lookupFailure != null) throw lookupFailure.error;
+      if (decision.result === axis) return axis;
+    }
+    return "denied";
   }
 
   async #canActorSeeObject(
@@ -1478,41 +1530,6 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     );
   }
 
-  async #matchesQuoteAcceptance(
-    ctx: InboxContext<TContextData>,
-    actorId: URL,
-    acceptance: ReturnType<typeof normalizeQuotePolicy>["automatic"],
-  ): Promise<boolean> {
-    if (actorId.href === ctx.getActorUri(this.identifier).href) return true;
-    switch (acceptance) {
-      case "public":
-        return true;
-      case "followers":
-        return await this.repository.hasFollower(actorId);
-      case "nobody":
-      default:
-        return false;
-    }
-  }
-
-  async #matchesQuoteApprovals(
-    ctx: InboxContext<TContextData>,
-    actorId: URL,
-    approvals: readonly URL[],
-  ): Promise<boolean> {
-    if (actorId.href === ctx.getActorUri(this.identifier).href) return true;
-    const followerCollection = ctx.getFollowersUri(this.identifier).href;
-    for (const approval of approvals) {
-      if (approval.href === PUBLIC_COLLECTION.href) return true;
-      if (approval.href === actorId.href) return true;
-      if (
-        approval.href === followerCollection &&
-        await this.repository.hasFollower(actorId)
-      ) return true;
-    }
-    return false;
-  }
-
   async #hasValidQuoteAuthorization(
     ctx: InboxContext<TContextData>,
     object: MessageClass,
@@ -1533,19 +1550,18 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       parsed.class !== QuoteAuthorization ||
       parsed.values.identifier !== this.identifier
     ) return false;
-    const authorization = await this.repository.getQuoteAuthorization(
-      parsed.values.id as Uuid,
-    );
-    if (
-      !validateQuoteAuthorization(authorization, {
+    const authorization = await verifyQuoteAuthorization(
+      ctx,
+      await this.repository.getQuoteAuthorization(parsed.values.id as Uuid),
+      {
         authorizationId: object.quoteAuthorizationId,
         quoteId: object.id,
         targetId,
         targetActorId: ctx.getActorUri(this.identifier),
-      })
-    ) {
-      return false;
-    }
+        source: "repository",
+      },
+    );
+    if (authorization == null) return false;
     const parsedTarget = parseLocalUri(
       ctx,
       targetId,

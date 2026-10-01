@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import "./temporal.ts";
 import type { Context } from "@fedify/fedify/federation";
+import { quoteInteraction } from "@fedify/interaction-controls";
 import { LanguageString } from "@fedify/vocab-runtime";
 import {
   type Actor,
@@ -343,11 +344,12 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       voters = 0;
       endTime = options.poll.endTime;
     }
+    const msgId = this.context.getObjectUri<MessageClass>(cls, {
+      identifier: this.bot.identifier,
+      id,
+    });
     const msg = new cls({
-      id: this.context.getObjectUri<MessageClass>(cls, {
-        identifier: this.bot.identifier,
-        id,
-      }),
+      id: msgId,
       contents: options.language == null
         ? [contentHtml]
         : [new LanguageString(contentHtml, options.language), contentHtml],
@@ -478,14 +480,14 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
         options.quoteTarget.actor.id.href !==
           this.context.getActorUri(this.bot.identifier).href
       ) {
-        const request = new QuoteRequest({
+        const request = quoteInteraction.createRequest({
           id: this.context.getObjectUri(QuoteRequest, {
             identifier: this.bot.identifier,
             id,
           }),
           actor: this.context.getActorUri(this.bot.identifier),
           object: options.quoteTarget.id,
-          instrument: msg.id,
+          instrument: msgId,
           to: options.quoteTarget.actor.id,
         });
         await this.context.sendActivity(

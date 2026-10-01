@@ -94,6 +94,7 @@
   ],
   "dependencies": {
     "@fedify/fedify": "catalog:",
+    "@fedify/interaction-controls": "catalog:",
     "@fedify/vocab": "catalog:",
     "@fedify/vocab-runtime": "catalog:",
     "@fedify/markdown-it-hashtag": "^0.3.0",
