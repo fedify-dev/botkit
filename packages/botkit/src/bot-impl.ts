@@ -193,6 +193,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   readonly properties: Record<string, Text<"block" | "inline", TContextData>>;
   #properties: { pairs: PropertyValue[]; tags: (Link | Object)[] } | null;
   readonly followerPolicy: "accept" | "reject" | "manual";
+  readonly aliases: readonly URL[];
   readonly quotePolicy: QuotePolicyOption;
   readonly repository: ActorScopedRepository;
 
@@ -266,6 +267,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     this.icon = options.icon;
     this.image = options.image;
     this.properties = options.properties ?? {};
+    this.aliases = options.aliases ?? [];
     this.#properties = null;
     this.followerPolicy = options.followerPolicy ?? "accept";
     this.quotePolicy = options.quotePolicy ?? "public";
@@ -344,6 +346,8 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
     return new this.class({
       id: ctx.getActorUri(identifier),
       preferredUsername: this.username,
+      // Fedify may mutate its array during lazy alias resolution.
+      aliases: [...this.aliases],
       name: this.name,
       summary: summary == null ? null : summary.text,
       attachments: pairs,
@@ -2194,6 +2198,9 @@ export function wrapBotImpl<TContextData>(
 ): Bot<TContextData> {
   const wrapper = {
     impl: bot,
+    get aliases() {
+      return bot.aliases;
+    },
     get federation() {
       return bot.federation;
     },
@@ -2748,6 +2755,7 @@ export class GroupBotImpl<TContextData> extends BotImpl<TContextData> {
       icon: profile.icon,
       image: profile.image,
       properties: profile.properties,
+      aliases: profile.aliases,
       followerPolicy: profile.followerPolicy,
       quotePolicy: profile.quotePolicy,
     });

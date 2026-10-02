@@ -213,6 +213,21 @@ const bot = createBot<void>({
 
 It can be changed after the bot is federated.
 
+### `~CreateBotOptions.aliases`
+
+*Available since BotKit 0.6.0.*
+
+The actor URIs of other accounts representing the same bot, published in its
+ActivityPub `alsoKnownAs` property.  This allows an existing account to move
+its followers to the bot.  Values must be `URL` objects containing actor
+URIs, rather than handles or profile page URLs.  BotKit publishes these URIs
+without resolving them.
+
+The default is an empty array.  You can read the configured list through
+`Bot.aliases` or `Session.bot.aliases`.  To change it on a static bot, update
+the configuration and redeploy.  See [*Moving an existing account to a
+bot*](#moving-an-existing-account-to-a-bot) for the migration steps.
+
 ### `~CreateBotOptions.followerPolicy`
 
 How to handle incoming follow requests.  Possible values are:
@@ -418,6 +433,90 @@ See the [design language document][DESIGN.md] for the full system.
 
 [DESIGN.md]: https://github.com/fedify-dev/botkit/blob/main/DESIGN.md
 [*Colors* section]: https://picocss.com/docs/colors
+
+
+Moving an existing account to a bot
+-----------------------------------
+
+*Available since BotKit 0.6.0.*
+
+You can move followers from an existing account on Mastodon or another server
+that supports [account migration with `Move`][FEP-7628] to a BotKit bot.
+Only followers move: posts, accounts you follow, and other account data are
+not transferred.
+
+First, find the old account's *actor URI*.  It is the `id` in its ActivityPub
+actor document, which may differ from its profile page URL.  For example, a
+Mastodon account `@mybot@old.example` normally has the actor URI
+`https://old.example/users/mybot`, while its profile page is
+`https://old.example/@mybot`.  Do not put the handle or the profile page URL
+in `aliases`: migration checks compare actor URIs exactly.
+
+To find the URI without guessing the server's URL scheme, query the old
+account's [WebFinger] endpoint:
+
+~~~~ bash
+curl 'https://old.example/.well-known/webfinger?resource=acct:mybot@old.example'
+~~~~
+
+In the response's `links`, find the `rel: "self"` link whose `type` is
+`application/activity+json` or `application/ld+json` with the ActivityStreams
+profile.  Fetch its `href` with an ActivityPub `Accept` header, and use the
+returned actor document's `id`:
+
+~~~~ bash
+curl -H 'Accept: application/activity+json' \
+  'https://old.example/users/mybot'
+~~~~
+
+Configure and deploy the new bot with that URI in `aliases`:
+
+~~~~ typescript twoslash
+import { createBot } from "@fedify/botkit";
+import { MemoryKvStore } from "@fedify/fedify";
+
+const bot = createBot<void>({
+  username: "mybot",
+  kv: new MemoryKvStore(),
+  aliases: [new URL("https://old.example/users/mybot")],
+});
+
+export default bot;
+~~~~
+
+This example uses an in-memory store; use
+[persistent storage](./repository.md) for a production bot.
+
+Once the bot is publicly reachable, fetch its actor document and confirm that
+`alsoKnownAs` contains the old actor URI.  You can find the new actor URI
+through the bot's WebFinger endpoint using the same procedure above.
+Mastodon refuses to start the move until the target advertises this alias.
+
+Then sign in to the *old* Mastodon account.  Under *Settings → Account →
+Moving to a different account*, choose the migration option, enter the new
+bot's handle (for example, `@mybot@new.example`), and confirm the move.
+Keep the old server online while it sends the migration notifications.
+The bot receives ordinary follow requests from servers that support migration;
+followers may arrive gradually.
+
+The default `followerPolicy: "accept"` accepts these requests automatically.
+With `"manual"`, accept them in the [`onFollow` handler](./events.md#follow).
+A `"reject"` policy rejects them unless your handler accepts them first.
+Check the bot's availability and follow policy before starting: Mastodon
+imposes a migration cooldown, so you cannot recover by immediately repeating
+the move.
+
+Aliases can be added to a bot that is already federated by updating its
+configuration and redeploying.  On a multi-bot
+[instance](./instance.md), set `BotProfile.aliases` on each static bot or in
+the profile returned by a dynamic group's dispatcher.  Later requests for a
+dynamic bot use the aliases returned by its dispatcher.  See
+[Mastodon's migration guide] for details about the old account's settings
+and restrictions.
+
+[FEP-7628]: https://w3id.org/fep/7628
+[WebFinger]: https://docs.joinmastodon.org/spec/webfinger/
+[Mastodon's migration guide]: https://docs.joinmastodon.org/user/moving/
 
 
 Running the bot

@@ -120,6 +120,7 @@ federation.setActorDispatcher("/ap/actor/{identifier}", (ctx, identifier) => {
 const bot: BotWithVoidContextData = {
   federation,
   identifier: "bot",
+  aliases: [],
   getSession(origin: string | URL | Context<void>, _contextData?: void) {
     const ctx = typeof origin === "string" || origin instanceof URL
       ? federation.createContext(new URL(origin))
@@ -127,6 +128,7 @@ const bot: BotWithVoidContextData = {
     return {
       bot: {
         identifier: "bot",
+        aliases: [],
         username: "bot",
         class: Service,
         followerPolicy: "accept",

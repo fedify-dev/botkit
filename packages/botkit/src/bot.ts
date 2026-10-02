@@ -178,6 +178,13 @@ export interface BotEventHandlers<TContextData> {
  */
 export interface ReadonlyBot {
   /**
+   * The URIs of other actors that represent the same bot, published as
+   * the actor's `alsoKnownAs`.  Defaults to an empty array.
+   * @since 0.6.0
+   */
+  readonly aliases: readonly URL[];
+
+  /**
    * The internal identifier for the bot actor.  It is used for the actor URI.
    */
   readonly identifier: string;
@@ -223,6 +230,13 @@ export interface ReadonlyBot {
  * A bot that can interact with the ActivityPub network.
  */
 export interface Bot<TContextData> extends BotEventHandlers<TContextData> {
+  /**
+   * The URIs of other actors that represent the same bot, published as
+   * the actor's `alsoKnownAs`.  Defaults to an empty array.
+   * @since 0.6.0
+   */
+  readonly aliases: readonly URL[];
+
   /**
    * An internal Fedify federation instance.  Normally you don't need to access
    * this directly.
@@ -374,6 +388,16 @@ export interface CreateBotOptions<TContextData> {
    * federated.
    */
   readonly properties?: Record<string, Text<"block" | "inline", TContextData>>;
+
+  /**
+   * The URIs of other actors that represent the same bot, published as
+   * the actor's `alsoKnownAs`.  An account elsewhere can move its followers
+   * to this bot only if its actor URI is listed here.  Use actor URIs, not
+   * handles or profile page URLs.  It can be changed after the bot is federated.
+   * @default `[]`
+   * @since 0.6.0
+   */
+  readonly aliases?: readonly URL[];
 
   /**
    * How to handle incoming follow requests.  Note that this behavior can be

@@ -83,6 +83,16 @@ export interface BotProfile<TContextData> {
   readonly properties?: Record<string, Text<"block" | "inline", TContextData>>;
 
   /**
+   * The URIs of other actors that represent the same bot, published as
+   * the actor's `alsoKnownAs`.  An account elsewhere can move its followers
+   * to this bot only if its actor URI is listed here.  Use actor URIs, not
+   * handles or profile page URLs.  It can be changed after the bot is federated.
+   * @default `[]`
+   * @since 0.6.0
+   */
+  readonly aliases?: readonly URL[];
+
+  /**
    * How to handle incoming follow requests.  Note that this behavior can
    * be overridden by manually invoking {@link FollowRequest.accept} or
    * {@link FollowRequest.reject} in the {@link BotEventHandlers.onFollow}

@@ -504,6 +504,7 @@ export class InstanceImpl<TContextData>
       icon: profile.icon,
       image: profile.image,
       properties: profile.properties,
+      aliases: profile.aliases,
       followerPolicy: profile.followerPolicy,
       quotePolicy: profile.quotePolicy,
     });

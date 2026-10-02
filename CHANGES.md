@@ -8,6 +8,10 @@ To be released.
 
 ### @fedify/botkit
 
+ -  Added an `aliases` option to `CreateBotOptions` and `BotProfile` so
+    existing accounts can move their followers to a BotKit bot.  Actor URIs
+    listed in the option are published as `alsoKnownAs`, and are available
+    through `Bot.aliases` and `Session.bot.aliases`.  [[#48], [#55]]
  -  Added names, inline summaries, and custom URLs when publishing or updating
     messages.  Updated messages can remove these fields by setting them to
     `null`, and the new `inline` template composes paragraphless rich text for
@@ -33,8 +37,10 @@ To be released.
 [#41]: https://github.com/fedify-dev/botkit/issues/41
 [#42]: https://github.com/fedify-dev/botkit/pull/42
 [#43]: https://github.com/fedify-dev/botkit/pull/43
+[#48]: https://github.com/fedify-dev/botkit/issues/48
 [#52]: https://github.com/fedify-dev/botkit/issues/52
 [#53]: https://github.com/fedify-dev/botkit/pull/53
+[#55]: https://github.com/fedify-dev/botkit/pull/55
 
 
 Version 0.5.6

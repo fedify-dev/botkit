@@ -176,8 +176,9 @@ Republishing the bot profile
 ----------------------------
 
 If you change the bot's profile metadata, such as the display name, bio,
-avatar, or header image, remote servers may keep showing the old cached
-profile until they refresh it themselves.  You can explicitly notify your
+avatar, header image, or account aliases, remote servers may keep showing
+the old cached profile until they refresh it themselves.  You can explicitly
+notify your
 followers by calling the `~Session.republishProfile()` method:
 
 ~~~~ typescript twoslash
