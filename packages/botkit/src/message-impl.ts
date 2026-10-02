@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import "./temporal.ts";
+import { quoteInteraction } from "@fedify/interaction-controls";
 import { LanguageString } from "@fedify/vocab-runtime";
 import {
   type Actor,
@@ -55,7 +56,7 @@ import type {
 } from "./message.ts";
 import type { AuthorizedLike, AuthorizedReaction } from "./reaction.ts";
 import type { Uuid } from "./repository.ts";
-import { validateQuoteAuthorization } from "./quote-authorization.ts";
+import { verifyQuoteAuthorization } from "./quote-authorization.ts";
 import {
   parseQuotePolicy,
   type QuotePolicy,
@@ -783,10 +784,10 @@ export class AuthorizedMessageImpl<T extends MessageClass, TContextData>
     const followersUri = this.session.context.getFollowersUri(
       this.session.bot.identifier,
     );
-    const del = new Delete({
+    const del = quoteInteraction.createRevocation({
       id: new URL("#delete", authorization.id),
       actor: this.session.actorId,
-      object: authorization.id,
+      authorization: authorization.id,
       to: quoteActor?.id ?? followersUri,
       cc: quoteActor?.id == null ? undefined : followersUri,
     });
@@ -1174,9 +1175,10 @@ async function verifyQuoteApproval<TContextData>(
       raw.quoteAuthorizationId,
       session.bot.legacyObjectUrisIdentifier,
     );
-    const authorization = parsed?.type === "object" &&
-        parsed.class === QuoteAuthorization &&
-        parsed.values.identifier === session.bot.identifier
+    const local = parsed?.type === "object" &&
+      parsed.class === QuoteAuthorization &&
+      parsed.values.identifier === session.bot.identifier;
+    const authorization = local
       ? await session.bot.repository.getQuoteAuthorization(
         parsed.values.id as Uuid,
       )
@@ -1190,12 +1192,13 @@ async function verifyQuoteApproval<TContextData>(
           signal,
         },
       );
-    return validateQuoteAuthorization(authorization, {
+    return await verifyQuoteAuthorization(session.context, authorization, {
       authorizationId: raw.quoteAuthorizationId,
       quoteId: raw.id,
       targetId: quoteTarget.id,
       targetActorId: quoteTarget.actor.id,
-    });
+      source: local ? "repository" : "remote",
+    }, signal) != null;
   } catch (error) {
     if (signal?.aborted === true) throw error;
     return false;

@@ -16,6 +16,7 @@ minimumReleaseAgeExclude:
 catalog:
   "@fedify/denokv": "jsr:@fedify/denokv@^2.4.0"
   "@fedify/fedify": ~2.4.0
+  "@fedify/interaction-controls": ~2.4.0
   "@fedify/postgres": ~2.4.0
   "@fedify/redis": ~2.4.0
   "@fedify/sqlite": ~2.4.0

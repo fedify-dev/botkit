@@ -13,18 +13,43 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import { quoteInteraction } from "@fedify/interaction-controls";
 import {
-  Accept,
   type Actor,
   QuoteAuthorization,
   type QuoteRequest as RawQuoteRequest,
-  Reject,
+  type Reject,
 } from "@fedify/vocab";
 import { v7 as uuidv7 } from "uuid";
 import type { AuthorizedMessage, Message, MessageClass } from "./message.ts";
 import type { QuoteRequest } from "./quote.ts";
 import type { Uuid } from "./repository.ts";
 import type { SessionImpl } from "./session-impl.ts";
+
+/**
+ * Creates a `Reject` activity for a quote request.
+ * @param actorId The URI of the bot rejecting the request.
+ * @param request The quote request to reject.
+ * @param requesterId The URI of the actor that sent the request.
+ * @returns The `Reject` activity.
+ * @throws {TypeError} The quote request ID is missing.
+ */
+export function createQuoteReject(
+  actorId: URL,
+  request: RawQuoteRequest,
+  requesterId: URL,
+): Reject {
+  if (request.id == null) {
+    throw new TypeError("The quote request ID is missing.");
+  }
+  return quoteInteraction.createReject({
+    mode: "polite",
+    id: new URL(`/#reject/${request.id.href}`, actorId),
+    actor: actorId,
+    request,
+    to: requesterId,
+  });
+}
 
 export class QuoteRequestImpl<TContextData>
   implements QuoteRequest<TContextData> {
@@ -34,6 +59,7 @@ export class QuoteRequestImpl<TContextData>
   readonly actor: Actor;
   readonly quote: Message<MessageClass, TContextData>;
   readonly target: AuthorizedMessage<MessageClass, TContextData>;
+  readonly #actorId: URL;
   #state: "pending" | "accepted" | "rejected";
 
   get state(): "pending" | "accepted" | "rejected" {
@@ -60,6 +86,7 @@ export class QuoteRequestImpl<TContextData>
     this.id = raw.id;
     this.raw = raw;
     this.actor = actor;
+    this.#actorId = actor.id;
     this.quote = quote;
     this.target = target;
     this.#state = "pending";
@@ -87,16 +114,19 @@ export class QuoteRequestImpl<TContextData>
       throw new TypeError(
         "The quote authorization does not belong to this message.",
       );
+    } else if (authorization.id == null) {
+      throw new TypeError("The quote authorization ID is missing.");
     }
     await this.session.context.sendActivity(
       this.session.bot,
       this.actor,
-      new Accept({
+      quoteInteraction.createAccept({
+        mode: "polite",
         id: new URL(`/#accept/${this.id.href}`, this.session.actorId),
         actor: this.session.actorId,
-        to: this.actor.id,
-        object: this.raw,
-        result: authorization.id,
+        request: this.raw,
+        authorization: authorization.id,
+        to: this.#actorId,
       }),
       { excludeBaseUris: [new URL(this.session.context.origin)] },
     );
@@ -112,12 +142,7 @@ export class QuoteRequestImpl<TContextData>
     await this.session.context.sendActivity(
       this.session.bot,
       this.actor,
-      new Reject({
-        id: new URL(`/#reject/${this.id.href}`, this.session.actorId),
-        actor: this.session.actorId,
-        to: this.actor.id,
-        object: this.raw,
-      }),
+      createQuoteReject(this.session.actorId, this.raw, this.#actorId),
       { excludeBaseUris: [new URL(this.session.context.origin)] },
     );
     this.#state = "rejected";
@@ -125,12 +150,12 @@ export class QuoteRequestImpl<TContextData>
 
   async #createAuthorization(): Promise<QuoteAuthorization> {
     const id = uuidv7() as Uuid;
-    const authorization = new QuoteAuthorization({
+    const authorization = quoteInteraction.createAuthorization({
       id: this.session.context.getObjectUri(QuoteAuthorization, {
         identifier: this.session.bot.identifier,
         id,
       }),
-      attribution: this.session.actorId,
+      attributedTo: this.session.actorId,
       interactingObject: this.quote.id,
       interactionTarget: this.target.id,
     });

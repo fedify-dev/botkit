@@ -15,14 +15,26 @@ To be released.
  -  Added the `federationOptions` option to `createBot()` and
     `createInstance()` for private-address access in tests, circuit breaking,
     OpenTelemetry providers, and HTTP Signature negotiation.  [[#41], [#43]]
+ -  Changed [FEP-044f] quote authorization handling to use Fedify's
+    *@fedify/interaction-controls* package.  Quote authorization stamps are
+    now checked against their owner's [FEP-fe34] origin, so stamps whose IDs
+    have no comparable origin, such as opaque URIs, are no longer accepted.
+    [[#52], [#53]]
+ -  Fixed a bug where a remote server could approve a quote with a quote
+    authorization stamp other than the one named in its `Accept` activity,
+    as long as the substituted stamp was on the same origin.  [[#52], [#53]]
  -  Upgraded Fedify to 2.4.0, which adds support for [FEP-ef61] portable
     objects and hardens HTTP Signature verification and document loading.
 
+[FEP-044f]: https://w3id.org/fep/044f
+[FEP-fe34]: https://w3id.org/fep/fe34
 [FEP-ef61]: https://w3id.org/fep/ef61
 [#40]: https://github.com/fedify-dev/botkit/issues/40
 [#41]: https://github.com/fedify-dev/botkit/issues/41
 [#42]: https://github.com/fedify-dev/botkit/pull/42
 [#43]: https://github.com/fedify-dev/botkit/pull/43
+[#52]: https://github.com/fedify-dev/botkit/issues/52
+[#53]: https://github.com/fedify-dev/botkit/pull/53
 
 
 Version 0.5.6
@@ -294,7 +306,6 @@ Released on July 8, 2026.
 
  -  Upgraded Fedify to 2.3.1, Hono to 4.12.27, and LogTape to 2.2.3.
 
-[FEP-044f]: https://w3id.org/fep/044f
 [#16]: https://github.com/fedify-dev/botkit/issues/16
 [#24]: https://github.com/fedify-dev/botkit/pull/24
 [#27]: https://github.com/fedify-dev/botkit/issues/27

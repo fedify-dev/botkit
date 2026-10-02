@@ -13,16 +13,19 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import type { Context } from "@fedify/fedify/federation";
+import { quoteInteraction } from "@fedify/interaction-controls";
 import { QuoteAuthorization } from "@fedify/vocab";
 
 /**
- * Expected identifiers for validating a quote authorization stamp.
+ * Expected identifiers for verifying a quote authorization stamp.
  *
- * @since 0.5.0
+ * @since 0.6.0
  */
-export interface QuoteAuthorizationValidationOptions {
+export interface QuoteAuthorizationVerificationOptions {
   /**
-   * The expected quote authorization stamp ID.
+   * The expected quote authorization stamp ID.  Required when
+   * {@link source} is `"remote"`.
    */
   readonly authorizationId?: URL;
 
@@ -40,27 +43,53 @@ export interface QuoteAuthorizationValidationOptions {
    * The actor that owns the quote target object.
    */
   readonly targetActorId: URL | null;
+
+  /**
+   * How the authorization was obtained:
+   *
+   *  -  `"repository"`: stored by the bot itself, so it is authentic.
+   *  -  `"remote"`: dereferenced from {@link authorizationId}, or embedded in
+   *     an authenticated activity on the same origin (Fedify's vocabulary
+   *     accessors re-fetch cross-origin embedded objects).  It is authentic
+   *     only when its ID is the one that was dereferenced.
+   */
+  readonly source: "repository" | "remote";
 }
 
 /**
- * Checks whether an object is a matching FEP-044f quote authorization stamp.
+ * Verifies that an object is a matching FEP-044f quote authorization stamp.
  *
- * @param authorization The fetched or stored object to validate.
+ * @param context The Fedify context.
+ * @param authorization The fetched or stored object to verify.
  * @param options The identifiers the authorization must match.
- * @returns `true` if the object is a quote authorization for the quote.
- * @since 0.5.0
+ * @param signal An abort signal.
+ * @returns The authorization if it is valid for the quote, or `null`.
+ * @throws {DOMException} The signal is aborted.
+ * @since 0.6.0
  */
-export function validateQuoteAuthorization(
+export async function verifyQuoteAuthorization<TContextData>(
+  context: Context<TContextData>,
   authorization: unknown,
-  options: QuoteAuthorizationValidationOptions,
-): authorization is QuoteAuthorization {
-  return authorization instanceof QuoteAuthorization &&
-    authorization.id != null &&
-    options.targetActorId != null &&
-    (options.authorizationId == null ||
-      authorization.id.href === options.authorizationId.href) &&
-    authorization.id.origin === options.targetActorId.origin &&
-    authorization.attributionId?.href === options.targetActorId.href &&
-    authorization.interactingObjectId?.href === options.quoteId.href &&
-    authorization.interactionTargetId?.href === options.targetId.href;
+  options: QuoteAuthorizationVerificationOptions,
+  signal?: AbortSignal,
+): Promise<QuoteAuthorization | null> {
+  signal?.throwIfAborted();
+  if (
+    !(authorization instanceof QuoteAuthorization) ||
+    options.targetActorId == null ||
+    (options.authorizationId != null &&
+      authorization.id?.href !== options.authorizationId.href)
+  ) {
+    return null;
+  }
+  const result = await quoteInteraction.verifyAuthorization(context, {
+    authorization,
+    interactingObject: options.quoteId,
+    interactionTarget: options.targetId,
+    attributedTo: options.targetActorId,
+    verifyAuthenticity: () =>
+      options.source === "repository" || options.authorizationId != null,
+  });
+  signal?.throwIfAborted();
+  return result.verified ? result.authorization : null;
 }
