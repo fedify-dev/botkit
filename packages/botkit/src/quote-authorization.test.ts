@@ -144,6 +144,22 @@ test("verifyQuoteAuthorization() requires IDs for remote authorizations", async 
   );
 });
 
+test("verifyQuoteAuthorization() throws when the signal is aborted", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(
+    () =>
+      verifyQuoteAuthorization(context, createAuthorization(), {
+        authorizationId,
+        quoteId,
+        targetId,
+        targetActorId,
+        source: "remote",
+      }, controller.signal),
+    { name: "AbortError" },
+  );
+});
+
 test("verifyQuoteAuthorization() compares FEP-fe34 origins", async () => {
   const opaqueId = new URL("urn:example:stamp");
   assert.ok(

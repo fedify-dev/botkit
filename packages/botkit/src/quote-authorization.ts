@@ -62,14 +62,18 @@ export interface QuoteAuthorizationVerificationOptions {
  * @param context The Fedify context.
  * @param authorization The fetched or stored object to verify.
  * @param options The identifiers the authorization must match.
+ * @param signal An abort signal.
  * @returns The authorization if it is valid for the quote, or `null`.
+ * @throws {DOMException} The signal is aborted.
  * @since 0.6.0
  */
 export async function verifyQuoteAuthorization<TContextData>(
   context: Context<TContextData>,
   authorization: unknown,
   options: QuoteAuthorizationVerificationOptions,
+  signal?: AbortSignal,
 ): Promise<QuoteAuthorization | null> {
+  signal?.throwIfAborted();
   if (
     !(authorization instanceof QuoteAuthorization) ||
     options.targetActorId == null ||
@@ -86,5 +90,6 @@ export async function verifyQuoteAuthorization<TContextData>(
     verifyAuthenticity: () =>
       options.source === "repository" || options.authorizationId != null,
   });
+  signal?.throwIfAborted();
   return result.verified ? result.authorization : null;
 }

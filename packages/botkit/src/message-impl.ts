@@ -1198,7 +1198,7 @@ async function verifyQuoteApproval<TContextData>(
       targetId: quoteTarget.id,
       targetActorId: quoteTarget.actor.id,
       source: local ? "repository" : "remote",
-    }) != null;
+    }, signal) != null;
   } catch (error) {
     if (signal?.aborted === true) throw error;
     return false;
