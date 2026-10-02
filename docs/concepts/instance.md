@@ -151,7 +151,7 @@ actor URI and *should not* be changed after the bot is federated.  The second
 argument is a `BotProfile`, which takes the profile-related options that
 `createBot()` used to take: `~BotProfile.username`, `~BotProfile.name`,
 `~BotProfile.summary`, `~BotProfile.icon`, `~BotProfile.image`,
-`~BotProfile.properties`, `~BotProfile.class`, and
+`~BotProfile.properties`, `~BotProfile.aliases`, `~BotProfile.class`, and
 `~BotProfile.followerPolicy`.
 
 Identifiers and usernames must be unique across the instance;
@@ -163,6 +163,12 @@ routed to the bots they are relevant to: a `Follow` reaches the followed bot,
 a `Like` reaches the owner of the liked message, a mention reaches the
 mentioned bot, and a message from a followed account reaches the bots that
 follow its author.
+
+To let an existing account move its followers to a bot, set
+`BotProfile.aliases` to an array containing the old actor URI as a `URL`.
+The same field is available in
+profiles returned by a dynamic dispatcher.  See [*Moving an existing account
+to a bot*](./bot.md#moving-an-existing-account-to-a-bot) for the full procedure.
 
 
 Dynamic bots
