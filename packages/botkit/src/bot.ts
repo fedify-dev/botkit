@@ -25,6 +25,7 @@ import { BotImpl, wrapBotImpl } from "./bot-impl.ts";
 import type { CustomEmoji, DeferredCustomEmoji } from "./emoji.ts";
 import type {
   AcceptEventHandler,
+  FolloweeMoveEventHandler,
   FollowEventHandler,
   LikeEventHandler,
   MentionEventHandler,
@@ -62,6 +63,14 @@ export interface BotEventHandlers<TContextData> {
    * An event handler for a follow request to the bot.
    */
   onFollow?: FollowEventHandler<TContextData>;
+
+  /**
+   * Invoked after submitting a follow request to a followed actor's verified
+   * migration target and unfollowing the old actor.  The new request may
+   * still await acceptance.
+   * @since 0.6.0
+   */
+  onFolloweeMove?: FolloweeMoveEventHandler<TContextData>;
 
   /**
    * An event handler for an unfollow event from the bot.
@@ -339,6 +348,13 @@ export interface BotWithVoidContextData extends Bot<void> {
  * Options for creating a bot.
  */
 export interface CreateBotOptions<TContextData> {
+  /**
+   * The handler invoked after a followed actor moves to a verified target.
+   * It can also be assigned through {@link Bot.onFolloweeMove} afterwards.
+   * @since 0.6.0
+   */
+  readonly onFolloweeMove?: FolloweeMoveEventHandler<TContextData>;
+
   /**
    * The internal identifier of the bot.  Since it is used for the actor URI,
    * it *should not* be changed after the bot is federated.

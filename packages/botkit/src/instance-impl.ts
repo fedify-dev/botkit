@@ -39,10 +39,13 @@ import {
   Endpoints,
   Follow,
   Image,
+  isActor,
   Like as RawLike,
   Link,
   Mention,
+  Move,
   Note,
+  Object as APObject,
   Question,
   QuoteAuthorization,
   QuoteRequest,
@@ -50,6 +53,11 @@ import {
   Undo,
   Update,
 } from "@fedify/vocab";
+import {
+  type DocumentLoader,
+  FetchError,
+  UrlError,
+} from "@fedify/vocab-runtime";
 import { getLogger } from "@logtape/logtape";
 import mimeDb from "mime-db";
 import fs from "node:fs/promises";
@@ -73,6 +81,22 @@ import { app, multiApp } from "./pages.tsx";
 import { KvRepository, type Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
 import { parseLocalUri, rewriteLegacyObjectPath } from "./uri.ts";
+
+interface FolloweeMoveResult<TContextData> {
+  readonly oldActor: Actor;
+  readonly newActor: Actor;
+  readonly bots: readonly BotImpl<TContextData>[];
+  readonly errors: readonly unknown[];
+}
+
+function isPermanentMoveFetchError(error: unknown): boolean {
+  if (error instanceof SyntaxError) return true;
+  if (error instanceof UrlError) return error.reason !== "dns";
+  if (!(error instanceof FetchError) || error.response == null) return false;
+  const status = error.response.status;
+  return status < 400 ||
+    status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
 
 /**
  * The default identifier of the instance actor: an internal `Application`
@@ -335,6 +359,7 @@ export class InstanceImpl<TContextData>
         this.onUnverifiedActivity(ctx, activity, reason)
       )
       .on(Follow, (ctx, follow) => this.onFollowed(ctx, follow))
+      .on(Move, (ctx, move) => this.onMoved(ctx, move))
       .on(QuoteRequest, (ctx, request) => this.onQuoteRequested(ctx, request))
       .on(Undo, (ctx, undo) => this.onUndone(ctx, undo))
       .on(Accept, (ctx, accept) => this.onFollowAccepted(ctx, accept))
@@ -645,6 +670,247 @@ export class InstanceImpl<TContextData>
       { uri: uri?.href },
     );
     return [];
+  }
+
+  // Serializes copies delivered through shared and personal inboxes.  This
+  // is process-local; repository relationships gate subsequent deliveries.
+  readonly #moves = new Map<string, Promise<void>>();
+
+  /**
+   * Handles a verified push-mode account migration for all following bots.
+   * @param ctx The inbox context.
+   * @param move The verified incoming activity.
+   * @param signal The signal for cancelling processing.
+   * @returns A promise that resolves after transitions and callbacks complete.
+   * @throws If a transient lookup, transition, or event handler fails.
+   * @internal
+   */
+  async onMoved(
+    ctx: InboxContext<TContextData>,
+    move: Move,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    signal?.throwIfAborted();
+    const oldId = move.actorId;
+    const targetId = move.targetId;
+    if (
+      move.id == null || oldId == null || targetId == null ||
+      move.actorIds.length !== 1 || move.objectIds.length !== 1 ||
+      move.targetIds.length !== 1 || move.objectId?.href !== oldId.href ||
+      targetId.href === oldId.href ||
+      (targetId.protocol !== "https:" && targetId.protocol !== "http:")
+    ) return;
+
+    const key = JSON.stringify([ctx.origin, oldId.href]);
+    const previous = this.#moves.get(key) ?? Promise.resolve();
+    const run = previous.then(() =>
+      this.#processMove(ctx, move, oldId, targetId, signal)
+    );
+    const tail = run.then(() => {}, () => {});
+    this.#moves.set(key, tail);
+    let result: FolloweeMoveResult<TContextData> | null;
+    try {
+      result = await run;
+    } finally {
+      if (this.#moves.get(key) === tail) this.#moves.delete(key);
+    }
+    if (result == null) return;
+    const errors = [...result.errors];
+    // Handlers run after releasing the lock and are read live from groups.
+    for (const bot of result.bots) {
+      try {
+        await bot.onFolloweeMove?.(
+          bot.getSession(ctx),
+          result.oldActor,
+          result.newActor,
+        );
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length > 0) throw errors[0];
+  }
+
+  async #fetchMoveActor(
+    ctx: InboxContext<TContextData>,
+    id: URL,
+    documentLoader: DocumentLoader,
+    signal?: AbortSignal,
+  ): Promise<Actor | null> {
+    signal?.throwIfAborted();
+    const logger = getLogger(["botkit", "instance", "inbox"]);
+    const document = await documentLoader(id.href);
+    let loaderFailure: { readonly error: unknown } | undefined;
+    const observe =
+      (load: DocumentLoader): DocumentLoader => async (url, options) => {
+        try {
+          return await load(url, options);
+        } catch (error) {
+          loaderFailure = { error };
+          throw error;
+        }
+      };
+    let actor: APObject;
+    try {
+      const documentUrl = new URL(document.documentUrl);
+      if (documentUrl.origin !== id.origin) return null;
+      actor = await APObject.fromJsonLd(document.document, {
+        documentLoader: observe(documentLoader),
+        contextLoader: observe((url, options) =>
+          ctx.contextLoader(url, {
+            ...options,
+            signal: signal ?? options?.signal,
+          })
+        ),
+        baseUrl: documentUrl,
+      });
+    } catch (error) {
+      signal?.throwIfAborted();
+      if (loaderFailure != null) throw loaderFailure.error;
+      logger.debug(
+        "Ignoring Move with an invalid target document: {error}",
+        { error },
+      );
+      return null;
+    }
+    return isActor(actor) && actor.id?.href === id.href ? actor : null;
+  }
+
+  async #processMove(
+    ctx: InboxContext<TContextData>,
+    move: Move,
+    oldId: URL,
+    targetId: URL,
+    signal?: AbortSignal,
+  ): Promise<FolloweeMoveResult<TContextData> | null> {
+    signal?.throwIfAborted();
+    // Always fan out, including personal deliveries: Fedify's inbox queue
+    // deduplicates an activity across recipients on the receiving origin.
+    // Snapshot first, since unfollowing mutates the repository's reverse index.
+    const identifiers = new Set(
+      await Array.fromAsync(this.repository.findFollowedBots(oldId)),
+    );
+    const bots: BotImpl<TContextData>[] = [];
+    for (const identifier of identifiers) {
+      const bot = await this.resolveBot(ctx, identifier);
+      if (
+        bot != null && ctx.getActorUri(identifier).href !== targetId.href &&
+        await bot.repository.getFollowee(oldId) != null
+      ) bots.push(bot);
+    }
+    if (bots.length === 0) return null;
+
+    const logger = getLogger(["botkit", "instance", "inbox"]);
+    const loader = await ctx.getDocumentLoader(bots[0]);
+    let documentLoader: DocumentLoader = (url, options) =>
+      loader(url, { ...options, signal: signal ?? options?.signal });
+    let newActor: Actor;
+    try {
+      const local = ctx.parseUri(targetId);
+      if (local?.type === "actor") {
+        const targetBot = await this.resolveBot(ctx, local.identifier);
+        const actor = await targetBot?.dispatchActor(ctx, local.identifier);
+        if (actor == null) return null;
+        newActor = actor;
+      } else {
+        // Do not use getTarget() (which trusts embeds) or lookupObject()
+        // (which suppresses transport errors and can prevent queue retries).
+        let actor: Actor | null = null;
+        for (let index = 0; index < bots.length; index++) {
+          try {
+            actor = await this.#fetchMoveActor(
+              ctx,
+              targetId,
+              documentLoader,
+              signal,
+            );
+            break;
+          } catch (error) {
+            // A signature-specific denial must not prevent other following
+            // bots from verifying the destination with their own identity.
+            if (
+              error instanceof FetchError &&
+              (error.response?.status === 401 ||
+                error.response?.status === 403) &&
+              index + 1 < bots.length
+            ) {
+              const alternate = await ctx.getDocumentLoader(bots[index + 1]);
+              documentLoader = (url, options) =>
+                alternate(url, {
+                  ...options,
+                  signal: signal ?? options?.signal,
+                });
+              continue;
+            }
+            throw error;
+          }
+        }
+        if (actor == null) return null;
+        newActor = actor;
+      }
+    } catch (error) {
+      signal?.throwIfAborted();
+      if (!isPermanentMoveFetchError(error)) throw error;
+      logger.debug("Ignoring Move with an unavailable target: {error}", {
+        error,
+      });
+      return null;
+    }
+    if (
+      newActor.id?.href !== targetId.href || newActor.inboxId == null ||
+      !newActor.aliasIds.some((alias) => alias.href === oldId.href)
+    ) return null;
+
+    let oldActor: Actor | null = null;
+    for (let index = 0; index < bots.length; index++) {
+      const originLoader = await ctx.getDocumentLoader(bots[index]);
+      const loadOrigin: DocumentLoader = (url, options) =>
+        originLoader(url, { ...options, signal: signal ?? options?.signal });
+      try {
+        oldActor = await move.getActor({
+          documentLoader: loadOrigin,
+          contextLoader: (url, options) =>
+            ctx.contextLoader(url, {
+              ...options,
+              signal: signal ?? options?.signal,
+            }),
+        });
+        if (oldActor?.id?.href !== oldId.href) return null;
+        if (oldActor.inboxId == null) {
+          oldActor = await this.#fetchMoveActor(ctx, oldId, loadOrigin, signal);
+          if (oldActor == null || oldActor.inboxId == null) return null;
+        }
+        break;
+      } catch (error) {
+        signal?.throwIfAborted();
+        if (
+          error instanceof FetchError &&
+          (error.response?.status === 401 || error.response?.status === 403) &&
+          index + 1 < bots.length
+        ) continue;
+        if (!isPermanentMoveFetchError(error)) throw error;
+        return null;
+      }
+    }
+    if (oldActor == null) return null;
+    const migrated: BotImpl<TContextData>[] = [];
+    const errors: unknown[] = [];
+    for (const bot of bots) {
+      try {
+        signal?.throwIfAborted();
+        if (await bot.repository.getFollowee(oldId) == null) continue;
+        const session = bot.getSession(ctx);
+        if (await bot.repository.getFollowee(targetId) == null) {
+          await session.follow(newActor);
+        }
+        signal?.throwIfAborted();
+        await session.unfollow(oldActor);
+        migrated.push(bot);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    return { oldActor, newActor, bots: migrated, errors };
   }
 
   async onFollowed(

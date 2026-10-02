@@ -23,7 +23,7 @@ bot.onMention = async (session, message) => {
 ~~~~
 
 Every event handler receives a [session](./session.md) object as the first
-argument, and the event-specific object as the second argument.
+argument, followed by the event-specific objects.
 
 BotKit invokes these event handlers only for activities whose signatures were
 verified by Fedify.  As of Fedify 2.1.0, BotKit also acknowledges certain
@@ -150,6 +150,64 @@ bot.onRejectFollow = async (session, rejecter) => {
   );
 };
 ~~~~
+
+
+Followee move
+-------------
+
+*This event is available since BotKit 0.6.0.*
+
+When an account your bot follows moves, BotKit automatically submits a follow
+request to its new account and unfollows the old one.  It accepts push-mode
+`Move` activities sent by the old account only, and verifies that the new
+account lists the old actor URI in its `alsoKnownAs`.  A target embedded in
+an activity is checked against the target account's own actor document.
+
+The `~Bot.onFolloweeMove` handler receives the bot's session, the old `Actor`,
+and the new `Actor`, in that order.  It runs after the new request is submitted
+and the old account is unfollowed.  The new request may still await acceptance;
+`~Bot.onAcceptFollow` or `~Bot.onRejectFollow` reports the eventual response.
+With an outgoing queue, submitting the request means enqueueing it, rather
+than completing delivery.
+
+~~~~ typescript twoslash
+import type { Bot } from "@fedify/botkit";
+declare const bot: Bot<void>;
+// ---cut-before---
+bot.onFolloweeMove = (session, oldActor, newActor) => {
+  console.info(
+    session.bot.identifier,
+    "followed account moved",
+    oldActor.id?.href,
+    newActor.id?.href,
+  );
+};
+~~~~
+
+You can also supply this handler as the `onFolloweeMove` option to
+`createBot()`, or assign it to a
+[dynamic bot group](./instance.md#dynamic-bots). The `FolloweeMoveEventHandler`
+type is exported by *@fedify/botkit*.
+
+Only accepted follows of the old account are migrated.  If the bot already
+follows the target, it keeps that follow and only unfollows the old account.
+A repeat delivery does nothing once the old follow has been removed.  A pending
+request to the target may receive another follow request, since it is not yet
+an accepted follow.
+
+There is no migration policy option.  A handler can unfollow an already accepted
+target with `~Session.unfollow()`; to decline a target whose request is still
+pending, unfollow it from `~Bot.onAcceptFollow`.  `~Session.unfollow()` does not
+cancel pending requests.  A rejected target leaves the bot following neither
+account.
+
+> [!NOTE]
+> These changes are not a transaction across servers.  Failure to submit the
+> new request preserves the old follow, but an outgoing queue's later delivery
+> failure cannot restore it.  The old follow is removed before its `Undo` is
+> submitted; if that submission fails, the event does not run, and a repeated
+> `Move` does not retry the `Undo`.  Event handlers are likewise not replayed
+> after the old follow has been removed.
 
 
 Mention

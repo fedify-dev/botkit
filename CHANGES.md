@@ -12,6 +12,9 @@ To be released.
     existing accounts can move their followers to a BotKit bot.  Actor URIs
     listed in the option are published as `alsoKnownAs`, and are available
     through `Bot.aliases` and `Session.bot.aliases`.  [[#48], [#55]]
+ -  Added automatic re-following when an account a bot follows moves to a
+    verified new account, with an `onFolloweeMove` event after submitting the
+    new follow request and unfollowing the old account.  [[#49], [#56]]
  -  Added names, inline summaries, and custom URLs when publishing or updating
     messages.  Updated messages can remove these fields by setting them to
     `null`, and the new `inline` template composes paragraphless rich text for
@@ -27,6 +30,9 @@ To be released.
  -  Fixed a bug where a remote server could approve a quote with a quote
     authorization stamp other than the one named in its `Accept` activity,
     as long as the substituted stamp was on the same origin.  [[#52], [#53]]
+ -  Fixed delivery of follow requests, acceptances, rejections, and unfollows
+    between bots hosted on the same instance, including follow requests to
+    account migration targets on that instance.  [[#49], [#56]]
  -  Upgraded Fedify to 2.4.0, which adds support for [FEP-ef61] portable
     objects and hardens HTTP Signature verification and document loading.
 
@@ -38,9 +44,11 @@ To be released.
 [#42]: https://github.com/fedify-dev/botkit/pull/42
 [#43]: https://github.com/fedify-dev/botkit/pull/43
 [#48]: https://github.com/fedify-dev/botkit/issues/48
+[#49]: https://github.com/fedify-dev/botkit/issues/49
 [#52]: https://github.com/fedify-dev/botkit/issues/52
 [#53]: https://github.com/fedify-dev/botkit/pull/53
 [#55]: https://github.com/fedify-dev/botkit/pull/55
+[#56]: https://github.com/fedify-dev/botkit/pull/56
 
 
 Version 0.5.6
