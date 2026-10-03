@@ -205,7 +205,7 @@ export interface Message<T extends MessageClass, TContextData> {
    * @param options The options for sharing the message.
    * @returns The shared message.
    * @throws {TypeError} If the visibility of the message is not `"public"` or
-   *                     `"unlisted"`.
+   *                     `"unlisted"`, or if the bot has moved.
    */
   share(
     options?: MessageShareOptions,

@@ -45,7 +45,7 @@ export interface FollowRequest {
 
   /**
    * Accepts the follow request.
-   * @throws {TypeError} The follow request is not pending.
+   * @throws {TypeError} If the follow request is not pending or the bot has moved.
    */
   accept(): Promise<void>;
 

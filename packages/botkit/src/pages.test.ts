@@ -390,3 +390,87 @@ describe("message rendering", () => {
     assert.ok(!html.includes("javascript:alert"));
   });
 });
+
+test("moved profiles show their successor and reject direct follow forms", async () => {
+  const repository = new MemoryRepository();
+  const instance = new InstanceImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+  });
+  instance.createBot("old", { username: "old" });
+  instance.createBot("active", { username: "active" });
+  const successor = new URL("https://new.example/actor?name=Alice&from=old");
+  await seedMessage(repository, "old");
+  await repository.setSuccessor("old", successor);
+  const profile = await instance.fetch(
+    new Request("https://example.com/@old"),
+    undefined,
+  );
+  const html = await profile.text();
+  assert.ok(html.includes("This bot has moved"));
+  assert.ok(html.includes("https://new.example/actor?name=Alice&amp;from=old"));
+  assert.ok(!html.includes('action="/@old/follow"'));
+  assert.ok(html.includes("Hello, world!"));
+  const active = await instance.fetch(
+    new Request("https://example.com/@active"),
+    undefined,
+  );
+  assert.ok((await active.text()).includes('action="/@active/follow"'));
+  const follow = await instance.fetch(
+    new Request("https://example.com/@old/follow", { method: "POST" }),
+    undefined,
+  );
+  assert.strictEqual(follow.status, 409);
+  assert.ok((await follow.text()).includes("This bot has moved"));
+});
+
+test("single-bot moved profile escapes unsafe successor schemes", async () => {
+  const repository = new MemoryRepository();
+  const bot = new BotImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+    username: "old",
+  });
+  await repository.setSuccessor("bot", new URL("javascript:alert(1)"));
+  const profile = await bot.fetch(
+    new Request("https://example.com/"),
+    undefined,
+  );
+  const html = await profile.text();
+  assert.ok(html.includes("This bot has moved"));
+  assert.ok(!html.includes('href="javascript:'));
+  assert.ok(!html.includes('action="/follow"'));
+});
+
+test("moved notices link local successors to their public profile", async () => {
+  const repository = new MemoryRepository();
+  const instance = new InstanceImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+  });
+  instance.createBot("old", { username: "old" });
+  instance.createBot("target-id", { username: "new-name" });
+  const target = new URL("https://example.com/ap/actor/target-id");
+  await repository.setSuccessor("old", target);
+  for (
+    const request of [
+      new Request("https://example.com/@old"),
+      new Request("https://example.com/@old/follow", { method: "POST" }),
+    ]
+  ) {
+    const response = await instance.fetch(request, undefined);
+    const html = await response.text();
+    const link =
+      /(?:This bot has moved to|Its new actor is)\s*<a href="([^"]+)"/.exec(
+        html,
+      );
+    assert.ok(link);
+    assert.strictEqual(link[1], "https://example.com/@new-name");
+    const destination = await instance.fetch(
+      new Request(link[1], { headers: { Accept: "text/html" } }),
+      undefined,
+    );
+    assert.strictEqual(destination.status, 200);
+    assert.ok((await destination.text()).includes("@new-name"));
+  }
+});

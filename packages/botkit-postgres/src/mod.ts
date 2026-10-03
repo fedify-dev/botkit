@@ -181,6 +181,15 @@ async function initializePostgresRepositorySchemaInTransaction(
   );
   await execute(
     sql,
+    `CREATE TABLE IF NOT EXISTS "${validatedSchema}"."bot_successors" (
+       bot_id TEXT PRIMARY KEY,
+       successor_id TEXT NOT NULL
+     )`,
+    [],
+    prepare,
+  );
+  await execute(
+    sql,
     `CREATE TABLE IF NOT EXISTS "${validatedSchema}"."key_pairs" (
        bot_id TEXT NOT NULL,
        position INTEGER NOT NULL,
@@ -593,6 +602,45 @@ export class PostgresRepository implements Repository, AsyncDisposable {
         await this.sql.end({ timeout: 5 });
       }
     }
+  }
+
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    signal?.throwIfAborted();
+    await this.ensureReady();
+    signal?.throwIfAborted();
+    const rows = await this.query<{ readonly successor_id: string }>(
+      this.sql,
+      `SELECT successor_id FROM ${
+        this.table("bot_successors")
+      } WHERE bot_id = $1`,
+      [identifier],
+    );
+    return rows[0] === undefined ? undefined : new URL(rows[0].successor_id);
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    signal?.throwIfAborted();
+    const href = successorId.href;
+    await this.ensureReady();
+    signal?.throwIfAborted();
+    const rows = await this.query<{ readonly bot_id: string }>(
+      this.sql,
+      `INSERT INTO ${
+        this.table("bot_successors")
+      } (bot_id, successor_id) VALUES ($1, $2)
+       ON CONFLICT (bot_id) DO NOTHING RETURNING bot_id`,
+      [identifier, href],
+    );
+    return rows.length > 0;
   }
 
   async setKeyPairs(

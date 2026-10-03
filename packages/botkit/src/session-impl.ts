@@ -16,7 +16,7 @@
 import "./temporal.ts";
 import type { Context } from "@fedify/fedify/federation";
 import { quoteInteraction } from "@fedify/interaction-controls";
-import { LanguageString } from "@fedify/vocab-runtime";
+import { type DocumentLoader, LanguageString } from "@fedify/vocab-runtime";
 import {
   type Actor,
   Collection,
@@ -25,8 +25,10 @@ import {
   isActor,
   Link,
   Mention,
+  Move,
   Note,
   type Object,
+  Object as APObject,
   PUBLIC_COLLECTION,
   QuoteRequest,
   Undo,
@@ -52,6 +54,7 @@ import { serializeQuotePolicy } from "./quote.ts";
 import type {
   Session,
   SessionGetOutboxOptions,
+  SessionMoveOptions,
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
   SessionPublishOptionsWithQuestion,
@@ -226,6 +229,194 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     return follow != null;
   }
 
+  async move(
+    target: Actor | URL | string,
+    options: SessionMoveOptions = {},
+  ): Promise<void> {
+    const signal = options.signal;
+    signal?.throwIfAborted();
+    if (await this.bot.repository.getSuccessor(signal) != null) {
+      throw new TypeError("The bot has already moved.");
+    }
+    const actor = await this.#resolveMoveTarget(target, false, signal);
+    const successorId = actor.id!;
+    signal?.throwIfAborted();
+    if (!await this.bot.repository.setSuccessor(successorId, signal)) {
+      throw new TypeError("The bot has already moved.");
+    }
+    // From here cancellation must not interrupt the notification pair.
+    // Never roll back a move which another server may already have processed.
+    try {
+      await this.#notifyMove(successorId);
+    } catch (error) {
+      if (error instanceof AggregateError) throw error;
+      throw new AggregateError(
+        [error],
+        "The bot moved, but its migration notifications failed.",
+      );
+    }
+  }
+
+  async republishMove(options: SessionMoveOptions = {}): Promise<void> {
+    const signal = options.signal;
+    signal?.throwIfAborted();
+    const successorId = await this.bot.repository.getSuccessor(signal);
+    if (successorId == null) throw new TypeError("The bot has not moved.");
+    await this.#resolveMoveTarget(successorId, true, signal);
+    await this.#notifyMove(successorId, signal);
+  }
+
+  async #resolveMoveTarget(
+    target: Actor | URL | string,
+    allowMoved: boolean,
+    signal?: AbortSignal,
+  ): Promise<Actor> {
+    signal?.throwIfAborted();
+    let id: URL | null;
+    if (isActor(target)) {
+      id = target.id;
+    } else if (target instanceof URL) {
+      id = target;
+    } else {
+      const handle = target.replace(/^acct:/, "").match(
+        /^@?([^@/:]+)@([^@/]+)$/,
+      );
+      if (
+        handle != null &&
+        handle[2].toLowerCase() === this.context.host.toLowerCase()
+      ) {
+        const bot = await this.bot.instance.resolveBotByUsername(
+          this.context,
+          handle[1],
+        );
+        if (bot == null) {
+          throw new TypeError("The migration target could not be resolved.");
+        }
+        id = this.context.getActorUri(bot.identifier);
+      } else if (handle != null) {
+        const documentLoader = await this.context.getDocumentLoader(this.bot);
+        const actor = await this.context.lookupObject(target, {
+          documentLoader,
+          signal,
+        });
+        signal?.throwIfAborted();
+        if (!isActor(actor)) {
+          throw new TypeError("The migration target could not be resolved.");
+        }
+        id = actor.id;
+      } else {
+        id = new URL(target);
+      }
+    }
+    if (id == null) {
+      throw new TypeError("The migration target does not have an ID.");
+    }
+    if (id.protocol !== "http:" && id.protocol !== "https:") {
+      throw new TypeError(
+        "The migration target must have an HTTP or HTTPS actor URI.",
+      );
+    }
+    if (id.href === this.actorId.href) {
+      throw new TypeError("The bot cannot move to itself.");
+    }
+    let actor: APObject | null;
+    const local = this.context.parseUri(id);
+    if (local?.type === "actor") {
+      const bot = await this.bot.instance.resolveBot(
+        this.context,
+        local.identifier,
+      );
+      actor = await bot?.dispatchActor(this.context, local.identifier) ?? null;
+    } else {
+      const loader = await this.context.getDocumentLoader(this.bot);
+      const documentLoader: DocumentLoader = (url, options) =>
+        loader(url, { ...options, signal: signal ?? options?.signal });
+      const document = await documentLoader(id.href);
+      const documentUrl = new URL(document.documentUrl);
+      if (documentUrl.origin !== id.origin) {
+        throw new TypeError(
+          "The migration target document has a different origin.",
+        );
+      }
+      actor = await APObject.fromJsonLd(document.document, {
+        baseUrl: documentUrl,
+        documentLoader,
+        contextLoader: (url, options) =>
+          this.context.contextLoader(url, {
+            ...options,
+            signal: signal ?? options?.signal,
+          }),
+      });
+    }
+    signal?.throwIfAborted();
+    if (
+      !isActor(actor) || actor.id?.href !== id.href || actor.inboxId == null
+    ) {
+      throw new TypeError(
+        "The migration target is not a valid actor with an inbox.",
+      );
+    }
+    if (!allowMoved && actor.successorId != null) {
+      throw new TypeError("The migration target has already moved.");
+    }
+    if (!actor.aliasIds.some((alias) => alias.href === this.actorId.href)) {
+      throw new TypeError(
+        "The migration target does not list the bot as an alias.",
+      );
+    }
+    return actor;
+  }
+
+  async #notifyMove(successorId: URL, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
+    // Freeze the audience for both sends: a local Move can cause immediate
+    // Undo(Follow) deliveries which mutate the live followers collection.
+    const followers = await Array.fromAsync(this.bot.repository.getFollowers());
+    const actor = await this.getActor();
+    const followersId = this.context.getFollowersUri(this.bot.identifier);
+    const update = new Update({
+      id: new URL(`#update-profile/${crypto.randomUUID()}`, this.actorId),
+      actor: this.actorId,
+      to: followersId,
+      object: actor,
+    });
+    const move = new Move({
+      id: new URL(`#move/${crypto.randomUUID()}`, this.actorId),
+      actor: this.actorId,
+      object: this.actorId,
+      target: successorId,
+      to: PUBLIC_COLLECTION,
+      cc: followersId,
+    });
+    signal?.throwIfAborted();
+    if (followers.length === 0) return;
+    const errors: unknown[] = [];
+    for (const activity of [update, move]) {
+      try {
+        await this.context.sendActivity(this.bot, followers, activity, {
+          preferSharedInbox: true,
+          excludeBaseUris: [],
+          orderingKey: this.actorId.href,
+        });
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(
+        errors,
+        "The migration notifications could not all be submitted.",
+      );
+    }
+  }
+
+  /** Checks whether this bot may publish new messages. @internal */
+  async ensureActive(signal?: AbortSignal): Promise<void> {
+    if (await this.bot.repository.getSuccessor(signal) != null) {
+      throw new TypeError("The bot has moved and cannot publish new messages.");
+    }
+  }
+
   async republishProfile(): Promise<void> {
     const actor = await this.getActor();
     const update = new Update({
@@ -264,6 +455,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       | SessionImplPublishOptionsWithClass<MessageClass, TContextData>
       | SessionImplPublishOptionsWithQuestion<TContextData> = {},
   ): Promise<AuthorizedMessage<MessageClass, TContextData>> {
+    await this.ensureActive();
     const published = new Date();
     const id = uuidv7({ msecs: +published }) as Uuid;
     const cls = "class" in options ? options.class : Note;
@@ -418,6 +610,9 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       object: msg,
       published: published.toTemporalInstant(),
     });
+    // Rendering text can await remote lookups or user code.  Recheck before
+    // storing anything in case the bot moved during that preparation.
+    await this.ensureActive();
     await this.bot.repository.addMessage(id, activity);
     const preferSharedInbox = visibility === "public" ||
       visibility === "unlisted" || visibility === "followers";

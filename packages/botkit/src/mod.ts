@@ -109,6 +109,7 @@ export {
 export type {
   Session,
   SessionGetOutboxOptions,
+  SessionMoveOptions,
   SessionPublishOptions,
   SessionPublishOptionsWithClass,
 } from "./session.ts";

@@ -8,6 +8,12 @@ To be released.
 
 ### @fedify/botkit
 
+ -  Added `Session.move()` to move a bot's followers to a linked actor,
+    persist its `movedTo` redirect, and show its new home on the profile.
+    Moved bots reject new follows and cannot publish, reply, or share new
+    messages.  `Session.republishMove()` resends failed migration notifications.
+    Custom repositories must now implement the required `getSuccessor()` and
+    atomic, write-once `setSuccessor()` methods.  [[#50], [#57]]
  -  Added an `aliases` option to `CreateBotOptions` and `BotProfile` so
     existing accounts can move their followers to a BotKit bot.  Actor URIs
     listed in the option are published as `alsoKnownAs`, and are available
@@ -45,10 +51,30 @@ To be released.
 [#43]: https://github.com/fedify-dev/botkit/pull/43
 [#48]: https://github.com/fedify-dev/botkit/issues/48
 [#49]: https://github.com/fedify-dev/botkit/issues/49
+[#50]: https://github.com/fedify-dev/botkit/issues/50
 [#52]: https://github.com/fedify-dev/botkit/issues/52
 [#53]: https://github.com/fedify-dev/botkit/pull/53
 [#55]: https://github.com/fedify-dev/botkit/pull/55
 [#56]: https://github.com/fedify-dev/botkit/pull/56
+[#57]: https://github.com/fedify-dev/botkit/pull/57
+
+### @fedify/botkit-postgres
+
+ -  Added persistent account migration state through `getSuccessor()` and
+    atomic, write-once `setSuccessor()`, keeping moved bots inactive across
+    restarts.  [[#50], [#57]]
+
+### @fedify/botkit-redis
+
+ -  Added persistent account migration state through `getSuccessor()` and
+    atomic, write-once `setSuccessor()`, keeping moved bots inactive across
+    restarts.  [[#50], [#57]]
+
+### @fedify/botkit-sqlite
+
+ -  Added persistent account migration state through `getSuccessor()` and
+    atomic, write-once `setSuccessor()`, keeping moved bots inactive across
+    restarts.  [[#50], [#57]]
 
 
 Version 0.5.6

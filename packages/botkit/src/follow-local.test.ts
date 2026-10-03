@@ -237,3 +237,77 @@ test("a sibling's rejection reaches the sender through real HTTP inboxes", async
     await local.close();
   }
 });
+
+test("Session.move migrates local and remote followers through real HTTP", async (t) => {
+  const local = await createTestServer(t.signal);
+  const remote = await createTestServer(t.signal);
+  try {
+    const old = local.instance.createBot("old", { username: "old" });
+    const session = old.getSession(local.origin);
+    const target = local.instance.createBot("target", {
+      username: "target",
+      aliases: [session.actorId],
+    });
+    const targetId = target.getSession(local.origin).actorId;
+    const localFollower = local.instance.createBot("local", {
+      username: "local",
+    });
+    const remoteFollower = remote.instance.createBot("remote", {
+      username: "remote",
+    });
+    const oldActor = await session.getActor();
+    const migrations: string[] = [];
+    for (
+      const [follower, server] of [[localFollower, local], [
+        remoteFollower,
+        remote,
+      ]] as const
+    ) {
+      follower.onFolloweeMove = (_session, origin, destination) => {
+        assert.deepStrictEqual(origin.id, session.actorId);
+        assert.deepStrictEqual(destination.id, targetId);
+        migrations.push(follower.identifier);
+      };
+      await follower.getSession(server.origin).follow(oldActor);
+      assert.ok(
+        await server.repository.getFollowee(
+          follower.identifier,
+          session.actorId,
+        ),
+      );
+    }
+    assert.strictEqual(await local.repository.countFollowers("old"), 2);
+    await session.move(targetId, { signal: t.signal });
+    for (
+      const [follower, server] of [[localFollower, local], [
+        remoteFollower,
+        remote,
+      ]] as const
+    ) {
+      assert.ok(
+        await server.repository.getFollowee(follower.identifier, targetId),
+      );
+      assert.strictEqual(
+        await server.repository.getFollowee(
+          follower.identifier,
+          session.actorId,
+        ),
+        undefined,
+      );
+      assert.ok(
+        await local.repository.hasFollower(
+          "target",
+          follower.getSession(server.origin).actorId,
+        ),
+      );
+    }
+    assert.deepStrictEqual(migrations.sort(), ["local", "remote"]);
+    assert.deepStrictEqual((await session.getActor()).successorId, targetId);
+    assert.strictEqual(await local.repository.countFollowers("old"), 0);
+    assert.deepStrictEqual(local.errors, []);
+    assert.deepStrictEqual(remote.errors, []);
+  } finally {
+    await local.close();
+    await remote.close();
+  }
+});

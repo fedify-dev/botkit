@@ -90,6 +90,23 @@ export const app = new Hono<Env>();
 
 app.get("/", (c) => profilePage(c, c.env.bot, c.env.contextData, ""));
 
+// Actor URIs identify the successor; local bots have separate HTML profiles.
+async function successorWebUrl(
+  bot: BotImpl<unknown>,
+  ctx: Context<unknown>,
+  successor: URL,
+  signal?: AbortSignal,
+): Promise<URL> {
+  signal?.throwIfAborted();
+  const parsed = ctx.parseUri(successor);
+  if (parsed?.type !== "actor") return successor;
+  const target = await bot.instance.resolveBot(ctx, parsed.identifier);
+  signal?.throwIfAborted();
+  return target == null
+    ? successor
+    : bot.instance.getBotWebUrl(target, ctx.origin);
+}
+
 async function profilePage(
   c: PageContext,
   bot: BotImpl<unknown>,
@@ -111,6 +128,10 @@ async function profilePage(
     : bot.image;
   const imageWidth = bot.image instanceof Image ? bot.image.width : null;
   const imageHeight = bot.image instanceof Image ? bot.image.height : null;
+  const successor = await bot.repository.getSuccessor();
+  const successorUrl = successor == null
+    ? undefined
+    : await successorWebUrl(bot, ctx, successor);
   const followersCount = await bot.repository.countFollowers();
   const summaryChunks = bot.summary?.getHtml(session);
   const postsCount = await bot.repository.countMessages();
@@ -192,6 +213,14 @@ async function profilePage(
                 <CopyIcon />
               </button>
             </span>
+            {successor != null && (
+              <p class="bk-bio">
+                This bot has moved to {successor.protocol === "http:" ||
+                    successor.protocol === "https:"
+                  ? <a href={successorUrl?.href}>{successor.href}</a>
+                  : successor.href}.
+              </p>
+            )}
             {summary &&
               (
                 <div
@@ -235,7 +264,9 @@ async function profilePage(
                 </a>
               </div>
               <span class="bk-meta__spacer" />
-              <FollowButton bot={bot} action={`${base}/follow`} />
+              {successor == null && (
+                <FollowButton bot={bot} action={`${base}/follow`} />
+              )}
             </div>
           </div>
         </header>
@@ -567,6 +598,30 @@ async function followPage(
   const home = base === "" ? "/" : base;
   const ctx = bot.federation.createContext(c.req.raw, contextData);
   const url = new URL(c.req.url);
+
+  const successor = await bot.repository.getSuccessor();
+  const successorUrl = successor == null
+    ? undefined
+    : await successorWebUrl(bot, ctx, successor);
+  if (successor != null) {
+    return c.html(
+      <Layout bot={bot} host={url.host} title="Bot moved">
+        <main class="container">
+          <h1>This bot has moved</h1>
+          <p>
+            Its new actor is{" "}
+            {successor.protocol === "http:" || successor.protocol === "https:"
+              ? <a href={successorUrl?.href}>{successor.href}</a>
+              : successor.href}.
+          </p>
+          <p>
+            <a href={home}>Go back</a>
+          </p>
+        </main>
+      </Layout>,
+      409,
+    );
+  }
 
   const formData = await c.req.formData();
   let followerHandle = formData.get("handle")?.toString();

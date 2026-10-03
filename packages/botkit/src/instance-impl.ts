@@ -81,6 +81,7 @@ import { app, multiApp } from "./pages.tsx";
 import { KvRepository, type Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
 import { parseLocalUri, rewriteLegacyObjectPath } from "./uri.ts";
+import { assertSuccessorRepository } from "./successor.ts";
 
 interface FolloweeMoveResult<TContextData> {
   readonly oldActor: Actor;
@@ -181,6 +182,7 @@ export class InstanceImpl<TContextData>
     this.kv = options.kv;
     this.queue = options.queue;
     this.repository = options.repository ?? new KvRepository(options.kv);
+    assertSuccessorRepository(this.repository);
     this.software = options.software;
     this.behindProxy = options.behindProxy ?? false;
     this.pages = {
