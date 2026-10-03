@@ -614,90 +614,94 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       object: msg,
       published: published.toTemporalInstant(),
     });
-    // Rendering text can await remote lookups or user code.  Recheck before
-    // storing anything in case the bot moved during that preparation.
-    await this.ensureActive();
-    await this.bot.repository.addMessage(id, activity);
-    const preferSharedInbox = visibility === "public" ||
-      visibility === "unlisted" || visibility === "followers";
-    const excludeBaseUris = [new URL(this.context.origin)];
-    if (preferSharedInbox) {
-      await this.context.sendActivity(
-        this.bot,
-        "followers",
-        activity,
-        { preferSharedInbox, excludeBaseUris },
-      );
-    }
     const cachedObjects: Record<string, Object> = {};
-    const textObjects = [
-      ...content.getCachedObjects(),
-      ...(summary?.getCachedObjects() ?? []),
-    ];
-    for (const cachedObject of textObjects) {
-      if (cachedObject.id == null) continue;
-      cachedObjects[cachedObject.id.href] = cachedObject;
-    }
-    if (mentionedActorIds.length > 0) {
-      const documentLoader = await this.context.getDocumentLoader(this.bot);
-      const promises: Promise<Object | null>[] = [];
-      for (const mentionedActorId of mentionedActorIds) {
-        const cachedObject = cachedObjects[mentionedActorId.href];
-        const promise = cachedObject == null
-          ? this.context.lookupObject(
-            mentionedActorId,
-            { documentLoader },
-          )
-          : Promise.resolve(cachedObject);
-        promises.push(promise);
-      }
-      const objects = await Promise.all(promises);
-      const mentionedActors = objects.filter(isActor);
-      await this.context.sendActivity(
-        this.bot,
-        mentionedActors,
-        activity,
-        { preferSharedInbox, excludeBaseUris },
-      );
-    }
-    if (options.replyTarget != null) {
-      await this.context.sendActivity(
-        this.bot,
-        options.replyTarget.actor,
-        activity,
-        { preferSharedInbox, excludeBaseUris, fanout: "skip" },
-      );
-    }
-    if (options.quoteTarget != null) {
-      await this.context.sendActivity(
-        this.bot,
-        options.quoteTarget.actor,
-        activity,
-        { preferSharedInbox, excludeBaseUris, fanout: "skip" },
-      );
-      if (
-        options.quoteTarget.actor.id != null &&
-        options.quoteTarget.actor.id.href !==
-          this.context.getActorUri(this.bot.identifier).href
-      ) {
-        const request = quoteInteraction.createRequest({
-          id: this.context.getObjectUri(QuoteRequest, {
-            identifier: this.bot.identifier,
-            id,
-          }),
-          actor: this.context.getActorUri(this.bot.identifier),
-          object: options.quoteTarget.id,
-          instrument: msgId,
-          to: options.quoteTarget.actor.id,
-        });
-        await this.context.sendActivity(
-          this.bot,
-          options.quoteTarget.actor,
-          request,
-          { preferSharedInbox, excludeBaseUris, fanout: "skip" },
-        );
-      }
-    }
+    await this.bot.instance.withSharingLock(
+      this.bot.identifier,
+      async (signal) => {
+        // Recheck after rendering, under the same lock as successor commits.
+        await this.ensureActive(signal);
+        await this.bot.repository.addMessage(id, activity);
+        const preferSharedInbox = visibility === "public" ||
+          visibility === "unlisted" || visibility === "followers";
+        const excludeBaseUris = [new URL(this.context.origin)];
+        if (preferSharedInbox) {
+          await this.context.sendActivity(
+            this.bot,
+            "followers",
+            activity,
+            { preferSharedInbox, excludeBaseUris },
+          );
+        }
+        const textObjects = [
+          ...content.getCachedObjects(),
+          ...(summary?.getCachedObjects() ?? []),
+        ];
+        for (const cachedObject of textObjects) {
+          if (cachedObject.id == null) continue;
+          cachedObjects[cachedObject.id.href] = cachedObject;
+        }
+        if (mentionedActorIds.length > 0) {
+          const documentLoader = await this.context.getDocumentLoader(this.bot);
+          const promises: Promise<Object | null>[] = [];
+          for (const mentionedActorId of mentionedActorIds) {
+            const cachedObject = cachedObjects[mentionedActorId.href];
+            const promise = cachedObject == null
+              ? this.context.lookupObject(
+                mentionedActorId,
+                { documentLoader },
+              )
+              : Promise.resolve(cachedObject);
+            promises.push(promise);
+          }
+          const objects = await Promise.all(promises);
+          const mentionedActors = objects.filter(isActor);
+          await this.context.sendActivity(
+            this.bot,
+            mentionedActors,
+            activity,
+            { preferSharedInbox, excludeBaseUris },
+          );
+        }
+        if (options.replyTarget != null) {
+          await this.context.sendActivity(
+            this.bot,
+            options.replyTarget.actor,
+            activity,
+            { preferSharedInbox, excludeBaseUris, fanout: "skip" },
+          );
+        }
+        if (options.quoteTarget != null) {
+          await this.context.sendActivity(
+            this.bot,
+            options.quoteTarget.actor,
+            activity,
+            { preferSharedInbox, excludeBaseUris, fanout: "skip" },
+          );
+          if (
+            options.quoteTarget.actor.id != null &&
+            options.quoteTarget.actor.id.href !==
+              this.context.getActorUri(this.bot.identifier).href
+          ) {
+            const request = quoteInteraction.createRequest({
+              id: this.context.getObjectUri(QuoteRequest, {
+                identifier: this.bot.identifier,
+                id,
+              }),
+              actor: this.context.getActorUri(this.bot.identifier),
+              object: options.quoteTarget.id,
+              instrument: msgId,
+              to: options.quoteTarget.actor.id,
+            });
+            await this.context.sendActivity(
+              this.bot,
+              options.quoteTarget.actor,
+              request,
+              { preferSharedInbox, excludeBaseUris, fanout: "skip" },
+            );
+          }
+        }
+      },
+    );
     return await createMessage(
       msg,
       this,

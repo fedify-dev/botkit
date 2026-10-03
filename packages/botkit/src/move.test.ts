@@ -21,15 +21,18 @@ import {
 } from "@fedify/fedify/federation";
 import type { DocumentLoader } from "@fedify/vocab-runtime";
 import {
+  Accept,
   type Activity,
   Announce,
   Article,
+  Create,
   Follow,
   isActor,
   Move,
   Note,
   Person,
   PUBLIC_COLLECTION,
+  QuoteRequest,
   Reject,
   Update,
 } from "@fedify/vocab";
@@ -41,7 +44,8 @@ import { hideRepositoryMethods } from "./helpers.ts";
 import { createInstance } from "./instance.ts";
 import { MemoryCachedRepository, MemoryRepository } from "./repository.ts";
 import { SessionImpl } from "./session-impl.ts";
-import { text } from "./text.ts";
+import { mention, text } from "./text.ts";
+import { createMessage } from "./message-impl.ts";
 
 function mockLoader(
   loader: DocumentLoader,
@@ -607,4 +611,216 @@ test("failed sharing releases the move serialization boundary", async () => {
   await assert.rejects(message.share(), TypeError);
   await f.session.move(f.target);
   assert.deepStrictEqual(await f.repository.getSuccessor("bot"), f.target.id);
+});
+
+test("move waits for publishing storage and every activity submission", async (t) => {
+  for (const pause of [0, 1, 2, 3, 4, 5]) {
+    await t.test(pause === 0 ? "storage" : `submission ${pause}`, async () => {
+      const f = fixture();
+      const remote = new Person({
+        id: new URL("https://remote.example/actor"),
+        inbox: new URL("https://remote.example/inbox"),
+      });
+      const original = await createMessage(
+        new Note({
+          id: new URL("https://remote.example/note/1"),
+          attribution: remote.id,
+          content: "Original.",
+          to: PUBLIC_COLLECTION,
+        }),
+        f.session,
+        { [remote.id!.href]: remote },
+      );
+      const started = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const fetched = Promise.withResolvers<void>();
+      const loader = await f.context.getDocumentLoader(f.bot);
+      f.context.getDocumentLoader = mockLoader(async (url, options) => {
+        const result = await loader(url, options);
+        fetched.resolve();
+        return result;
+      });
+      const add = f.repository.addMessage.bind(f.repository);
+      f.repository.addMessage = async (identifier, id, activity) => {
+        if (pause === 0) {
+          started.resolve();
+          await release.promise;
+        }
+        return await add(identifier, id, activity);
+      };
+      let submissions = 0;
+      f.context.sendActivity = async (_sender, _recipients, activity) => {
+        if (!(activity instanceof Create || activity instanceof QuoteRequest)) {
+          return;
+        }
+        submissions++;
+        if (pause === submissions) {
+          started.resolve();
+          await release.promise;
+        }
+        assert.strictEqual(await f.repository.getSuccessor("bot"), undefined);
+      };
+      const publishing = f.session.publish(
+        text`Hello ${mention("remote", remote)}.`,
+        {
+          replyTarget: original,
+          quoteTarget: original,
+        },
+      );
+      await started.promise;
+      const moving = new SessionImpl(f.bot, f.context).move(f.target);
+      await fetched.promise;
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      try {
+        assert.strictEqual(await f.repository.getSuccessor("bot"), undefined);
+      } finally {
+        release.resolve();
+        await Promise.allSettled([publishing, moving]);
+      }
+      await publishing;
+      await moving;
+      assert.strictEqual(submissions, 5);
+      assert.strictEqual(await f.repository.countMessages("bot"), 1);
+    });
+  }
+});
+
+test("move snapshots followers after pending acceptance finishes", async (t) => {
+  for (const pause of ["delivery", "storage"] as const) {
+    await t.test(pause, async () => {
+      const f = fixture();
+      const follower = new Person({
+        id: new URL("https://follower.example/actor"),
+        inbox: new URL("https://follower.example/inbox"),
+      });
+      const request = new FollowRequestImpl(
+        f.session,
+        new Follow({
+          id: new URL("https://follower.example/follow/1"),
+          actor: follower,
+          object: f.session.actorId,
+        }),
+        follower,
+      );
+      const started = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const fetched = Promise.withResolvers<void>();
+      const loader = await f.context.getDocumentLoader(f.bot);
+      f.context.getDocumentLoader = mockLoader(async (url, options) => {
+        const result = await loader(url, options);
+        fetched.resolve();
+        return result;
+      });
+      const audiences: string[][] = [];
+      f.context.sendActivity = async (_sender, recipients, activity) => {
+        if (activity instanceof Accept && pause === "delivery") {
+          started.resolve();
+          await release.promise;
+        }
+        if (activity instanceof Update || activity instanceof Move) {
+          assert.ok(Array.isArray(recipients));
+          audiences.push(recipients.map((actor) => actor.id!.href));
+        }
+      };
+      const add = f.repository.addFollower.bind(f.repository);
+      f.repository.addFollower = async (identifier, id, actor) => {
+        if (pause === "storage") {
+          started.resolve();
+          await release.promise;
+        }
+        return await add(identifier, id, actor);
+      };
+      const accepting = request.accept();
+      await started.promise;
+      const moving = new SessionImpl(f.bot, f.context).move(f.target);
+      await fetched.promise;
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      try {
+        assert.strictEqual(await f.repository.getSuccessor("bot"), undefined);
+      } finally {
+        release.resolve();
+        await Promise.allSettled([accepting, moving]);
+      }
+      await accepting;
+      await moving;
+      assert.strictEqual(request.state, "accepted");
+      assert.deepStrictEqual(audiences, [[follower.id!.href], [
+        follower.id!.href,
+      ]]);
+    });
+  }
+});
+
+test("queued follow acceptance rechecks moved state inside the lock", async () => {
+  const f = fixture();
+  const follower = new Person({
+    id: new URL("https://follower.example/actor"),
+    inbox: new URL("https://follower.example/inbox"),
+  });
+  const request = new FollowRequestImpl(
+    f.session,
+    new Follow({
+      id: new URL("https://follower.example/follow/1"),
+      actor: follower,
+      object: f.session.actorId,
+    }),
+    follower,
+  );
+  const started = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  const set = f.repository.setSuccessor.bind(f.repository);
+  f.repository.setSuccessor = async (identifier, successor, signal) => {
+    started.resolve();
+    await release.promise;
+    return await set(identifier, successor, signal);
+  };
+  const moving = f.session.move(f.target);
+  await started.promise;
+  const accepting = request.accept();
+  await new Promise<void>((resolve) => setTimeout(resolve, 20));
+  release.resolve();
+  const results = await Promise.allSettled([moving, accepting]);
+  assert.strictEqual(results[0].status, "fulfilled");
+  assert.strictEqual(results[1].status, "rejected");
+  if (results[1].status === "rejected") {
+    assert.ok(results[1].reason instanceof TypeError);
+  }
+  assert.strictEqual(request.state, "pending");
+  assert.strictEqual(await f.repository.countFollowers("bot"), 0);
+  assert.ok(!f.sent.some(({ activity }) => activity instanceof Accept));
+});
+
+test("concurrent acceptance checks pending state after preceding acceptance", async () => {
+  const f = fixture();
+  const follower = new Person({
+    id: new URL("https://follower.example/actor"),
+    inbox: new URL("https://follower.example/inbox"),
+  });
+  const request = new FollowRequestImpl(
+    f.session,
+    new Follow({
+      id: new URL("https://follower.example/follow/1"),
+      actor: follower,
+      object: f.session.actorId,
+    }),
+    follower,
+  );
+  const results = await Promise.allSettled([
+    request.accept(),
+    request.accept(),
+  ]);
+  assert.strictEqual(
+    results.filter((result) => result.status === "fulfilled").length,
+    1,
+  );
+  assert.strictEqual(
+    results.filter((result) => result.status === "rejected").length,
+    1,
+  );
+  assert.strictEqual(request.state, "accepted");
+  assert.strictEqual(
+    f.sent.filter(({ activity }) => activity instanceof Accept).length,
+    1,
+  );
+  assert.strictEqual(await f.repository.countFollowers("bot"), 1);
 });

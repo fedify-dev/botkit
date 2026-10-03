@@ -249,10 +249,12 @@ follow requests retained before the move also cannot be accepted afterwards,
 but can still be rejected.  There is no API to undo a move or change its
 stored destination.
 
-Within one instance, an in-progress share finishes storing and submitting its
-notifications before `move()` can commit.  Shares starting after that commit
-are rejected.  Applications serving the same bot from several processes must
-coordinate sharing and migration between those processes.
+Within one instance, once publishing, sharing, or follow acceptance passes its
+final state check, `move()` waits for its storage and activity submissions to
+finish.  Text rendering happens before that check, so a move during rendering
+rejects publication before it stores anything.  Applications serving the same
+bot from several processes must coordinate these operations and migration
+between those processes.
 
 [FEP-7628]: https://w3id.org/fep/7628
 
@@ -278,8 +280,7 @@ if ((await session.getActor()).successorId != null) {
 }
 ~~~~
 
-This also reaches followers whose acceptance was already in progress when the
-bot moved.  It does not change the successor.  The destination must still list
+It does not change the successor.  The destination must still list
 the old actor as an alias, even if it has since moved again.  With a configured
 queue, Fedify retries delivery of notifications it has accepted; without a
 queue, delivery happens during the call and can partially fail.

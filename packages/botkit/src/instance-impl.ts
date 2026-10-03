@@ -677,7 +677,7 @@ export class InstanceImpl<TContextData>
   readonly #sharing = new Map<string, Promise<void>>();
 
   /**
-   * Serializes sharing and successor writes for one bot on this instance.
+   * Serializes actor writes with migration for one bot on this instance.
    * @param identifier The bot whose state is protected.
    * @param operation The operation to run after preceding work finishes.
    * @param signal The signal for cancelling before the operation starts.
