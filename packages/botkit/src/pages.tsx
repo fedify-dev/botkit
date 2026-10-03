@@ -100,7 +100,8 @@ async function successorWebUrl(
   signal?.throwIfAborted();
   const parsed = ctx.parseUri(successor);
   if (parsed?.type !== "actor") return successor;
-  const target = await bot.instance.resolveBot(ctx, parsed.identifier);
+  const target = await bot.instance.resolveBot(ctx, parsed.identifier)
+    .catch(() => null);
   signal?.throwIfAborted();
   return target == null
     ? successor

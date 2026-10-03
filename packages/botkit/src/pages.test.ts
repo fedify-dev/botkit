@@ -474,3 +474,33 @@ test("moved notices link local successors to their public profile", async () => 
     assert.ok((await destination.text()).includes("@new-name"));
   }
 });
+
+test("moved pages survive a failing dynamic successor dispatcher", async () => {
+  const repository = new MemoryRepository();
+  const instance = new InstanceImpl<void>({
+    kv: new MemoryKvStore(),
+    repository,
+  });
+  instance.createBot("old", { username: "old" });
+  instance.createBot(async () => {
+    await Promise.resolve();
+    throw new TypeError("The target profile is unavailable.");
+  });
+  const successor = new URL("https://example.com/ap/actor/target");
+  await repository.setSuccessor("old", successor);
+  for (
+    const [path, method, status] of [
+      ["/@old", "GET", 200],
+      ["/@old/follow", "POST", 409],
+    ] as const
+  ) {
+    const response = await instance.fetch(
+      new Request(`https://example.com${path}`, { method }),
+      undefined,
+    );
+    assert.strictEqual(response.status, status);
+    const html = await response.text();
+    assert.ok(html.includes("This bot has moved"));
+    assert.ok(html.includes(`href="${successor.href}"`));
+  }
+});
