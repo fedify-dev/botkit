@@ -241,9 +241,13 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
     const actor = await this.#resolveMoveTarget(target, false, signal);
     const successorId = actor.id!;
     signal?.throwIfAborted();
-    if (!await this.bot.repository.setSuccessor(successorId, signal)) {
-      throw new TypeError("The bot has already moved.");
-    }
+    const committed = await this.bot.instance.withSharingLock(
+      this.bot.identifier,
+      async (signal) =>
+        await this.bot.repository.setSuccessor(successorId, signal),
+      signal,
+    );
+    if (!committed) throw new TypeError("The bot has already moved.");
     // From here cancellation must not interrupt the notification pair.
     // Never roll back a move which another server may already have processed.
     try {

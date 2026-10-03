@@ -249,6 +249,11 @@ follow requests retained before the move also cannot be accepted afterwards,
 but can still be rejected.  There is no API to undo a move or change its
 stored destination.
 
+Within one instance, an in-progress share finishes storing and submitting its
+notifications before `move()` can commit.  Shares starting after that commit
+are rejected.  Applications serving the same bot from several processes must
+coordinate sharing and migration between those processes.
+
 [FEP-7628]: https://w3id.org/fep/7628
 
 ### Recovering notification failures

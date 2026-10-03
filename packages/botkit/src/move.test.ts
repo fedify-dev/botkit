@@ -22,6 +22,7 @@ import {
 import type { DocumentLoader } from "@fedify/vocab-runtime";
 import {
   type Activity,
+  Announce,
   Article,
   Follow,
   isActor,
@@ -532,4 +533,78 @@ test("dynamic targets resolve without HTTP and remain separate from the source",
   await session.move(targetId);
   assert.deepStrictEqual((await session.getActor()).successorId, targetId);
   assert.strictEqual(await repository.getSuccessor("new"), undefined);
+});
+
+test("move waits for sharing storage and both submissions across sessions", async (t) => {
+  for (const pause of ["storage", "followers", "author"] as const) {
+    await t.test(pause, async () => {
+      const f = fixture();
+      const message = await f.session.publish(text`Original.`);
+      await seedFollower(f.repository, t.signal);
+      const started = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const fetched = Promise.withResolvers<void>();
+      const getLoader = f.context.getDocumentLoader;
+      const loader = await getLoader(f.bot);
+      f.context.getDocumentLoader = mockLoader(async (url, options) => {
+        const result = await loader(url, options);
+        fetched.resolve();
+        return result;
+      });
+      const add = f.repository.addMessage.bind(f.repository);
+      f.repository.addMessage = async (identifier, id, activity) => {
+        if (pause === "storage" && activity instanceof Announce) {
+          started.resolve();
+          await release.promise;
+        }
+        return await add(identifier, id, activity);
+      };
+      let submissions = 0;
+      f.context.sendActivity = async (_sender, _recipients, activity) => {
+        if (!(activity instanceof Announce)) return;
+        submissions++;
+        if (
+          (pause === "followers" && submissions === 1) ||
+          (pause === "author" && submissions === 2)
+        ) {
+          started.resolve();
+          await release.promise;
+        }
+        assert.strictEqual(await f.repository.getSuccessor("bot"), undefined);
+      };
+      const sharing = message.share();
+      await started.promise;
+      const moving = new SessionImpl(f.bot, f.context).move(f.target);
+      await fetched.promise;
+      // Let the authoritative actor parse finish while the share is suspended.
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      try {
+        assert.strictEqual(await f.repository.getSuccessor("bot"), undefined);
+      } finally {
+        release.resolve();
+        await Promise.allSettled([sharing, moving]);
+      }
+      await sharing;
+      await moving;
+      assert.strictEqual(submissions, 2);
+      assert.deepStrictEqual(
+        await f.repository.getSuccessor("bot"),
+        f.target.id,
+      );
+      await assert.rejects(message.share(), TypeError);
+      assert.strictEqual(await f.repository.countMessages("bot"), 2);
+    });
+  }
+});
+
+test("failed sharing releases the move serialization boundary", async () => {
+  const f = fixture();
+  const message = await f.session.publish(text`Original.`);
+  f.context.sendActivity = async (_sender, _recipients, activity) => {
+    await Promise.resolve();
+    if (activity instanceof Announce) throw new TypeError("Submission failed.");
+  };
+  await assert.rejects(message.share(), TypeError);
+  await f.session.move(f.target);
+  assert.deepStrictEqual(await f.repository.getSuccessor("bot"), f.target.id);
 });

@@ -11,9 +11,11 @@ To be released.
  -  Added `Session.move()` to move a bot's followers to a linked actor,
     persist its `movedTo` redirect, and show its new home on the profile.
     Moved bots reject new follows and cannot publish, reply, or share new
-    messages.  `Session.republishMove()` resends failed migration notifications.
-    Custom repositories must now implement the required `getSuccessor()` and
-    atomic, write-once `setSuccessor()` methods.  [[#50], [#57]]
+    messages.  In-progress shares finish before a move commits within the
+    same instance.  `Session.republishMove()` resends failed migration
+    notifications. Custom repositories must now implement the required
+    `getSuccessor()` and atomic, write-once `setSuccessor()` methods.
+    [[#50], [#57]]
  -  Added an `aliases` option to `CreateBotOptions` and `BotProfile` so
     existing accounts can move their followers to a BotKit bot.  Actor URIs
     listed in the option are published as `alsoKnownAs`, and are available
