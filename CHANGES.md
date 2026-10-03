@@ -15,14 +15,14 @@ To be released.
     with moves within the same instance.  `Session.republishMove()`
     resends failed migration notifications. Custom repositories must now
     implement the required `getSuccessor()` and atomic, write-once
-    `setSuccessor()` methods. [[#50], [#57]]
+    `setSuccessor()` methods.  [[#47], [#50], [#57]]
  -  Added an `aliases` option to `CreateBotOptions` and `BotProfile` so
     existing accounts can move their followers to a BotKit bot.  Actor URIs
     listed in the option are published as `alsoKnownAs`, and are available
-    through `Bot.aliases` and `Session.bot.aliases`.  [[#48], [#55]]
+    through `Bot.aliases` and `Session.bot.aliases`.  [[#47], [#48], [#55]]
  -  Added automatic re-following when an account a bot follows moves to a
     verified new account, with an `onFolloweeMove` event after submitting the
-    new follow request and unfollowing the old account.  [[#49], [#56]]
+    new follow request and unfollowing the old account.  [[#47], [#49], [#56]]
  -  Added names, inline summaries, and custom URLs when publishing or updating
     messages.  Updated messages can remove these fields by setting them to
     `null`, and the new `inline` template composes paragraphless rich text for
@@ -51,6 +51,7 @@ To be released.
 [#41]: https://github.com/fedify-dev/botkit/issues/41
 [#42]: https://github.com/fedify-dev/botkit/pull/42
 [#43]: https://github.com/fedify-dev/botkit/pull/43
+[#47]: https://github.com/fedify-dev/botkit/issues/47
 [#48]: https://github.com/fedify-dev/botkit/issues/48
 [#49]: https://github.com/fedify-dev/botkit/issues/49
 [#50]: https://github.com/fedify-dev/botkit/issues/50
@@ -64,19 +65,19 @@ To be released.
 
  -  Added persistent account migration state through `getSuccessor()` and
     atomic, write-once `setSuccessor()`, keeping moved bots inactive across
-    restarts.  [[#50], [#57]]
+    restarts.  [[#47], [#50], [#57]]
 
 ### @fedify/botkit-redis
 
  -  Added persistent account migration state through `getSuccessor()` and
     atomic, write-once `setSuccessor()`, keeping moved bots inactive across
-    restarts.  [[#50], [#57]]
+    restarts.  [[#47], [#50], [#57]]
 
 ### @fedify/botkit-sqlite
 
  -  Added persistent account migration state through `getSuccessor()` and
     atomic, write-once `setSuccessor()`, keeping moved bots inactive across
-    restarts.  [[#50], [#57]]
+    restarts.  [[#47], [#50], [#57]]
 
 
 Version 0.5.6
