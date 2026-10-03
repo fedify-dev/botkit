@@ -80,3 +80,22 @@ export function parseLocalUri<TContextData>(
   rewritten.pathname = rewrittenPath;
   return ctx.parseUri(rewritten);
 }
+
+/**
+ * Keeps follow activities deliverable to actors hosted on this instance.
+ * Remote recipients retain the usual exclusion of the instance's own inboxes.
+ * @param ctx The federation context.
+ * @param recipientId The recipient's actor URI.
+ * @returns The delivery options for the follow activity.
+ * @internal
+ */
+export function getFollowDeliveryOptions<TContextData>(
+  ctx: Context<TContextData>,
+  recipientId: URL | null,
+): { excludeBaseUris: URL[] } {
+  return {
+    excludeBaseUris: ctx.parseUri(recipientId)?.type === "actor"
+      ? []
+      : [new URL(ctx.origin)],
+  };
+}

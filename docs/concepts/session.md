@@ -255,6 +255,11 @@ bot.onFollow = async (session, followRequest) => {
 > If you try to follow an actor that is already followed, the method will just
 > do nothing.
 
+When an account the bot follows moves to another account, BotKit automatically
+submits a follow request to the verified target and unfollows the old account.
+See [the followee move event](./events.md#followee-move) for validation rules,
+request timing, and the `onFolloweeMove` callback.
+
 
 Unfollowing an actor
 --------------------

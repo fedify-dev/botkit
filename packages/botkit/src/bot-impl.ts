@@ -77,6 +77,7 @@ import {
 } from "./emoji.ts";
 import type {
   AcceptEventHandler,
+  FolloweeMoveEventHandler,
   FollowEventHandler,
   LikeEventHandler,
   MentionEventHandler,
@@ -162,6 +163,7 @@ export interface BotImplOptions<TContextData>
  */
 export const botEventHandlerNames = [
   "onFollow",
+  "onFolloweeMove",
   "onUnfollow",
   "onAcceptFollow",
   "onRejectFollow",
@@ -239,6 +241,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   }
 
   onFollow?: FollowEventHandler<TContextData>;
+  onFolloweeMove?: FolloweeMoveEventHandler<TContextData>;
   onUnfollow?: UnfollowEventHandler<TContextData>;
   onAcceptFollow?: AcceptEventHandler<TContextData>;
   onRejectFollow?: RejectEventHandler<TContextData>;
@@ -258,6 +261,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
   onVote?: VoteEventHandler<TContextData>;
 
   constructor(options: BotImplOptions<TContextData>) {
+    this.onFolloweeMove = options.onFolloweeMove;
     this.identifier = options.identifier ?? "bot";
     this.class = options.class ?? Service;
     this.username = options.username;
@@ -2225,6 +2229,12 @@ export function wrapBotImpl<TContextData>(
     set onFollow(value) {
       bot.onFollow = value;
     },
+    get onFolloweeMove() {
+      return bot.onFolloweeMove;
+    },
+    set onFolloweeMove(value) {
+      bot.onFolloweeMove = value;
+    },
     get onUnfollow() {
       return bot.onUnfollow;
     },
@@ -2679,6 +2689,7 @@ export class BotGroupImpl<TContextData> implements BotGroup<TContextData> {
   ) => string | null | Promise<string | null>;
 
   onFollow?: FollowEventHandler<TContextData>;
+  onFolloweeMove?: FolloweeMoveEventHandler<TContextData>;
   onUnfollow?: UnfollowEventHandler<TContextData>;
   onAcceptFollow?: AcceptEventHandler<TContextData>;
   onRejectFollow?: RejectEventHandler<TContextData>;

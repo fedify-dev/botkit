@@ -57,6 +57,7 @@ import type {
   SessionPublishOptionsWithQuestion,
 } from "./session.ts";
 import { plainText, type Text } from "./text.ts";
+import { getFollowDeliveryOptions } from "./uri.ts";
 
 const logger = getLogger(["botkit", "session"]);
 
@@ -144,7 +145,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
       this.bot,
       actor,
       follow,
-      { excludeBaseUris: [new URL(this.context.origin)] },
+      getFollowDeliveryOptions(this.context, actor.id),
     );
   }
 
@@ -188,7 +189,7 @@ export class SessionImpl<TContextData> implements Session<TContextData> {
           object: follow,
           to: actor.id,
         }),
-        { excludeBaseUris: [new URL(this.context.origin)] },
+        getFollowDeliveryOptions(this.context, actor.id),
       );
     }
   }

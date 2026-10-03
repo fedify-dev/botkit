@@ -38,6 +38,22 @@ export type FollowEventHandler<TContextData> = (
 ) => void | Promise<void>;
 
 /**
+ * An event handler invoked after a followed actor moves to another account.
+ * The new follow request has been submitted, but may still await acceptance.
+ * @typeParam TContextData The type of the context data.
+ * @param session The session of the bot.
+ * @param oldActor The actor the bot previously followed.
+ * @param newActor The actor to which the account moved.
+ * @returns Nothing, or a promise that resolves when handling completes.
+ * @since 0.6.0
+ */
+export type FolloweeMoveEventHandler<TContextData> = (
+  session: Session<TContextData>,
+  oldActor: Actor,
+  newActor: Actor,
+) => void | Promise<void>;
+
+/**
  * An event handler for an unfollow event from the bot.
  * @typeParam TContextData The type of the context data.
  * @param session The session of the bot.

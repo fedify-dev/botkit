@@ -16,6 +16,7 @@
 import { Accept, type Actor, type Follow, Reject } from "@fedify/vocab";
 import type { FollowRequest } from "./follow.ts";
 import type { SessionImpl } from "./session-impl.ts";
+import { getFollowDeliveryOptions } from "./uri.ts";
 
 export class FollowRequestImpl<TContextData> implements FollowRequest {
   readonly session: SessionImpl<TContextData>;
@@ -58,7 +59,7 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
         to: this.follower.id,
         object: this.raw,
       }),
-      { excludeBaseUris: [new URL(this.session.context.origin)] },
+      getFollowDeliveryOptions(this.session.context, this.follower.id),
     );
     await this.session.bot.repository.addFollower(this.id, this.follower);
     this.#state = "accepted";
@@ -77,7 +78,7 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
         to: this.follower.id,
         object: this.raw,
       }),
-      { excludeBaseUris: [new URL(this.session.context.origin)] },
+      getFollowDeliveryOptions(this.session.context, this.follower.id),
     );
     this.#state = "rejected";
   }
