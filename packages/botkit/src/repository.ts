@@ -30,6 +30,8 @@ import { getLogger } from "@logtape/logtape";
 export type { KvKey, KvStore } from "@fedify/fedify/federation";
 export { Announce, Create } from "@fedify/vocab";
 
+import { assertSuccessorRepository } from "./successor.ts";
+
 const logger = getLogger(["botkit", "repository"]);
 const kvLockPollIntervalMs = 100;
 const uuidPattern =
@@ -92,6 +94,34 @@ interface QuoteAuthorizationReferenceData {
  * @since 0.3.0
  */
 export interface Repository {
+  /**
+   * Gets the actor URI to which a bot has moved.
+   * @param identifier The owning bot actor's identifier.
+   * @param signal The signal to cancel before reading.
+   * @returns The successor URI, or `undefined` if the bot has not moved.
+   * @since 0.6.0
+   */
+  getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined>;
+
+  /**
+   * Records a bot's successor only if it has not already moved.
+   * This must be an atomic first-write-wins operation.  Existing values,
+   * including the same URI, must never be overwritten.
+   * @param identifier The owning bot actor's identifier.
+   * @param successorId The successor's actor URI.
+   * @param signal The signal to cancel before committing the write.
+   * @returns `true` if stored, `false` if a successor already exists.
+   * @since 0.6.0
+   */
+  setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean>;
+
   /**
    * Sets the key pairs of a bot actor.
    * @param identifier The identifier of the bot actor that owns the key pairs.
@@ -510,6 +540,27 @@ export interface Repository {
  * @since 0.5.0
  */
 export class ActorScopedRepository {
+  /**
+   * Gets this bot's successor actor URI.
+   * @param signal The signal to cancel before reading.
+   * @returns The successor URI, or `undefined` if the bot has not moved.
+   * @since 0.6.0
+   */
+  getSuccessor(signal?: AbortSignal): Promise<URL | undefined> {
+    return this.repository.getSuccessor(this.identifier, signal);
+  }
+
+  /**
+   * Records this bot's successor only if it has not already moved.
+   * @param successorId The successor's actor URI.
+   * @param signal The signal to cancel before committing the write.
+   * @returns Whether the successor was stored.
+   * @since 0.6.0
+   */
+  setSuccessor(successorId: URL, signal?: AbortSignal): Promise<boolean> {
+    return this.repository.setSuccessor(this.identifier, successorId, signal);
+  }
+
   /**
    * The underlying repository.
    */
@@ -939,6 +990,37 @@ export interface KvRepositoryOptions {
  * A repository for storing bot data using a key-value store.
  */
 export class KvRepository implements Repository {
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    signal?.throwIfAborted();
+    const value = await this.kv.get<string>(this.#key(identifier, "successor"));
+    return value === undefined ? undefined : new URL(value);
+  }
+
+  /**
+   * {@inheritDoc Repository.setSuccessor}
+   * Without CAS, writes are serialized only within this repository instance.
+   */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    signal?.throwIfAborted();
+    const key = this.#key(identifier, "successor");
+    const href = successorId.href;
+    if (this.kv.cas != null) return await this.kv.cas(key, undefined, href);
+    return await this.#withNonCasKvLock(key, async () => {
+      if (await this.kv.get(key) !== undefined) return false;
+      signal?.throwIfAborted();
+      await this.kv.set(key, href);
+      return true;
+    });
+  }
+
   readonly kv: KvStore;
 
   /**
@@ -2132,6 +2214,7 @@ function extractTimestamp(uuid: string): number {
 }
 
 interface MemoryActorData {
+  successor?: string;
   keyPairs?: CryptoKeyPair[];
   messages: Map<Uuid, Create | Announce>;
   followers: Map<string, Actor>;
@@ -2150,6 +2233,31 @@ interface MemoryActorData {
  * persistent and is only suitable for testing or development.
  */
 export class MemoryRepository implements Repository {
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    signal?.throwIfAborted();
+    const value = this.#data.get(identifier)?.successor;
+    return await Promise.resolve(
+      value === undefined ? undefined : new URL(value),
+    );
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    signal?.throwIfAborted();
+    const data = this.#bucket(identifier);
+    if (data.successor !== undefined) return await Promise.resolve(false);
+    data.successor = successorId.href;
+    return await Promise.resolve(true);
+  }
+
   #data: Map<string, MemoryActorData> = new Map();
 
   #bucket(identifier: string): MemoryActorData {
@@ -2567,6 +2675,25 @@ export class MemoryRepository implements Repository {
  * @since 0.3.0
  */
 export class MemoryCachedRepository implements Repository {
+  // Successor reads intentionally bypass the cache: another repository view
+  // may have moved the bot since a previous read.
+  /** {@inheritDoc Repository.getSuccessor} */
+  getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    return this.underlying.getSuccessor(identifier, signal);
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    return this.underlying.setSuccessor(identifier, successorId, signal);
+  }
+
   private underlying: Repository;
   private cache: MemoryRepository;
 
@@ -2577,6 +2704,7 @@ export class MemoryCachedRepository implements Repository {
    *              If not provided, a new one will be created internally.
    */
   constructor(underlying: Repository, cache?: MemoryRepository) {
+    assertSuccessorRepository(underlying);
     this.underlying = underlying;
     this.cache = cache ?? new MemoryRepository();
   }

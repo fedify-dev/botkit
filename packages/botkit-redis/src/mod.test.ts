@@ -300,6 +300,44 @@ if (redisUrl == null) {
       );
     });
 
+    test("successor is atomic, scoped and persistent", async (t) => {
+      const harness = createHarness();
+      const repo = harness.repository;
+      const target = new URL("https://new.example/actor");
+      try {
+        assert.strictEqual(await repo.getSuccessor("old", t.signal), undefined);
+        const results = await Promise.all([
+          repo.setSuccessor("old", target, t.signal),
+          repo.setSuccessor(
+            "old",
+            new URL("https://other.example/actor"),
+            t.signal,
+          ),
+        ]);
+        assert.strictEqual(results.filter(Boolean).length, 1);
+        const successor = await repo.getSuccessor("old", t.signal);
+        assert.ok(successor);
+        assert.ok(!await repo.setSuccessor("old", successor));
+        assert.strictEqual(await repo.getSuccessor("sibling"), undefined);
+        await assert.rejects(
+          repo.setSuccessor("sibling", target, AbortSignal.abort()),
+          { name: "AbortError" },
+        );
+        const second = new RedisRepository({
+          url: redisUrl,
+          prefix: harness.prefix,
+        });
+        try {
+          assert.deepStrictEqual(await second.getSuccessor("old"), successor);
+          assert.ok(!await second.setSuccessor("old", target));
+        } finally {
+          await second.close();
+        }
+      } finally {
+        await harness.cleanup();
+      }
+    });
+
     test("key pairs", async () => {
       const { repository, cleanup } = createHarness();
       try {

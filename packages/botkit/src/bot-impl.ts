@@ -131,6 +131,8 @@ import { SessionImpl } from "./session-impl.ts";
 import type { Session } from "./session.ts";
 import type { Text } from "./text.ts";
 
+import { assertSuccessorRepository } from "./successor.ts";
+
 const logger = getLogger(["botkit", "bot"]);
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -352,6 +354,7 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       preferredUsername: this.username,
       // Fedify may mutate its array during lazy alias resolution.
       aliases: [...this.aliases],
+      successor: await this.repository.getSuccessor(),
       name: this.name,
       summary: summary == null ? null : summary.text,
       attachments: pairs,
@@ -659,9 +662,15 @@ export class BotImpl<TContextData> implements Bot<TContextData> {
       follow,
       follower,
     );
+    if (await this.repository.getSuccessor() != null) {
+      await followRequest.reject();
+      return;
+    }
     await this.onFollow?.(session, followRequest);
     if (followRequest.state === "pending") {
-      if (this.followerPolicy === "accept") await followRequest.accept();
+      if (await this.repository.getSuccessor() != null) {
+        await followRequest.reject();
+      } else if (this.followerPolicy === "accept") await followRequest.accept();
       else if (this.followerPolicy === "reject") await followRequest.reject();
     }
   }
@@ -2349,11 +2358,31 @@ export function wrapBotImpl<TContextData>(
  * @internal
  */
 export class MigrationGatedRepository implements Repository {
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    await this.#migration;
+    return await this.#repository.getSuccessor(identifier, signal);
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    await this.#migration;
+    return await this.#repository.setSuccessor(identifier, successorId, signal);
+  }
+
   readonly #repository: Repository;
   readonly #migration: Promise<void>;
   readonly #missingQuoteAuthorizationReferenceMethods = new Set<string>();
 
   constructor(repository: Repository, identifier: string) {
+    assertSuccessorRepository(repository);
     this.#repository = repository;
     this.#migration = repository.migrate?.(identifier) ?? Promise.resolve();
     // The rejection is re-thrown by the first awaiting operation; this

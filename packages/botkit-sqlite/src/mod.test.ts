@@ -914,3 +914,40 @@ describe("SqliteRepository.migrate() with empty-string identifiers", () => {
     }
   });
 });
+
+test("SQLite successor persists across reopen and cannot be overwritten", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "botkit-move-"));
+  const path = join(directory, "data.sqlite");
+  const target = new URL("https://new.example/actor");
+  try {
+    const repo = new SqliteRepository({ path });
+    try {
+      assert.strictEqual(await repo.getSuccessor("old", t.signal), undefined);
+      const results = await Promise.all([
+        repo.setSuccessor("old", target, t.signal),
+        repo.setSuccessor(
+          "old",
+          new URL("https://other.example/actor"),
+          t.signal,
+        ),
+      ]);
+      assert.deepStrictEqual(results, [true, false]);
+      assert.strictEqual(await repo.getSuccessor("sibling"), undefined);
+      await assert.rejects(
+        repo.setSuccessor("sibling", target, AbortSignal.abort()),
+        { name: "AbortError" },
+      );
+    } finally {
+      repo.close();
+    }
+    const reopened = new SqliteRepository({ path });
+    try {
+      assert.deepStrictEqual(await reopened.getSuccessor("old"), target);
+      assert.ok(!await reopened.setSuccessor("old", target));
+    } finally {
+      reopened.close();
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

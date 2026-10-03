@@ -47,8 +47,20 @@ export class FollowRequestImpl<TContextData> implements FollowRequest {
   }
 
   async accept(): Promise<void> {
+    await this.session.bot.instance.withSharingLock(
+      this.session.bot.identifier,
+      (signal) => this.#accept(signal),
+    );
+  }
+
+  async #accept(signal?: AbortSignal): Promise<void> {
     if (this.#state !== "pending") {
       throw new TypeError("The follow request is not pending.");
+    }
+    if (await this.session.bot.repository.getSuccessor(signal) != null) {
+      throw new TypeError(
+        "The bot has moved and cannot accept follow requests.",
+      );
     }
     await this.session.context.sendActivity(
       this.session.bot,

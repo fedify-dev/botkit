@@ -2430,3 +2430,80 @@ describe("KvRepository.migrate()", () => {
     );
   });
 });
+
+for (const [name, factory] of Object.entries(factories)) {
+  test(`${name} successor is write-once and bot-scoped`, async (t) => {
+    const repository = factory();
+    const target = new URL("https://new.example/actor");
+    assert.strictEqual(
+      await repository.getSuccessor("old", t.signal),
+      undefined,
+    );
+    const results = await Promise.all([
+      repository.setSuccessor("old", target, t.signal),
+      repository.setSuccessor(
+        "old",
+        new URL("https://other.example/actor"),
+        t.signal,
+      ),
+    ]);
+    assert.strictEqual(results.filter(Boolean).length, 1);
+    const successor = await repository.getSuccessor("old", t.signal);
+    assert.ok(successor);
+    assert.ok(!await repository.setSuccessor("old", successor, t.signal));
+    assert.strictEqual(await repository.getSuccessor("sibling"), undefined);
+    const href = successor.href;
+    successor.pathname = "/mutated";
+    target.pathname = "/mutated";
+    assert.strictEqual((await repository.getSuccessor("old"))?.href, href);
+    const signal = AbortSignal.abort();
+    await assert.rejects(repository.setSuccessor("sibling", target, signal), {
+      name: "AbortError",
+    });
+    assert.strictEqual(await repository.getSuccessor("sibling"), undefined);
+  });
+}
+
+test("MemoryCachedRepository observes successor changes through other views", async () => {
+  const underlying = new MemoryRepository();
+  const first = new MemoryCachedRepository(underlying);
+  const second = new MemoryCachedRepository(underlying);
+  assert.strictEqual(await first.getSuccessor("old"), undefined);
+  const target = new URL("https://new.example/actor");
+  assert.ok(await second.setSuccessor("old", target));
+  assert.deepStrictEqual(await first.getSuccessor("old"), target);
+  const scoped = first.forIdentifier("old");
+  assert.deepStrictEqual(await scoped.getSuccessor(), target);
+  assert.ok(!await scoped.setSuccessor(target));
+});
+
+test("KvRepository successor CAS coordinates independent views", async () => {
+  const kv = new MemoryKvStore();
+  const first = new KvRepository(kv);
+  const second = new KvRepository(kv);
+  const results = await Promise.all([
+    first.setSuccessor("bot", new URL("https://new.example/first")),
+    second.setSuccessor("bot", new URL("https://new.example/second")),
+  ]);
+  assert.strictEqual(results.filter(Boolean).length, 1);
+  assert.deepStrictEqual(
+    await first.getSuccessor("bot"),
+    await second.getSuccessor("bot"),
+  );
+});
+
+test("KvRepository successor fallback serializes within one non-CAS view", async () => {
+  const kv = new Proxy(new MemoryKvStore(), {
+    get(target, property, receiver) {
+      if (property === "cas") return undefined;
+      const value = Reflect.get(target, property, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+  const repository = new KvRepository(kv);
+  const results = await Promise.all([
+    repository.setSuccessor("bot", new URL("https://new.example/first")),
+    repository.setSuccessor("bot", new URL("https://new.example/second")),
+  ]);
+  assert.deepStrictEqual(results, [true, false]);
+});

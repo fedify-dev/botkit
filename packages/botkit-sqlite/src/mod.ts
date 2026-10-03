@@ -351,6 +351,10 @@ export class SqliteRepository implements Repository, Disposable {
 
   private initializeTables(): void {
     this.rebuildLegacyTables();
+    this.db.exec(`CREATE TABLE IF NOT EXISTS bot_successors (
+      bot_id TEXT PRIMARY KEY NOT NULL,
+      successor_id TEXT NOT NULL
+    )`);
 
     // Key pairs table
     this.db.exec(`
@@ -483,6 +487,34 @@ export class SqliteRepository implements Repository, Disposable {
       CREATE INDEX IF NOT EXISTS idx_poll_votes_bot_message_option
       ON poll_votes(bot_id, message_id, option)
     `);
+  }
+
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    signal?.throwIfAborted();
+    const row = this.db.prepare(
+      "SELECT successor_id FROM bot_successors WHERE bot_id = ?",
+    ).get(identifier);
+    return await Promise.resolve(
+      row === undefined ? undefined : new URL(String(row.successor_id)),
+    );
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    signal?.throwIfAborted();
+    const href = successorId.href;
+    const result = this.db.prepare(
+      "INSERT INTO bot_successors (bot_id, successor_id) VALUES (?, ?) ON CONFLICT (bot_id) DO NOTHING",
+    ).run(identifier, href);
+    return await Promise.resolve(result.changes > 0);
   }
 
   async setKeyPairs(

@@ -193,6 +193,104 @@ followers.  Call it after your application updates the bot profile and you want
 the change to propagate without waiting for the next post.
 
 
+Moving the bot to another actor
+-------------------------------
+
+*This API is available since BotKit 0.6.0.*
+
+Call `~Session.move()` to move the bot's followers to another BotKit bot or
+an account on a different server.  First configure the destination to list
+this bot's *actor URI* in its `alsoKnownAs` aliases.  For a BotKit destination,
+use [`aliases`](./bot.md#createbotoptions-aliases) and deploy it before starting
+the move.  The URI is `session.actorId`, rather than the bot's profile page URL.
+
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+declare const session: Session<void>;
+// ---cut-before---
+await session.move("@mybot@new.example");
+~~~~
+
+The target can also be an actor `URL`, a URI string, or an `Actor` object.
+BotKit fetches its current actor document and verifies that its aliases contain
+this bot's actor URI.  It rejects the bot itself, targets without an inbox,
+and targets that have already moved.
+
+BotKit stores the successor, publishes an actor `Update` carrying `movedTo`,
+then sends a push-mode [FEP-7628] `Move` to the old followers.  This includes
+followers on the same instance.  Only followers move: posts, followed accounts,
+and other data stay on the old server.  Keep that server running while remote
+servers process the migration.  A successful call means the notifications were
+submitted, rather than that every follower has already moved.
+
+The moved state survives a restart when the repository is persistent.  The
+old actor's `successorId` points to the destination, its profile shows a link,
+and it rejects incoming follow requests without invoking `onFollow`, regardless
+of `followerPolicy`.  `Session.publish()`, `Message.reply()`, and
+`Message.share()` throw `TypeError` on a moved bot.  Existing posts remain
+accessible, and their editing and deletion remain available.
+
+Other event handlers still run.  Deploy a moved-state check in handlers that
+publish or reply *before* starting the move:
+
+~~~~ typescript twoslash
+import { type Bot, text } from "@fedify/botkit";
+declare const bot: Bot<void>;
+// ---cut-before---
+bot.onMention = async (session, message) => {
+  if ((await session.getActor()).successorId != null) return;
+  await message.reply(text`Thanks for mentioning me!`);
+};
+~~~~
+
+Without this check, a reply attempt throws from the handler and fails the
+incoming activity's processing; a configured queue may retry it.  Pending
+follow requests retained before the move also cannot be accepted afterwards,
+but can still be rejected.  There is no API to undo a move or change its
+stored destination.
+
+Within one instance, once publishing, sharing, or follow acceptance passes its
+final state check, `move()` waits for its storage and activity submissions to
+finish.  Text rendering happens before that check, so a move during rendering
+rejects publication before it stores anything.  Applications serving the same
+bot from several processes must coordinate these operations and migration
+between those processes.
+
+[FEP-7628]: https://w3id.org/fep/7628
+
+### Recovering notification failures
+
+A storage or delivery failure can occur after the successor has been stored.
+BotKit keeps the moved state because some servers may already have processed
+the migration.  It attempts the `Move` even if submitting the `Update` fails.
+Post-commit notification failures throw `AggregateError`; a storage error can
+also leave the write's outcome uncertain.  On any error, check
+`(await session.getActor()).successorId` before choosing how to retry.
+
+Calling `move()` on a moved bot throws `TypeError`.  Use
+`~Session.republishMove()` to revalidate the stored successor's alias and
+resend both notifications to the remaining followers:
+
+~~~~ typescript twoslash
+import type { Session } from "@fedify/botkit";
+declare const session: Session<void>;
+// ---cut-before---
+if ((await session.getActor()).successorId != null) {
+  await session.republishMove();
+}
+~~~~
+
+It does not change the successor.  The destination must still list
+the old actor as an alias, even if it has since moved again.  With a configured
+queue, Fedify retries delivery of notifications it has accepted; without a
+queue, delivery happens during the call and can partially fail.
+
+Both methods accept `{ signal: AbortSignal }`.  `move()` honours cancellation
+until successor storage commits, then continues both notifications.
+`republishMove()` honours cancellation during preparation, including the
+follower snapshot, then continues both notifications once submission starts.
+
+
 Publishing a message
 --------------------
 

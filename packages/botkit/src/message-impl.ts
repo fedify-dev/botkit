@@ -163,6 +163,17 @@ export class MessageImpl<T extends MessageClass, TContextData>
   async share(
     options: MessageShareOptions = {},
   ): Promise<AuthorizedSharedMessage<T, TContextData>> {
+    return await this.session.bot.instance.withSharingLock(
+      this.session.bot.identifier,
+      (signal) => this.#share(options, signal),
+    );
+  }
+
+  async #share(
+    options: MessageShareOptions,
+    signal?: AbortSignal,
+  ): Promise<AuthorizedSharedMessage<T, TContextData>> {
+    await this.session.ensureActive(signal);
     const published = new Date();
     const id = uuidv7({ msecs: +published }) as Uuid;
     const visibility = options.visibility ?? this.visibility;

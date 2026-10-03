@@ -43,6 +43,35 @@ the quote's authorization state.
 [FEP-044f]: https://w3id.org/fep/044f
 
 
+Account migration storage
+-------------------------
+
+Since BotKit 0.6.0, custom repositories must implement two additional methods:
+
+ -  `~Repository.getSuccessor(identifier, signal?)` returns the successor actor
+    `URL`, or `undefined` if the bot has not moved.  Return a fresh `URL` so
+    callers cannot mutate the stored value.
+ -  `~Repository.setSuccessor(identifier, successorId, signal?)` atomically
+    records the first successor and returns `true`.  If one already exists,
+    return `false`, including when the URI is identical.  Never overwrite it.
+
+These are required even if your application never calls `Session.move()`:
+actor dispatch and publishing read the moved state.  BotKit rejects repositories
+missing either method during construction, including repositories passed
+through a cache or the single-bot compatibility wrapper.  Honor an aborted
+signal before a read or write, and never report cancellation after a write has
+committed.  See [moving a bot](./session.md#moving-the-bot-to-another-actor) for
+the lifecycle and recovery behavior.
+
+All built-in repositories implement this contract.  SQL repositories create an
+additional table automatically, and KV/Redis repositories store a bot-scoped
+successor key.  `MemoryCachedRepository` reads successors directly from its
+backing repository, so another process's move takes effect immediately.  A
+`KvRepository` without CAS can serialize successor writes only within the
+same repository instance; use a CAS-capable store or a dedicated SQL/Redis
+repository when several instances may move the same bot concurrently.
+
+
 `KvRepository`
 --------------
 

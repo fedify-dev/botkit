@@ -111,6 +111,40 @@ export interface Session<TContextData> {
   follows(actor: Actor | URL | string): Promise<boolean>;
 
   /**
+   * Moves the bot's followers to a linked actor and makes the bot inactive.
+   * The destination must advertise this bot's actor URI in `alsoKnownAs`.
+   * Cancellation is honoured until the successor is committed; notifications
+   * continue after that point.  On failure, check {@link Session.getActor}'s
+   * `successorId` before retrying or calling {@link Session.republishMove}.
+   * @param target The destination actor, actor URI, or fediverse handle.
+   * @param options Options for cancelling preparation.
+   * @returns A promise that resolves after submitting the notifications.
+   * @throws {TypeError} If the bot has moved, or the target is invalid,
+   *                     inactive, the bot itself, or does not list its alias.
+   * @throws {AggregateError} If notification preparation or submission fails
+   *                          after the successor has been committed.
+   * @since 0.6.0
+   */
+  move(
+    target: Actor | URL | string,
+    options?: SessionMoveOptions,
+  ): Promise<void>;
+
+  /**
+   * Resends the stored account migration to the remaining followers.
+   * Revalidates the destination's alias without changing the successor.
+   * Cancellation is honoured through preparation, until the first activity
+   * is submitted; both notifications continue once submission starts.
+   * @param options Options for cancelling preparation.
+   * @returns A promise that resolves after submitting the notifications.
+   * @throws {TypeError} If the bot has not moved or its successor is invalid
+   *                     or no longer lists the bot as an alias.
+   * @throws {AggregateError} If notification submission fails.
+   * @since 0.6.0
+   */
+  republishMove(options?: SessionMoveOptions): Promise<void>;
+
+  /**
    * Republishes the bot profile to its followers.
    *
    * This is useful when the bot's profile metadata such as its display name,
@@ -127,6 +161,7 @@ export interface Session<TContextData> {
    * @param text The content of the note.
    * @param options The options for publishing the message.
    * @returns The published message.
+   * @throws {TypeError} If the bot has moved.
    */
   publish(
     content: Text<"block", TContextData>,
@@ -139,6 +174,7 @@ export interface Session<TContextData> {
    * @param text The content of the note.
    * @param options The options for publishing the message.
    * @returns The published message.
+   * @throws {TypeError} If the bot has moved.
    */
   publish<T extends MessageClass>(
     content: Text<"block", TContextData>,
@@ -150,6 +186,7 @@ export interface Session<TContextData> {
    * @param content The content of the question.
    * @param options The options for publishing the question.
    * @returns The published question.
+   * @throws {TypeError} If the bot has moved.
    * @since 0.3.0
    */
   publish(
@@ -165,6 +202,15 @@ export interface Session<TContextData> {
   getOutbox(
     options?: SessionGetOutboxOptions,
   ): AsyncIterable<AuthorizedMessage<MessageClass, TContextData>>;
+}
+
+/**
+ * Options for preparing an account migration or resending its notifications.
+ * @since 0.6.0
+ */
+export interface SessionMoveOptions {
+  /** The signal to cancel preparation before committing or submitting. */
+  readonly signal?: AbortSignal;
 }
 
 /**

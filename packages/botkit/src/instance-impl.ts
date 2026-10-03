@@ -81,6 +81,7 @@ import { app, multiApp } from "./pages.tsx";
 import { KvRepository, type Repository } from "./repository.ts";
 import type { Session } from "./session.ts";
 import { parseLocalUri, rewriteLegacyObjectPath } from "./uri.ts";
+import { assertSuccessorRepository } from "./successor.ts";
 
 interface FolloweeMoveResult<TContextData> {
   readonly oldActor: Actor;
@@ -181,6 +182,7 @@ export class InstanceImpl<TContextData>
     this.kv = options.kv;
     this.queue = options.queue;
     this.repository = options.repository ?? new KvRepository(options.kv);
+    assertSuccessorRepository(this.repository);
     this.software = options.software;
     this.behindProxy = options.behindProxy ?? false;
     this.pages = {
@@ -670,6 +672,39 @@ export class InstanceImpl<TContextData>
       { uri: uri?.href },
     );
     return [];
+  }
+
+  readonly #sharing = new Map<string, Promise<void>>();
+
+  /**
+   * Serializes actor writes with migration for one bot on this instance.
+   * @param identifier The bot whose state is protected.
+   * @param operation The operation to run after preceding work finishes.
+   * @param signal The signal for cancelling before the operation starts.
+   * @returns The operation's result.
+   * @throws If the operation fails or its signal is aborted.
+   * @internal
+   */
+  async withSharingLock<T>(
+    identifier: string,
+    operation: (signal?: AbortSignal) => Promise<T>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    signal?.throwIfAborted();
+    const previous = this.#sharing.get(identifier) ?? Promise.resolve();
+    const run = previous.then(() => {
+      signal?.throwIfAborted();
+      return operation(signal);
+    });
+    const tail = run.then(() => {}, () => {});
+    this.#sharing.set(identifier, tail);
+    try {
+      return await run;
+    } finally {
+      if (this.#sharing.get(identifier) === tail) {
+        this.#sharing.delete(identifier);
+      }
+    }
   }
 
   // Serializes copies delivered through shared and personal inboxes.  This

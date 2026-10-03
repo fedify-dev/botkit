@@ -440,6 +440,34 @@ export class RedisRepository implements Repository, AsyncDisposable {
     }
   }
 
+  /** {@inheritDoc Repository.getSuccessor} */
+  async getSuccessor(
+    identifier: string,
+    signal?: AbortSignal,
+  ): Promise<URL | undefined> {
+    signal?.throwIfAborted();
+    const value = await this.get(this.botKey(identifier, "successor"));
+    return value === undefined ? undefined : new URL(value);
+  }
+
+  /** {@inheritDoc Repository.setSuccessor} */
+  async setSuccessor(
+    identifier: string,
+    successorId: URL,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    signal?.throwIfAborted();
+    const href = successorId.href;
+    await this.ensureReady();
+    signal?.throwIfAborted();
+    return await this.command([
+      "SET",
+      this.botKey(identifier, "successor"),
+      href,
+      "NX",
+    ]) === "OK";
+  }
+
   async setKeyPairs(
     identifier: string,
     keyPairs: CryptoKeyPair[],
