@@ -41,7 +41,7 @@ To be released.
  -  Fixed delivery of follow requests, acceptances, rejections, and unfollows
     between bots hosted on the same instance, including follow requests to
     account migration targets on that instance.  [[#49], [#56]]
- -  Upgraded Fedify to 2.4.4, which adds support for [FEP-ef61] portable
+ -  Upgraded Fedify to 2.4.5, which adds support for [FEP-ef61] portable
     objects and hardens HTTP Signature verification and document loading.
 
 [FEP-044f]: https://w3id.org/fep/044f
@@ -78,6 +78,32 @@ To be released.
  -  Added persistent account migration state through `getSuccessor()` and
     atomic, write-once `setSuccessor()`, keeping moved bots inactive across
     restarts.  [[#47], [#50], [#57]]
+
+
+Version 0.5.8
+-------------
+
+Released on October 24, 2026.
+
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.3.15, which fixes a security vulnerability where DNS
+    rebinding bypassed the SSRF protection in document loading, outbound
+    activity delivery, and NodeInfo queries.  Because the hostname was
+    resolved once to check that it was public and again to connect, an
+    attacker could reach internal services with a hostname that answered
+    with a public address for the check and a private one for the
+    connection.  On Node.js and Bun, connections are now made only to the
+    addresses that passed the check; Bun deployments behind an HTTP proxy
+    should use Bun 1.4.3 or later, and Bun versions before 1.3.11 can no
+    longer reach HTTPS servers on non-default ports.  On Deno, `fetch()`
+    offers no way to choose the addresses it connects to, so Deno
+    deployments must also run Deno 2.8.1 or later with `--deny-net`
+    covering private IPv4 ranges, `[::1]`, and `[::]`, listen on a Unix
+    domain socket, and block IPv6 private ranges at the network layer.
+    [[GHSA-r48c-xx2h-fv4g]]
+
+[GHSA-r48c-xx2h-fv4g]: https://github.com/fedify-dev/fedify/security/advisories/GHSA-r48c-xx2h-fv4g
 
 
 Version 0.5.7
@@ -432,6 +458,30 @@ Released on July 8, 2026.
 
 [#12]: https://github.com/fedify-dev/botkit/issues/12
 [#35]: https://github.com/fedify-dev/botkit/pull/35
+
+
+Version 0.4.11
+--------------
+
+Released on October 24, 2026.
+
+### @fedify/botkit
+
+ -  Upgraded Fedify to 2.1.31, which fixes a security vulnerability where DNS
+    rebinding bypassed the SSRF protection in document loading, outbound
+    activity delivery, and NodeInfo queries.  Because the hostname was
+    resolved once to check that it was public and again to connect, an
+    attacker could reach internal services with a hostname that answered
+    with a public address for the check and a private one for the
+    connection.  On Node.js and Bun, connections are now made only to the
+    addresses that passed the check; Bun deployments behind an HTTP proxy
+    should use Bun 1.4.3 or later, and Bun versions before 1.3.11 can no
+    longer reach HTTPS servers on non-default ports.  On Deno, `fetch()`
+    offers no way to choose the addresses it connects to, so Deno
+    deployments must also run Deno 2.8.1 or later with `--deny-net`
+    covering private IPv4 ranges, `[::1]`, and `[::]`, listen on a Unix
+    domain socket, and block IPv6 private ranges at the network layer.
+    [[GHSA-r48c-xx2h-fv4g]]
 
 
 Version 0.4.10
