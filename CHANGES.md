@@ -4,7 +4,7 @@ BotKit changelog
 Version 0.5.8
 -------------
 
-To be released.
+Released on October 24, 2026.
 
 ### @fedify/botkit
 
