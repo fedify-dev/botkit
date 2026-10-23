@@ -1,25 +1,25 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@fedify/denokv@~2.1.30": "2.1.30",
-    "jsr:@fedify/fedify@^2.1.30": "2.1.30",
-    "jsr:@fedify/fedify@~2.1.30": "2.1.30",
+    "jsr:@fedify/denokv@~2.1.31": "2.1.31",
+    "jsr:@fedify/fedify@^2.1.31": "2.1.31",
+    "jsr:@fedify/fedify@~2.1.31": "2.1.31",
     "jsr:@fedify/markdown-it-hashtag@0.3": "0.3.0",
     "jsr:@fedify/markdown-it-mention@0.3": "0.3.0",
-    "jsr:@fedify/vocab-runtime@^2.1.2": "2.4.4",
-    "jsr:@fedify/vocab-runtime@^2.1.30": "2.4.4",
-    "jsr:@fedify/vocab-runtime@^2.4.4": "2.4.4",
-    "jsr:@fedify/vocab-runtime@~2.1.30": "2.1.30",
-    "jsr:@fedify/vocab@^2.1.2": "2.4.4",
-    "jsr:@fedify/vocab@^2.1.30": "2.4.4",
-    "jsr:@fedify/vocab@~2.1.30": "2.1.30",
-    "jsr:@fedify/webfinger@^2.1.30": "2.4.4",
-    "jsr:@fedify/webfinger@^2.4.4": "2.4.4",
+    "jsr:@fedify/vocab-runtime@^2.1.2": "2.4.5",
+    "jsr:@fedify/vocab-runtime@^2.1.31": "2.4.5",
+    "jsr:@fedify/vocab-runtime@^2.4.5": "2.4.5",
+    "jsr:@fedify/vocab-runtime@~2.1.31": "2.1.31",
+    "jsr:@fedify/vocab@^2.1.2": "2.4.5",
+    "jsr:@fedify/vocab@^2.1.31": "2.4.5",
+    "jsr:@fedify/vocab@~2.1.31": "2.1.31",
+    "jsr:@fedify/webfinger@^2.1.31": "2.4.5",
+    "jsr:@fedify/webfinger@^2.4.5": "2.4.5",
     "jsr:@hongminhee/x-forwarded-fetch@0.2": "0.2.0",
     "jsr:@hono/hono@^4.8.2": "4.13.13",
     "jsr:@logtape/logtape@^1.3.5": "1.3.11",
-    "jsr:@logtape/logtape@^2.0.5": "2.4.1",
-    "jsr:@logtape/logtape@^2.2.0": "2.4.1",
+    "jsr:@logtape/logtape@^2.0.5": "2.4.2",
+    "jsr:@logtape/logtape@^2.2.0": "2.4.2",
     "jsr:@std/fs@^1.0.19": "1.0.24",
     "jsr:@std/html@0.224": "0.224.2",
     "jsr:@std/internal@^1.0.12": "1.0.12",
@@ -32,14 +32,14 @@
     "npm:@js-temporal/polyfill@~0.5.1": "0.5.1",
     "npm:@logtape/logtape@^1.3.5": "1.3.7",
     "npm:@multiformats/base-x@^4.0.1": "4.0.1",
-    "npm:@opentelemetry/api@^1.9.0": "1.9.1",
-    "npm:@opentelemetry/api@^1.9.1": "1.9.1",
-    "npm:@opentelemetry/core@^2.5.0": "2.11.0_@opentelemetry+api@1.9.1",
-    "npm:@opentelemetry/sdk-trace-base@^2.5.0": "2.11.0_@opentelemetry+api@1.9.1",
+    "npm:@opentelemetry/api@1.9": "1.9.1",
+    "npm:@opentelemetry/api@~1.9.1": "1.9.1",
+    "npm:@opentelemetry/core@^2.5.0": "2.12.0_@opentelemetry+api@1.9.1",
+    "npm:@opentelemetry/sdk-trace-base@^2.5.0": "2.12.0_@opentelemetry+api@1.9.1",
     "npm:@opentelemetry/semantic-conventions@^1.39.0": "1.43.0",
     "npm:@types/markdown-it@^14.1.1": "14.1.2",
-    "npm:asn1js@^3.0.10": "3.0.10",
-    "npm:asn1js@^3.0.6": "3.0.10",
+    "npm:asn1js@^3.0.10": "3.1.0",
+    "npm:asn1js@^3.0.6": "3.1.0",
     "npm:byte-encodings@^1.0.11": "1.0.11",
     "npm:es-toolkit@^1.30.0": "1.52.0",
     "npm:es-toolkit@^1.43.0": "1.52.0",
@@ -62,32 +62,33 @@
     "npm:jsonld@9": "9.0.0",
     "npm:markdown-it@^14.1.0": "14.1.0",
     "npm:mime-db@^1.54.0": "1.54.0",
-    "npm:pkijs@^3.2.5": "3.4.1",
+    "npm:pkijs@^3.2.5": "3.4.3",
     "npm:postgres@^3.4.8": "3.4.8",
     "npm:structured-field-values@^2.0.4": "2.0.4",
     "npm:tsdown@~0.12.8": "0.12.9_rolldown@1.0.0-beta.55",
+    "npm:undici@^7.30.1": "7.30.1",
     "npm:uri-template-router@1": "1.0.0",
     "npm:url-template@^3.1.1": "3.1.1",
     "npm:uuid@^11.1.0": "11.1.0",
     "npm:xss@^1.0.15": "1.0.15"
   },
   "jsr": {
-    "@fedify/denokv@2.1.30": {
-      "integrity": "0fcd4ca09cbd7ee0a79070cb5d86c1d89cd25ded3718a46384b927e661d5f2cb",
+    "@fedify/denokv@2.1.31": {
+      "integrity": "264cfe8c1d7b0b1738d783d51889fc1005e12ccb9f282a58cd7bea1b9488fd27",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.1.30",
+        "jsr:@fedify/fedify@^2.1.31",
         "npm:es-toolkit@^1.30.0"
       ]
     },
-    "@fedify/fedify@2.1.30": {
-      "integrity": "5bdc58fb37874ac69e929d4322bd3885cb9c5331defc0287080ec6d29bcfb7cb",
+    "@fedify/fedify@2.1.31": {
+      "integrity": "3c85de988e6ed435dfeeae05683987573fbab87c5a5f1ba04d4091b2f4cbffa8",
       "dependencies": [
-        "jsr:@fedify/fedify@^2.1.30",
-        "jsr:@fedify/vocab-runtime@^2.1.30",
-        "jsr:@fedify/vocab@^2.1.30",
-        "jsr:@fedify/webfinger@^2.1.30",
+        "jsr:@fedify/fedify@^2.1.31",
+        "jsr:@fedify/vocab-runtime@^2.1.31",
+        "jsr:@fedify/vocab@^2.1.31",
+        "jsr:@fedify/webfinger@^2.1.31",
         "jsr:@logtape/logtape@^2.0.5",
-        "npm:@opentelemetry/api@^1.9.0",
+        "npm:@opentelemetry/api@1.9",
         "npm:@opentelemetry/core",
         "npm:@opentelemetry/sdk-trace-base",
         "npm:@opentelemetry/semantic-conventions",
@@ -113,56 +114,58 @@
         "npm:@types/markdown-it"
       ]
     },
-    "@fedify/vocab@2.1.30": {
-      "integrity": "3a405bb91444c9321009fab76146ee37e4d0884e3cb077d40e2356cc1fd0e7cf",
+    "@fedify/vocab@2.1.31": {
+      "integrity": "6473e75c925dabbeeb101ef660218fcacbf37a7a1a10eefb6db1539d847f219e",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.1.30",
-        "jsr:@fedify/webfinger@^2.1.30",
+        "jsr:@fedify/vocab-runtime@^2.1.31",
+        "jsr:@fedify/webfinger@^2.1.31",
         "jsr:@logtape/logtape@^2.0.5",
-        "npm:@opentelemetry/api@^1.9.0",
+        "npm:@opentelemetry/api@1.9",
         "npm:es-toolkit@^1.43.0"
       ]
     },
-    "@fedify/vocab@2.4.4": {
-      "integrity": "55afb47ccc19730d8b3a7b0416d4f4a92bae90886952b48e2f5500ab8b9a0bf5",
+    "@fedify/vocab@2.4.5": {
+      "integrity": "cdf745d846d2075804ccfa08fdf34f5e390e1aa30afe82a67c47c90af224315f",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.4.4",
-        "jsr:@fedify/webfinger@^2.4.4",
+        "jsr:@fedify/vocab-runtime@^2.4.5",
+        "jsr:@fedify/webfinger@^2.4.5",
         "jsr:@logtape/logtape@^2.2.0",
-        "npm:@opentelemetry/api@^1.9.1",
+        "npm:@opentelemetry/api@~1.9.1",
         "npm:es-toolkit@^1.46.1"
       ]
     },
-    "@fedify/vocab-runtime@2.1.30": {
-      "integrity": "fd2d12119ad8ab66faadd234aa4af2819ae6dc3d6a003e56b02f9e9f7a46fcbd",
+    "@fedify/vocab-runtime@2.1.31": {
+      "integrity": "aae97aa4c45f0f3cf0af9ab7ab116b0308d0a021c581a679d5acc72deaeaf82f",
       "dependencies": [
         "jsr:@logtape/logtape@^2.0.5",
         "npm:@multiformats/base-x",
-        "npm:@opentelemetry/api@^1.9.0",
+        "npm:@opentelemetry/api@1.9",
         "npm:asn1js@^3.0.6",
         "npm:byte-encodings",
         "npm:jsonld",
-        "npm:pkijs"
+        "npm:pkijs",
+        "npm:undici"
       ]
     },
-    "@fedify/vocab-runtime@2.4.4": {
-      "integrity": "278b4d816a8cdbc5ea8d4143f3156f22636581e545eb0517dd394b8cf0d95615",
+    "@fedify/vocab-runtime@2.4.5": {
+      "integrity": "de494517e9b659ba7ab0e4291b5f8c95c07863a202955da5958b1ed0ec432eda",
       "dependencies": [
         "jsr:@logtape/logtape@^2.2.0",
         "npm:@multiformats/base-x",
-        "npm:@opentelemetry/api@^1.9.1",
+        "npm:@opentelemetry/api@~1.9.1",
         "npm:asn1js@^3.0.10",
         "npm:byte-encodings",
         "npm:jsonld",
-        "npm:pkijs"
+        "npm:pkijs",
+        "npm:undici"
       ]
     },
-    "@fedify/webfinger@2.4.4": {
-      "integrity": "551abde7a9c62afc2a1fcc014c5c60517560a07eb1512795860158f7cb9667a4",
+    "@fedify/webfinger@2.4.5": {
+      "integrity": "dc673bae907c48d07924154b425a4204de22ee380499f904d6661fa90ba7438d",
       "dependencies": [
-        "jsr:@fedify/vocab-runtime@^2.4.4",
+        "jsr:@fedify/vocab-runtime@^2.4.5",
         "jsr:@logtape/logtape@^2.2.0",
-        "npm:@opentelemetry/api@^1.9.1"
+        "npm:@opentelemetry/api@~1.9.1"
       ]
     },
     "@hongminhee/x-forwarded-fetch@0.2.0": {
@@ -192,8 +195,8 @@
     "@logtape/logtape@1.3.11": {
       "integrity": "eb673324344f1a4a01900ba81c815c361407543924c0387d85cdaf7846d73e8c"
     },
-    "@logtape/logtape@2.4.1": {
-      "integrity": "0f371ab59edecff804e444f9769f5b339d08772f59874e8de1eb88120508bcae"
+    "@logtape/logtape@2.4.2": {
+      "integrity": "308d84fb97124e5558a24eb23b94a8909fc60f4b0032e9328905a4264d14886b"
     },
     "@std/fs@1.0.21": {
       "integrity": "d720fe1056d78d43065a4d6e0eeb2b19f34adb8a0bc7caf3a4dbf1d4178252cd",
@@ -279,7 +282,7 @@
       "integrity": "sha512-ODhCGmElUPmR3IR+KZmBNkRAFyjJ01rxvk2E+/qQ2h2EGPJH5k6bz3N24ympGc5+i4YCGk/ipIpmkwc0+iSmRg==",
       "dependencies": [
         "ky",
-        "undici"
+        "undici@6.29.1"
       ]
     },
     "@emnapi/core@1.7.1": {
@@ -449,33 +452,34 @@
     "@opentelemetry/api@1.9.1": {
       "integrity": "sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q=="
     },
-    "@opentelemetry/core@2.11.0_@opentelemetry+api@1.9.1": {
-      "integrity": "sha512-7YP44XH0tV6+Mb54x2YGf84i7yi+31MBZlE8JwvozkxyTvXbSp10X7cI7YE49ChJ3shMJoBmCJF3+1QFBJctGA==",
+    "@opentelemetry/core@2.12.0_@opentelemetry+api@1.9.1": {
+      "integrity": "sha512-1HsSAuvT4/my0QrXWsyXFdWjKaPeCHsismKZgEEIb8NK13LP6DrMRlsUbvD/0F9mDWK3xDom9AMv3IscxgOnOQ==",
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/semantic-conventions"
       ]
     },
-    "@opentelemetry/resources@2.11.0_@opentelemetry+api@1.9.1": {
-      "integrity": "sha512-Ie7+8q8MDF4FAEQCKVMTx3ReUvxiIAgIiiW3c9JdmP8+HMcDy20puT+AHjexnExgnbvBxjQ9fjkFDWrikJ2jQA==",
+    "@opentelemetry/resources@2.12.0_@opentelemetry+api@1.9.1": {
+      "integrity": "sha512-+rSRoOdln6NhXTVcBdHSlZxJDNzwxadeweK2ltZO3tVtfp6aklABc06xclDk6ovRR+EiGgIcSbh/6NgjFhnb3A==",
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/core",
         "@opentelemetry/semantic-conventions"
       ]
     },
-    "@opentelemetry/sdk-trace-base@2.11.0_@opentelemetry+api@1.9.1": {
-      "integrity": "sha512-H19x/TX/LZdqiYOjM7fqtSxwlplC5pgelavqbQdHbhdq0q/AI/TGkM2dfGuuynTXmJPeF2HoZVoPDu+TGoW78A==",
+    "@opentelemetry/sdk-trace-base@2.12.0_@opentelemetry+api@1.9.1": {
+      "integrity": "sha512-JOERgZCxRM06FEJ5kEWxlSRChah6MmXDx3KwCruqEv/iEyLkTokCSemf2y1w8oIHtfrr8EVTpzebq/31vn2Cpg==",
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/core",
         "@opentelemetry/resources",
         "@opentelemetry/sdk-trace",
         "@opentelemetry/semantic-conventions"
-      ]
+      ],
+      "deprecated": true
     },
-    "@opentelemetry/sdk-trace@2.11.0_@opentelemetry+api@1.9.1": {
-      "integrity": "sha512-fFnTqGm8/G73GQVnxYi7LXa1ZVYEUvgL6XI1LpvV0bPC7WQ/ZGgKxCSl8FnlZBKto9JHHEFTO6s6CUpvvtwFrA==",
+    "@opentelemetry/sdk-trace@2.12.0_@opentelemetry+api@1.9.1": {
+      "integrity": "sha512-ImVuRQ6faOsTi1Wna88s2avgrrf/iDgXPigIeynkUhjstMuoQUDOJXgkez2j1mlU4btjXcXBGa+q7qKFYR3GsA==",
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/core",
@@ -590,8 +594,8 @@
     "argparse@2.0.1": {
       "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q=="
     },
-    "asn1js@3.0.10": {
-      "integrity": "sha512-S2s3aOytiKdFRdulw2qPE51MzjzVOisppcVv7jVFR+Kw0kxwvFrDcYA0h7Ndqbmj0HkMIXYWaoj7fli8kgx1eg==",
+    "asn1js@3.1.0": {
+      "integrity": "sha512-HWYi1THkOqguCiO+vwj09ZkQFD2kKEsejYHAYCtX0D80WVdoDnvRc9IukXX/jeb0T9NRWJnRtqwdbHltnFjwXA==",
       "dependencies": [
         "pvtsutils",
         "pvutils",
@@ -779,8 +783,8 @@
     "picomatch@4.0.3": {
       "integrity": "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="
     },
-    "pkijs@3.4.1": {
-      "integrity": "sha512-Oo/NZcSWccq8KyoG7gLE9fnltgHns+pNCjCAp/WmjsUySi+sX7y4z4Xqu4fVb42CDHzRPl33fjzT15V1wvcyhA==",
+    "pkijs@3.4.3": {
+      "integrity": "sha512-V9kOzaItwDgqlryhXysQsAXUEKi5O7kqWUaP3dXI7MLvkPqWWMb4wVb1QAtmEDCKI+XIAINsZoNKMFF7sZb1eg==",
       "dependencies": [
         "@noble/hashes",
         "asn1js",
@@ -919,8 +923,11 @@
         "unconfig-core"
       ]
     },
-    "undici@6.29.0": {
-      "integrity": "sha512-R+RODBqp6i2pPflGdq+xIOUkl+RNfGgHwoinecKu/JCuf2uO06cOKoDbI2P7Dn6KcswdKwrczbU6IYJ6K8X+wg=="
+    "undici@6.29.1": {
+      "integrity": "sha512-EvRlUt/QqAEvXdQeRMYUfwOQsfzpDztykrG2owGEE/rBOBoYv9uF39ZzsNDh4lTFHhTr2XOZjKkYgueD12ZmGA=="
+    },
+    "undici@7.30.1": {
+      "integrity": "sha512-03KrMbjIFDWQR5RNPrSw3bd1r12JpyFQl9/yxjUbJtqkjmllqC5lFjZh6ujeuJCKr8EOQvRW872Oy/az+nLYxg=="
     },
     "uri-template-router@1.0.0": {
       "integrity": "sha512-WKcL9ZSIEhHE3f5P4Z47Tf0nWbcgV1ISb/OBuF8YKEYi0SQOyTLCzM6B/gAKFWZhRhqA+C/Ks8UXe2qU5W0FVg=="
@@ -946,10 +953,10 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@fedify/denokv@~2.1.30",
-      "jsr:@fedify/fedify@~2.1.30",
-      "jsr:@fedify/vocab-runtime@~2.1.30",
-      "jsr:@fedify/vocab@~2.1.30",
+      "jsr:@fedify/denokv@~2.1.31",
+      "jsr:@fedify/fedify@~2.1.31",
+      "jsr:@fedify/vocab-runtime@~2.1.31",
+      "jsr:@fedify/vocab@~2.1.31",
       "jsr:@hongminhee/x-forwarded-fetch@0.2",
       "jsr:@hono/hono@^4.8.2",
       "jsr:@logtape/logtape@^1.3.5",
