@@ -7,26 +7,26 @@ settings:
 catalogs:
   default:
     '@fedify/denokv':
-      specifier: jsr:@fedify/denokv@^2.3.15
-      version: 2.4.4
+      specifier: jsr:@fedify/denokv@~2.3.16
+      version: 2.3.16
     '@fedify/fedify':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@fedify/postgres':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@fedify/redis':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@fedify/sqlite':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@fedify/vocab':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@fedify/vocab-runtime':
-      specifier: ~2.3.15
-      version: 2.3.15
+      specifier: ~2.3.16
+      version: 2.3.16
     '@js-temporal/polyfill':
       specifier: ^0.5.1
       version: 0.5.1
@@ -42,6 +42,13 @@ catalogs:
     x-forwarded-fetch:
       specifier: ^0.2.0
       version: 0.2.0
+
+overrides:
+  '@jsr/fedify__fedify': ~2.3.16
+  '@jsr/fedify__uri-template': ~2.3.16
+  '@jsr/fedify__vocab': ~2.3.16
+  '@jsr/fedify__vocab-runtime': ~2.3.16
+  '@jsr/fedify__webfinger': ~2.3.16
 
 importers:
 
@@ -61,25 +68,25 @@ importers:
         version: link:../packages/botkit-sqlite
       '@fedify/denokv':
         specifier: 'catalog:'
-        version: '@jsr/fedify__denokv@2.4.4'
+        version: '@jsr/fedify__denokv@2.3.16'
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/postgres':
         specifier: 'catalog:'
-        version: 2.3.15(@fedify/fedify@2.3.15)(postgres@3.4.9)
+        version: 2.3.16(@fedify/fedify@2.3.16)(postgres@3.4.9)
       '@fedify/redis':
         specifier: 'catalog:'
-        version: 2.3.15(@fedify/fedify@2.3.15)(ioredis@5.11.1)
+        version: 2.3.16(@fedify/fedify@2.3.16)(ioredis@5.11.1)
       '@fedify/sqlite':
         specifier: 'catalog:'
-        version: 2.3.15(@fedify/fedify@2.3.15)
+        version: 2.3.16(@fedify/fedify@2.3.16)
       '@fedify/vocab':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/vocab-runtime':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -148,7 +155,7 @@ importers:
     dependencies:
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/markdown-it-hashtag':
         specifier: ^0.3.0
         version: 0.3.0
@@ -157,10 +164,10 @@ importers:
         version: 0.3.0
       '@fedify/vocab':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/vocab-runtime':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -203,10 +210,10 @@ importers:
         version: link:../botkit
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/vocab':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@js-temporal/polyfill':
         specifier: ^0.5.1
         version: 0.5.1
@@ -228,10 +235,10 @@ importers:
         version: link:../botkit
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/vocab':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -253,10 +260,10 @@ importers:
         version: link:../botkit
       '@fedify/fedify':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@fedify/vocab':
         specifier: 'catalog:'
-        version: 2.3.15
+        version: 2.3.16
       '@js-temporal/polyfill':
         specifier: 'catalog:'
         version: 0.5.1
@@ -501,8 +508,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fedify/fedify@2.3.15':
-    resolution: {integrity: sha512-KyHHgv3hqNfo1PAN/GSP4lw4e5ig3MYiOIXa4XfpVEpVrnaPObMq5Y1vR0GUEEO66LIbrHpeQ2teamhcwxmVJw==}
+  '@fedify/fedify@2.3.16':
+    resolution: {integrity: sha512-7VN5Cmtt7/soVe9aYmO3b7CXYq4GZNDuPVENmMdP3ojheOnnZr8TO+KU7NOd+QPgbPUXHGZE/MJxt8k4pAWv9w==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@fedify/markdown-it-hashtag@0.3.0':
@@ -511,41 +518,41 @@ packages:
   '@fedify/markdown-it-mention@0.3.0':
     resolution: {integrity: sha512-4uVELsxh9AW0hzC6BVFqN59YWj6M/p6AZpwb/CQDjvcinfHyQp2yYtGDV4fBgsE5WC/ukpvU1pBNH20ts8TK4w==}
 
-  '@fedify/postgres@2.3.15':
-    resolution: {integrity: sha512-O6kd9rsx8ds1E5e8fQqw7F0pbgzU9ToCCnD0CvLdKZ/TTFQzGQE/TykmtKBTKgoHdwvuM6lG7FIJvwI38a75ew==}
+  '@fedify/postgres@2.3.16':
+    resolution: {integrity: sha512-DVL7jwti+jCNJsFnw052drXvmFFrUikT4Zv1WZ30HPDXjxUu4tR2mqCkkf2/agBXIjgn4SQSoQyOIEU+7uIb1A==}
     peerDependencies:
-      '@fedify/fedify': ^2.3.15
+      '@fedify/fedify': ^2.3.16
       postgres: ^3.4.7
 
-  '@fedify/redis@2.3.15':
-    resolution: {integrity: sha512-E1glmb0HgqAy/RNWQaRjcJe5weF9ZRum4vQ3vw5SyMuuat1gHQppuvys9jWCp7F3UAYh9lqIiD7JSv7m01JFHw==}
+  '@fedify/redis@2.3.16':
+    resolution: {integrity: sha512-prYVLCbbiDfmoMLJDVVPED/Y89nOx9QnYrlmUW+kGMwr9LTft4FFFJ8mHHS2H5pViWWx0UgnnOzuT1zmaAhxkA==}
     peerDependencies:
-      '@fedify/fedify': ^2.3.15
+      '@fedify/fedify': ^2.3.16
       ioredis: ^5.8.2
 
-  '@fedify/sqlite@2.3.15':
-    resolution: {integrity: sha512-KPG2hSIKJdof0NYbmGlF9nMsC/wH4KrQ4l6dq6OlSUG+QSMyWFZMptHkW5cpc60fqZmC24ZNC0Vvf/+7F4lYmA==}
+  '@fedify/sqlite@2.3.16':
+    resolution: {integrity: sha512-rAciDBb+xBJ4q0pjYJqvmWv42drKPyLlL/OxqJKgQNDk4upYXouudjeqv3O2jxS8Agd2liBRFczB4Xu5WWdJKw==}
     peerDependencies:
-      '@fedify/fedify': ^2.3.15
+      '@fedify/fedify': ^2.3.16
 
-  '@fedify/uri-template@2.3.15':
-    resolution: {integrity: sha512-ZbFjheGC8XRsYGTEJOG65vyiOplgNTHBqXb0uJ5y8fdDTFFB6lvjsdhAduzMDH2lnqPmc5Oj5ZvioD1hOvof+w==}
+  '@fedify/uri-template@2.3.16':
+    resolution: {integrity: sha512-AD7kWEaMLQBTdiT3B19goN7nbGys9U3/kUUHlsWdmzlVbyPDYL4TJv77Oic34pvP0/00ONDwLbG3ZrDCwiMTWg==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
-  '@fedify/vocab-runtime@2.3.15':
-    resolution: {integrity: sha512-IoKunlFjX24jqDq6HESUSwyAED+rohE19KW8xsdsNqu68Z9D4mJACo3K84FMUhlo1u8M7BiALnYAKz63HYHoqA==}
+  '@fedify/vocab-runtime@2.3.16':
+    resolution: {integrity: sha512-l/koew5Wwz3WZOIGeetH/S6W4rKbmubkDwReMur0+Wl/L2Y2bFo1RSqgmChnktaMHjNFP8vUPBMj9ldDhqD8Aw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
-  '@fedify/vocab-tools@2.3.15':
-    resolution: {integrity: sha512-RMJCywhFbWKPWiFguVadWr3xEAqmhXDcvH0bNObPpMr5Uo1HLwGBde57wkPK0LYTHqhbupug/UwUIHd/1Y9ICA==}
+  '@fedify/vocab-tools@2.3.16':
+    resolution: {integrity: sha512-AkuLxySxtLrZT5BOy1Mq+siCnxcYdxxf3bzm+gBAST/8vHak+OFEA+JMh09KP307U4yqKj/tkJQwanm2WRV2Lg==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
-  '@fedify/vocab@2.3.15':
-    resolution: {integrity: sha512-0SdptfcqlZNQ3HLJ7qbWK63UCJ8vU8BbeIpmxVzF/0G7un98fiQAW768Bg0WDoJ0NiP9iFPf0RkmXvU6I0f4zQ==}
+  '@fedify/vocab@2.3.16':
+    resolution: {integrity: sha512-mECAk2bXb4yvIY91lMA9H4TRmHUQ8WAinWvJEG33hgdou4tanOvO6NElCa55q8CsJlcLGMqV5Aa6X4ovzuYs6Q==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
-  '@fedify/webfinger@2.3.15':
-    resolution: {integrity: sha512-Q3inYZMHacRsL38UGlX2bJApsRB2KVR4/la3pjDodddTWTN/65OiPzzlB3NByXvs0htz8m3sx6D3WVilUFfZjQ==}
+  '@fedify/webfinger@2.3.16':
+    resolution: {integrity: sha512-NOyY4mmXISm63LwrQKGnW4icKdlxkhDVCAYHkcWqT3KpAsHX1zEtUeClur3Gg1ZW6VeIGEuA+YHRTKdIYhEWgw==}
     engines: {bun: '>=1.1.0', deno: '>=2.0.0', node: '>=22.0.0'}
 
   '@floating-ui/core@1.7.1':
@@ -608,29 +615,26 @@ packages:
     resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
     engines: {node: '>=12'}
 
-  '@jsr/fedify__denokv@2.4.4':
-    resolution: {integrity: sha512-5xv7a1yDFkvNz2ssQnSs8KN97PwD9gq5wPjYZai5ZKN/EmgYDNMXFb2YZnGUeAL9qKd71jRRbrt3SqKkRsUazw==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__denokv/2.4.4.tgz}
+  '@jsr/fedify__denokv@2.3.16':
+    resolution: {integrity: sha512-DRxhBeE8uEvs0erMlXs5PmTqp1ub3vkfkKrExHPAW5HheTHbAasT3SbtZymdX8FYFSJWBehhr+8zCsA3QGIkmQ==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__denokv/2.3.16.tgz}
 
-  '@jsr/fedify__fedify@2.4.4':
-    resolution: {integrity: sha512-IzlwQcziGphzPH6aKhwQ8r5EUyr7zGhQZTPlpVQ1m+TxovJsOscHjL+mK9YqK6xXnuUKo97/c88Pkz9tFvGcQA==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__fedify/2.4.4.tgz}
+  '@jsr/fedify__fedify@2.3.16':
+    resolution: {integrity: sha512-wuu33tucbjynuWXwMUm776isc1Pxvzibnl0H3bzfTShIlssiNgALwwvKNHSoCY8xlSQxV78ftYr+wp5PC+t/MA==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__fedify/2.3.16.tgz}
 
-  '@jsr/fedify__uri-template@2.4.4':
-    resolution: {integrity: sha512-6NwmGpJn3JPYGmJOaubrVLQ+ls3dx9j7UR+dPYGqBb9fz/eWCT11nTXdmcFHB4p1L9lN70WAUMe/HDLad8vIbQ==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__uri-template/2.4.4.tgz}
+  '@jsr/fedify__uri-template@2.3.16':
+    resolution: {integrity: sha512-QNvjiPLiHs3Vagq9dn829nKUM5VmFhaDy/faobTR4iqiNjKSasuLJSP9S7apUxIG6SVLIpNHMiG9IuB9NA1Jyg==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__uri-template/2.3.16.tgz}
 
-  '@jsr/fedify__vocab-runtime@2.4.4':
-    resolution: {integrity: sha512-DL1+AqWa+X08dYP2gDyUkc845QLSlNf6BaoWuCjoscNY6hwcLDlZZvSj1X9Wg0RPNshy4h3WaWFrEelSUDR5Og==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__vocab-runtime/2.4.4.tgz}
+  '@jsr/fedify__vocab-runtime@2.3.16':
+    resolution: {integrity: sha512-P0U1wlEVSYBjUoBeHtQJSTvgH6DlyrxS/f/UuosSxrAJp2f4axBEWPtPYJS2IFSrYMij97v+TQB6psrk9Aa1Wg==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__vocab-runtime/2.3.16.tgz}
 
-  '@jsr/fedify__vocab@2.4.4':
-    resolution: {integrity: sha512-LWCkN0M3IOohbMHHDNz8f0OpkEqJojV44HfHcw8O2xnVW0u4WO5adrZYM17UZQTyad+FIzi4zOt4ELG63Zydgw==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__vocab/2.4.4.tgz}
+  '@jsr/fedify__vocab@2.3.16':
+    resolution: {integrity: sha512-pguGk5hlIllI8HwPfdTwgkNnxR5t0XPZU58hXaxppmMeG+paH+jT6lO827pY8ChheC+dQrX+MDcWVQc9wK1nLg==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__vocab/2.3.16.tgz}
 
-  '@jsr/fedify__webfinger@2.4.4':
-    resolution: {integrity: sha512-YOb2iYbTT9arDMF8NDhy78qWxp/iKwq1EyOnGnAx8HkZgkFYNr65/nLeoh5JTv2ioRO6okxvq9uAbEVCkpz1jw==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__webfinger/2.4.4.tgz}
+  '@jsr/fedify__webfinger@2.3.16':
+    resolution: {integrity: sha512-P1cb+iXL3YlCfFch0Ur8W38aUFFnoXiMDmLEVip2ztSjO5ibw73t8B4RRLwpNdZcslHkj5ykTsNRgoNc8ZMGyA==, tarball: https://npm.jsr.io/~/11/@jsr/fedify__webfinger/2.3.16.tgz}
 
   '@jsr/logtape__logtape@2.3.6':
     resolution: {integrity: sha512-zoYIvDh/nOCidJknDGH2mhtCz52fIoQw64SFy1Bc+Yi0q8SHa9qY59U4vUj4b9Xzynfd0JTwshRpbAOugiuedw==, tarball: https://npm.jsr.io/~/11/@jsr/logtape__logtape/2.3.6.tgz}
-
-  '@jsr/standard-schema__spec@1.1.0':
-    resolution: {integrity: sha512-mWncLgOE1ZVd/xXG+SPmmDmYPQ9Q3OcIbkCn/3oPpp4WOw3RpbHWdxk/jiG8m4Bd9utE2b1yyfynSStpuhdXew==, tarball: https://npm.jsr.io/~/11/@jsr/standard-schema__spec/1.1.0.tgz}
 
   '@logtape/logtape@2.3.6':
     resolution: {integrity: sha512-1ajI6YRkq+gIpgYVhOcJ4Mn5QUarSvWnnuj8SNMjwrjIcOy1ANEIcZyaLN+vPtL2MCa845D8ghXR8xDA+c3Khg==}
@@ -1283,9 +1287,6 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
-
-  devalue@5.9.4:
-    resolution: {integrity: sha512-sPAT4pztbu6586/hrhOnMKS17IJrvg12mXiSPSS3W5qDeN2RGgvZ0diZCm31dBbnevfVmujNO3IM2wrS4Y2Rhg==}
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
@@ -2363,12 +2364,12 @@ snapshots:
   '@esbuild/win32-x64@0.27.2':
     optional: true
 
-  '@fedify/fedify@2.3.15':
+  '@fedify/fedify@2.3.16':
     dependencies:
-      '@fedify/uri-template': 2.3.15
-      '@fedify/vocab': 2.3.15
-      '@fedify/vocab-runtime': 2.3.15
-      '@fedify/webfinger': 2.3.15
+      '@fedify/uri-template': 2.3.16
+      '@fedify/vocab': 2.3.16
+      '@fedify/vocab-runtime': 2.3.16
+      '@fedify/webfinger': 2.3.16
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
       '@opentelemetry/api': 1.9.1
@@ -2391,30 +2392,30 @@ snapshots:
     dependencies:
       markdown-it: 14.3.2
 
-  '@fedify/postgres@2.3.15(@fedify/fedify@2.3.15)(postgres@3.4.9)':
+  '@fedify/postgres@2.3.16(@fedify/fedify@2.3.16)(postgres@3.4.9)':
     dependencies:
-      '@fedify/fedify': 2.3.15
+      '@fedify/fedify': 2.3.16
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
       postgres: 3.4.9
 
-  '@fedify/redis@2.3.15(@fedify/fedify@2.3.15)(ioredis@5.11.1)':
+  '@fedify/redis@2.3.16(@fedify/fedify@2.3.16)(ioredis@5.11.1)':
     dependencies:
-      '@fedify/fedify': 2.3.15
+      '@fedify/fedify': 2.3.16
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
       ioredis: 5.11.1
 
-  '@fedify/sqlite@2.3.15(@fedify/fedify@2.3.15)':
+  '@fedify/sqlite@2.3.16(@fedify/fedify@2.3.16)':
     dependencies:
-      '@fedify/fedify': 2.3.15
+      '@fedify/fedify': 2.3.16
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
       es-toolkit: 1.52.0
 
-  '@fedify/uri-template@2.3.15': {}
+  '@fedify/uri-template@2.3.16': {}
 
-  '@fedify/vocab-runtime@2.3.15':
+  '@fedify/vocab-runtime@2.3.16':
     dependencies:
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
@@ -2426,18 +2427,18 @@ snapshots:
       pkijs: 3.3.3
       undici: 7.30.1
 
-  '@fedify/vocab-tools@2.3.15':
+  '@fedify/vocab-tools@2.3.16':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       byte-encodings: 1.0.11
       es-toolkit: 1.52.0
       yaml: 2.9.1
 
-  '@fedify/vocab@2.3.15':
+  '@fedify/vocab@2.3.16':
     dependencies:
-      '@fedify/vocab-runtime': 2.3.15
-      '@fedify/vocab-tools': 2.3.15
-      '@fedify/webfinger': 2.3.15
+      '@fedify/vocab-runtime': 2.3.16
+      '@fedify/vocab-tools': 2.3.16
+      '@fedify/webfinger': 2.3.16
       '@js-temporal/polyfill': 0.5.1
       '@logtape/logtape': 2.3.6
       '@multiformats/base-x': 4.0.1
@@ -2447,9 +2448,9 @@ snapshots:
       jsonld: 9.0.0
       pkijs: 3.3.3
 
-  '@fedify/webfinger@2.3.15':
+  '@fedify/webfinger@2.3.16':
     dependencies:
-      '@fedify/vocab-runtime': 2.3.15
+      '@fedify/vocab-runtime': 2.3.16
       '@logtape/logtape': 2.3.6
       '@opentelemetry/api': 1.9.1
       es-toolkit: 1.46.1
@@ -2522,33 +2523,31 @@ snapshots:
     dependencies:
       jsbi: 4.3.2
 
-  '@jsr/fedify__denokv@2.4.4':
+  '@jsr/fedify__denokv@2.3.16':
     dependencies:
-      '@jsr/fedify__fedify': 2.4.4
+      '@jsr/fedify__fedify': 2.3.16
       es-toolkit: 1.52.0
 
-  '@jsr/fedify__fedify@2.4.4':
+  '@jsr/fedify__fedify@2.3.16':
     dependencies:
-      '@jsr/fedify__uri-template': 2.4.4
-      '@jsr/fedify__vocab': 2.4.4
-      '@jsr/fedify__vocab-runtime': 2.4.4
-      '@jsr/fedify__webfinger': 2.4.4
+      '@jsr/fedify__uri-template': 2.3.16
+      '@jsr/fedify__vocab': 2.3.16
+      '@jsr/fedify__vocab-runtime': 2.3.16
+      '@jsr/fedify__webfinger': 2.3.16
       '@jsr/logtape__logtape': 2.3.6
-      '@jsr/standard-schema__spec': 1.1.0
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.11.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-metrics': 2.7.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.11.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.40.0
       byte-encodings: 1.0.11
-      devalue: 5.9.4
       es-toolkit: 1.52.0
       json-canon: 1.0.1
       structured-field-values: 2.0.4
 
-  '@jsr/fedify__uri-template@2.4.4': {}
+  '@jsr/fedify__uri-template@2.3.16': {}
 
-  '@jsr/fedify__vocab-runtime@2.4.4':
+  '@jsr/fedify__vocab-runtime@2.3.16':
     dependencies:
       '@jsr/logtape__logtape': 2.3.6
       '@multiformats/base-x': 4.0.1
@@ -2557,24 +2556,23 @@ snapshots:
       byte-encodings: 1.0.11
       jsonld: 9.0.0
       pkijs: 3.3.3
+      undici: 7.30.1
 
-  '@jsr/fedify__vocab@2.4.4':
+  '@jsr/fedify__vocab@2.3.16':
     dependencies:
-      '@jsr/fedify__vocab-runtime': 2.4.4
-      '@jsr/fedify__webfinger': 2.4.4
+      '@jsr/fedify__vocab-runtime': 2.3.16
+      '@jsr/fedify__webfinger': 2.3.16
       '@jsr/logtape__logtape': 2.3.6
       '@opentelemetry/api': 1.9.1
       es-toolkit: 1.52.0
 
-  '@jsr/fedify__webfinger@2.4.4':
+  '@jsr/fedify__webfinger@2.3.16':
     dependencies:
-      '@jsr/fedify__vocab-runtime': 2.4.4
+      '@jsr/fedify__vocab-runtime': 2.3.16
       '@jsr/logtape__logtape': 2.3.6
       '@opentelemetry/api': 1.9.1
 
   '@jsr/logtape__logtape@2.3.6': {}
-
-  '@jsr/standard-schema__spec@1.1.0': {}
 
   '@logtape/logtape@2.3.6': {}
 
@@ -3116,8 +3114,6 @@ snapshots:
   dequal@2.0.3: {}
 
   detect-libc@2.1.2: {}
-
-  devalue@5.9.4: {}
 
   devlop@1.1.0:
     dependencies:
